@@ -8,6 +8,7 @@ open import Data.List.All
 open import Data.Nat using (ℕ ; zero ; suc ; _≟_) public
 import Data.List as L
 open import Data.Maybe
+open import Data.Product
 
 -- A label-annotated, untyped free term.
 -- Variables are represented by numbers.
@@ -78,7 +79,7 @@ deepDup y [ t₂ / x ] = deepDup y
 -- A partial mapping from number (position) to terms.
 data Heap : Set where
  [] : Heap
- _∷_ : Maybe Term -> Heap -> Heap
+ _∷_ : Maybe (Label × Term) -> Heap -> Heap
 
 -- Continuation 
 data Cont : Set where
@@ -89,8 +90,10 @@ data Cont : Set where
  unlabel : ∀ {l h} -> l ⊑ h -> Cont
  unId : Term -> Cont
 
-Stack : Set
-Stack = List Cont
+-- Just a list of continuation with a fixed label
+data Stack (l : Label) : Set where
+ [] : Stack l
+ _∷_ : Cont -> Stack l -> Stack l
 
 --------------------------------------------------------------------------------
 
@@ -107,12 +110,12 @@ data IsValue : Term -> Set where
 --------------------------------------------------------------------------------
 
 -- Selstof's Abstract Lazy Machine State
-record State : Set where
- constructor _,_,_
+record State (l : Label) : Set where
+ constructor ⟨_,_,_⟩
  field
    heap : Heap
    term : Term
-   stack : Stack
+   stack : Stack l
 
 open State
 
@@ -121,14 +124,14 @@ open State
 --  _∷_ : ∀ {Γ n mt} -> Fresh Γ n -> Fresh (mt ∷ Γ) (suc n)
 
 -- Extend a heap with a new binding
-data Add (t : Term) : Heap -> ℕ -> Heap -> Set where
-  [] : Add t [] 0 ((just t) ∷ [])
-  _∷_ : ∀ {mt n Γ Γ'} -> Add t Γ n Γ' -> Add t (mt ∷ Γ) (suc n) (mt ∷ Γ')
+data Add (l : Label) (t : Term) : Heap -> ℕ -> Heap -> Set where
+  [] : Add l t [] 0 (just (l , t) ∷ [])
+  _∷_ : ∀ {mt n Γ Γ'} -> Add l t Γ n Γ' -> Add l t (mt ∷ Γ) (suc n) (mt ∷ Γ')
   
-_≔_[_↦_] : Heap -> Heap -> ℕ -> Term -> Set
-Γ₂ ≔ Γ₁ [ n ↦ t ] = Add t Γ₁ n Γ₂
+_≔_[_↦_,_] : Heap -> Heap -> ℕ -> Label -> Term -> Set
+Γ₂ ≔ Γ₁ [ n ↦ l , t ] = Add l t Γ₁ n Γ₂
 
-data _⇝_ : State -> State -> Set where
- App₁ : ∀ {Γ Γ' S t₁ t₂ n} -> Γ' ≔ Γ [ n ↦ t₂ ] -> (Γ , App t₁ t₂ , S) ⇝ (Γ' , t₁ , ((Var n) ∷ S))
- App₂ : ∀ {Γ n m t S} -> (Γ , (Abs m t) , (Var n ∷ S)) ⇝ (Γ , (t [ (Var n) / m ]) , S)
- Var₁ : ∀ {Γ n m t S} -> (Γ , (Var n) , S) ⇝ ({!!} , t , ((# {!!} {!!}) ∷ S))
+data _⇝_ {l : Label} : State l -> State l -> Set where
+ App₁ : ∀ {Γ Γ' S t₁ t₂ n} -> Γ' ≔ Γ [ n ↦ l , t₂ ] -> ⟨ Γ , App t₁ t₂ , S ⟩ ⇝ ⟨ Γ' , t₁ , (Var n ∷ S) ⟩
+ App₂ : ∀ {Γ n m t S} -> ⟨ Γ , (Abs m t) , (Var n ∷ S) ⟩ ⇝ ⟨ Γ , (t [ Var n / m ]) , S ⟩
+ Var₁ : ∀ {Γ n m t S} -> ⟨ Γ , (Var n) , S ⟩ ⇝ ⟨ {!!} , t , (# {!!} {!!} ∷ S) ⟩
