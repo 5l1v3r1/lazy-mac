@@ -12,7 +12,7 @@ import Data.List as L
 open import Data.List using (List ; [] ; _∷_ ; _++_) public
 open import Data.Vec using (Vec ; [] ; _∷_ ; lookup) public
 open import Data.Fin using (Fin ; zero ; suc) public
-open import Data.Unit hiding (_≤_) public
+open import Data.Unit hiding (_≤_ ; _≟_) public
 open import Data.Product using (_×_ ; _,_)
 
 -- Types τ
