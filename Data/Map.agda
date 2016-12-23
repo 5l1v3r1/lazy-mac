@@ -60,3 +60,15 @@ data Member {A : Set} (v : A) : ℕ -> Map A -> Set where
 _↦_∈_ : {A : Set} -> ℕ -> A -> Map A -> Set
 n ↦ v ∈ Γ = Member v n Γ
 
+-- Merge between disjoint aligned bindings
+data _≔_⊔_ {A : Set} : Maybe A -> Maybe A -> Maybe A -> Set where
+  -- nothing : nothing ≔ nothing ⊔ nothing -- Maybe this case should not occur
+  just₁ : ∀ {v} -> just v ≔ just v ⊔ nothing
+  just₂ : ∀ {v} -> just v ≔ nothing ⊔ just v
+
+-- Merge two Heaps with disjoints domain
+data _≔ᴹ_⊔_ {A : Set} : Map A -> Map A -> Map A -> Set where
+  ∅₁ : ∀ {Γ} -> Γ ≔ᴹ [] ⊔ Γ
+  ∅₂ : ∀ {Γ} -> Γ ≔ᴹ Γ ⊔ []
+  _∷_ : ∀ { v₁ v₂ v₃ Γ₁ Γ₂ Γ₃ } -> v₃ ≔ v₁ ⊔ v₂ -> Γ₃ ≔ᴹ Γ₁ ⊔ Γ₂ -> (v₃ ∷ Γ₃) ≔ᴹ (v₁ ∷ Γ₁) ⊔ (v₂ ∷ Γ₂)
+  

@@ -236,15 +236,14 @@ mutual
   data _⊢ᴴ_∷_ (π : Context) : Heap -> Context -> Set where
     [] : π ⊢ᴴ [] ∷ []
     -- This rule does not allow for recursive bindings when typing
-    _∷_ : ∀ {Γ₁ Γ₂ l t τ π₁ π₂ n} -> π ⊢ᴴ Γ₁ ∷ π₁
-                       -> (π ++ π₁) ⊢ t ∷ τ
-                       -> π₂ ≔ᴬ π₁ [ n ↦ τ ]
+    _∷_ : ∀ {Γ₁ Γ₂ l t τ π' π₁ π₂ n} -> π ⊢ᴴ Γ₁ ∷ π₁
+                       -> π' ≔ᴹ π ⊔ π₁
+                       -> π' ⊢ t ∷ τ
+                       -> π₂ ≔ᴬ π' [ n ↦ τ ]
                        -> Γ₂ ≔ᴬ Γ₁ [ n ↦ l , t ] 
                        -> π ⊢ᴴ Γ₂ ∷ π₂ 
 
 
--- TODO we need zipWith not ++
-
 -- Typing rule for heap and term
 _⊢ᶜ_∷_ : (Context × Context) -> (Heap × Term) -> Ty -> Set
-(π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ = π₁ ⊢ᴴ Γ ∷ π₂ × (π₁ ++ π₂) ⊢ t ∷ τ
+(π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ = ∃ (λ π₃ -> (π₁ ⊢ᴴ Γ ∷ π₂) × (π₃ ≔ᴹ π₁ ⊔ π₂) × (π₃ ⊢ t ∷ τ))
