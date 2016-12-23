@@ -36,10 +36,6 @@ Labeled l τ = Res l (Id τ)
 -- MVar : Label -> Ty -> Ty
 -- MVar l τ = Res l Nat
 
--- A context π is a list of types contained in an environment
-Context : Set
-Context = List Ty
-
 -- Reference to a variable, bound during some abstraction.
 data _∈_ {A : Set} : A -> List A -> Set where
  Here : ∀ {π τ} -> τ ∈ (τ ∷ π)

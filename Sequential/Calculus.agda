@@ -153,10 +153,11 @@ data Substs (t₁ : Term) : List ℕ -> List ℕ -> Term -> Set where
 
 --------------------------------------------------------------------------------
 
+open import Data.Map
+
 -- A heap is a partial mapping from number (position) to terms.
-data Heap : Set where
- [] : Heap
- _∷_ : Maybe (Label × Term) -> Heap -> Heap
+Heap : Set
+Heap = Map (Label × Term)
 
 -- Continuation 
 data Cont : Set where
@@ -190,6 +191,10 @@ open State
 
 -- Typing Judgment
 
+-- A context is a partial mapping ℕ -> Ty
+Context : Set
+Context = Map Ty
+
 mutual
 
   data _⊢_∷_ (π : Context) : Term -> Ty -> Set where
@@ -207,8 +212,8 @@ mutual
     Id : ∀ {τ t} -> π ⊢ t ∷ τ -> π ⊢ Id t ∷ Id τ
     unId : ∀ {τ t} -> π ⊢ t ∷ Id τ -> π ⊢ unId t ∷ τ
 
-    Var : ∀ {τ n} -> {!!} -> π ⊢ Var n ∷ τ
-    Abs : ∀ {n t τ₁ τ₂} -> {!!} -> π ⊢ Abs n t ∷ (τ₁ => τ₂)    
+    Var : ∀ {τ n} -> n ↦ τ ∈ π  -> π ⊢ Var n ∷ τ
+    Abs : ∀ {π' n t τ₁ τ₂} -> π' ≔ᴬ π [ n ↦ τ₁ ] -> π' ⊢ t ∷ τ₂ -> π ⊢ Abs n t ∷ (τ₁ => τ₂)    
     App : ∀ {t₁ t₂ τ₁ τ₂} -> π ⊢ t₁ ∷ (τ₁ => τ₂) -> π ⊢ t₂ ∷ τ₂ -> π ⊢ App t₁ t₂ ∷ τ₂
 
     Mac : ∀ {l t τ} -> π ⊢ t ∷ τ -> π ⊢ Mac l t ∷ Mac l τ
@@ -224,10 +229,22 @@ mutual
 
     fork : ∀ {l h t} {l⊑h : l ⊑ h} -> π ⊢ t ∷ (Mac h  （） ) -> π ⊢ fork l⊑h t ∷ Mac l  （）
 
-    deepDup : ∀ {τ n} -> {!!} -> π ⊢ deepDup n ∷ τ
+    deepDup : ∀ {τ n} -> n ↦ τ ∈ π -> π ⊢ deepDup n ∷ τ
 
     ∙ : ∀ {τ} -> π ⊢ ∙ ∷ τ
 
   data _⊢ᴴ_∷_ (π : Context) : Heap -> Context -> Set where
     [] : π ⊢ᴴ [] ∷ []
-    _∷_ : ∀ {Γ t τ π'} -> π ⊢ᴴ Γ ∷ π' -> (π ++ π') ⊢ {!!} ∷ {!!} -> {!!} ⊢ᴴ {!!} ∷ {!!} 
+    -- This rule does not allow for recursive bindings when typing
+    _∷_ : ∀ {Γ₁ Γ₂ l t τ π₁ π₂ n} -> π ⊢ᴴ Γ₁ ∷ π₁
+                       -> (π ++ π₁) ⊢ t ∷ τ
+                       -> π₂ ≔ᴬ π₁ [ n ↦ τ ]
+                       -> Γ₂ ≔ᴬ Γ₁ [ n ↦ l , t ] 
+                       -> π ⊢ᴴ Γ₂ ∷ π₂ 
+
+
+-- TODO we need zipWith not ++
+
+-- Typing rule for heap and term
+_⊢ᶜ_∷_ : (Context × Context) -> (Heap × Term) -> Ty -> Set
+(π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ = π₁ ⊢ᴴ Γ ∷ π₂ × (π₁ ++ π₂) ⊢ t ∷ τ
