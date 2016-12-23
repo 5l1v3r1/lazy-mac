@@ -185,3 +185,49 @@ record State (l : Label) : Set where
    stack : Stack l
 
 open State
+
+--------------------------------------------------------------------------------
+
+-- Typing Judgment
+
+mutual
+
+  data _⊢_∷_ (π : Context) : Term -> Ty -> Set where
+    （） : π ⊢ （） ∷ （） 
+
+    True : π ⊢ True ∷ Bool
+    False : π ⊢ False ∷ Bool
+    
+    If_Then_Else_ : ∀ {t₁ t₂ t₃ τ} -> π ⊢ t₁ ∷ Bool
+                                   -> π ⊢ t₂ ∷ τ
+                                   -> π ⊢ t₃ ∷ τ
+                                   -> π ⊢ If t₁ Then t₂ Else t₃ ∷ τ
+                                   
+
+    Id : ∀ {τ t} -> π ⊢ t ∷ τ -> π ⊢ Id t ∷ Id τ
+    unId : ∀ {τ t} -> π ⊢ t ∷ Id τ -> π ⊢ unId t ∷ τ
+
+    Var : ∀ {τ n} -> {!!} -> π ⊢ Var n ∷ τ
+    Abs : ∀ {n t τ₁ τ₂} -> {!!} -> π ⊢ Abs n t ∷ (τ₁ => τ₂)    
+    App : ∀ {t₁ t₂ τ₁ τ₂} -> π ⊢ t₁ ∷ (τ₁ => τ₂) -> π ⊢ t₂ ∷ τ₂ -> π ⊢ App t₁ t₂ ∷ τ₂
+
+    Mac : ∀ {l t τ} -> π ⊢ t ∷ τ -> π ⊢ Mac l t ∷ Mac l τ
+    Return : ∀ {l t τ} -> π ⊢ t ∷ τ -> π ⊢ Return l t ∷ Mac l τ
+    Bind : ∀ {l τ₁ τ₂ t₁ t₂} -> π ⊢ t₁ ∷ (Mac l τ₁) -> π ⊢ t₂ ∷ (τ₁ => Mac l τ₂) -> π ⊢ Bind l t₁ t₂ ∷ Mac l τ₂
+
+
+    Res : ∀ {l t τ} -> π ⊢ t ∷ τ -> π ⊢ Res l t ∷ Res l τ
+    label : ∀ {l h t τ} {l⊑h : l ⊑ h} -> π ⊢ t ∷ τ -> π ⊢ label l⊑h t ∷ Mac l (Labeled h τ)
+    label∙ : ∀ {l h t τ} {l⊑h : l ⊑ h} -> π ⊢ t ∷ τ -> π ⊢ label∙ l⊑h t ∷ Mac l (Labeled h τ)
+    unlabel : ∀ {l h t τ} {l⊑h : l ⊑ h} -> π ⊢ t ∷ Labeled l τ -> π ⊢ unlabel l⊑h t ∷ Mac h τ
+
+
+    fork : ∀ {l h t} {l⊑h : l ⊑ h} -> π ⊢ t ∷ (Mac h  （） ) -> π ⊢ fork l⊑h t ∷ Mac l  （）
+
+    deepDup : ∀ {τ n} -> {!!} -> π ⊢ deepDup n ∷ τ
+
+    ∙ : ∀ {τ} -> π ⊢ ∙ ∷ τ
+
+  data _⊢ᴴ_∷_ (π : Context) : Heap -> Context -> Set where
+    [] : π ⊢ᴴ [] ∷ []
+    _∷_ : ∀ {Γ t τ π'} -> π ⊢ᴴ Γ ∷ π' -> (π ++ π') ⊢ {!!} ∷ {!!} -> {!!} ⊢ᴴ {!!} ∷ {!!} 
