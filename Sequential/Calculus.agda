@@ -247,3 +247,23 @@ mutual
 -- Typing rule for heap and term
 _⊢ᶜ_∷_ : (Context × Context) -> (Heap × Term) -> Ty -> Set
 (π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ = ∃ (λ π₃ -> (π₁ ⊢ᴴ Γ ∷ π₂) × (π₃ ≔ᴹ π₁ ⊔ π₂) × (π₃ ⊢ t ∷ τ))
+
+-- Typing rule for configuration with Stack 
+data _,_⊢ˢ_∷_ (π₁ : Context) {l : Label} : Context -> State l -> Ty -> Set where
+  EStack : ∀ {π₂ t τ Γ} -> (π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ -> π₁ , π₂ ⊢ˢ ⟨ Γ , t , [] ⟩ ∷ τ
+  If : ∀ {π₂ t₁ t₂ t₃ τ S Γ} -> π₁ , π₂ ⊢ˢ ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ∷ τ
+                             -> π₁ , π₂ ⊢ˢ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩ ∷ τ
+  Bind : ∀ {π₂ t₁ t₂ τ S Γ} -> π₁ , π₂ ⊢ˢ ⟨ Γ , Bind l t₁ t₂ , S ⟩ ∷ τ
+                            -> π₁ , π₂ ⊢ˢ ⟨ Γ , t₁ , Bind l t₂ ∷ S ⟩ ∷ Mac l τ
+  Unlabel : ∀ {π₂ t l' τ S Γ} -> (p : l' ⊑ l) -> π₁ , π₂ ⊢ˢ ⟨ Γ , unlabel p t , S ⟩ ∷ Mac l τ
+                              -> π₁ , π₂ ⊢ˢ ⟨ Γ , t , unlabel p ∷ S ⟩ ∷ Mac l τ
+  UnId : ∀ {π₂ t τ S Γ}  -> π₁ , π₂ ⊢ˢ ⟨ Γ , unId t , S ⟩ ∷ τ
+                         -> π₁ , π₂ ⊢ˢ ⟨ Γ , t , unId ∷ S ⟩ ∷ τ
+  App : ∀ {π₂ π₂' t₁ t₂ τ τ' S n Γ Γ'} -> Γ' ≔ᴬ Γ [ n ↦ (l , t₂) ] 
+                                       -> π₂' ≔ᴬ π₂ [ n ↦ τ' ]  -- Any τ' seems to much, but maybe is irrelevant here?
+                                       -> π₁ , π₂ ⊢ˢ ⟨ Γ , App t₁ t₂ , S ⟩ ∷ τ
+                                       -> π₁ , π₂' ⊢ˢ ⟨ Γ' , t₁ , Var n ∷ S ⟩ ∷ τ
+  Var : ∀ {π₂ π₂' t τ S n l' Γ Γ'} -> Γ ≔ᴿ Γ' [ n ↦ l' , t ]  -- What l' ?  ≔ᴿ ?
+                                       -> π₂ ≔ᴿ π₂' [ n ↦ τ ]
+                                       -> π₁ , π₂' ⊢ˢ ⟨ Γ' , Var n , S ⟩ ∷ τ
+                                       -> π₁ , π₂ ⊢ˢ ⟨ Γ , t , # l n ∷ S ⟩ ∷ τ
