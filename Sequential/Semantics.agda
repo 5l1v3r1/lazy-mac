@@ -6,6 +6,7 @@ open import Types 𝓛
 open import Sequential.Calculus 𝓛
 open import Data.Maybe
 open import Data.Product
+open import Data.Map
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 
 --------------------------------------------------------------------------------
@@ -101,8 +102,9 @@ data _⇝_ {l : Label} : State l -> State l -> Set where
 
  Hole : ∀ {Γ S} -> ⟨ Γ , ∙ , S ⟩ ⇝ ⟨ Γ , ∙ , S ⟩
 
- DeepDup : ∀ {Γ₁ Γ₂ Γ₃ Γ n n' ns' S l' t t'} -> n ↦ (l' , t) ∈ Γ
+ DeepDup : ∀ {Γ₁ Γ₂ Γ₃ n n' ns' S l' t t'} -> n ↦ (l' , t) ∈ Γ₁
                                 -> Substs t (ufv t) ns' t'
                                 -> Γ₂ ≔ᴰ Γ₁ [ ns' ↦ (l , ufv t) ]
                                 -> Γ₃ ≔ᴬ Γ₂ [ n' ↦ (l , t') ]
                                 -> ⟨ Γ₁ , (deepDup n) , S ⟩ ⇝ ⟨ Γ₃ , Var n' , S ⟩
+
