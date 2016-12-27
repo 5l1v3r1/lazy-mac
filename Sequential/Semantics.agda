@@ -1,9 +1,9 @@
 open import Lattice
 
-module Sequential.Semantics (𝓛 : Lattice) where
+module Sequential.Semantics {- (𝓛 : Lattice) -} where
 
-open import Types 𝓛
-open import Sequential.Calculus 𝓛
+open import Types
+open import Sequential.Calculus
 open import Data.Maybe
 open import Data.Product
 open import Data.Map
@@ -108,3 +108,26 @@ data _⇝_ {l : Label} : State l -> State l -> Set where
                                 -> Γ₃ ≔ᴬ Γ₂ [ n' ↦ (l , t') ]
                                 -> ⟨ Γ₁ , (deepDup n) , S ⟩ ⇝ ⟨ Γ₃ , Var n' , S ⟩
 
+
+-- Type preservation
+ty-preservation : ∀ {l π₁ π₂ τ Γ₁ Γ₂ t₁ t₂} {S₁ S₂ : Stack l} ->
+                   let s₁ = ⟨ Γ₁ , t₁ , S₁ ⟩
+                       s₂ = ⟨ Γ₂ , t₂ , S₂ ⟩ in π₁ , π₂ ⊢ˢ s₁ ∷ τ -> s₁ ⇝ s₂ -> π₁ , π₂ ⊢ˢ s₂ ∷ τ
+ty-preservation (EStack (π' , wt-Γ , wt-t)) (App₁ x₁) = {!!} -- App x₁ {!!} {!x!}
+ty-preservation (EStack x) (Var₁ x₁ x₂) = {!!}
+ty-preservation (EStack x) (Var₁' x₁ x₂) = {!!}
+ty-preservation (EStack x) If = {!!}
+ty-preservation (EStack x) Return = {!!}
+ty-preservation (EStack x) Bind₁ = {!!}
+ty-preservation (EStack x) (Label' p) = {!!}
+ty-preservation (EStack x) (Unlabel₁ p) = {!!}
+ty-preservation (EStack x) UnId₁ = {!!}
+ty-preservation (EStack (π₂' , wt-Γ₁ , u , fork x)) (Fork p) = EStack ({!!} , ({!!} , ({!!} , (Return {!（）!}))))
+ty-preservation (EStack x) Hole = EStack x
+ty-preservation (EStack x) (DeepDup x₁ x₂ x₃ x₄) = {!!}
+ty-preservation (If x) step = {!!}
+ty-preservation (Bind x) step = {!!}
+ty-preservation (Unlabel p x) step = {!!}
+ty-preservation (UnId x) step = {!!}
+ty-preservation (App x x₁ x₂) step = {!!}
+ty-preservation (Var x x₁ x₂) step = {!!}

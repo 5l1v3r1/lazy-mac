@@ -1,6 +1,9 @@
 open import Lattice
 
-module Types (𝓛 : Lattice) where
+module Types where
+
+postulate 𝓛 : Lattice
+
 
 open import Relation.Nullary public
 open import Relation.Binary.PropositionalEquality

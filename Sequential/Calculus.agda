@@ -1,8 +1,8 @@
 open import Lattice
 
-module Sequential.Calculus (𝓛 : Lattice) where
+module Sequential.Calculus {- (𝓛 : Lattice) -} where
 
-open import Types 𝓛
+open import Types
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 open import Data.List.All
 open import Data.Nat using (ℕ ; zero ; suc ; _≟_) public
