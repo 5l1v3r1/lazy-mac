@@ -214,7 +214,8 @@ mutual
 
     Var : ∀ {τ n} -> n ↦ τ ∈ π  -> π ⊢ Var n ∷ τ
     Abs : ∀ {π' n t τ₁ τ₂} -> π' ≔ᴬ π [ n ↦ τ₁ ] -> π' ⊢ t ∷ τ₂ -> π ⊢ Abs n t ∷ (τ₁ => τ₂)    
-    App : ∀ {t₁ t₂ τ₁ τ₂} -> π ⊢ t₁ ∷ (τ₁ => τ₂) -> π ⊢ t₂ ∷ τ₂ -> π ⊢ App t₁ t₂ ∷ τ₂
+    App : ∀ {t₁ t₂ τ₁ τ₂} -> π ⊢ t₁ ∷ (τ₁ => τ₂)
+                          -> π ⊢ t₂ ∷ τ₁ -> π ⊢ App t₁ t₂ ∷ τ₂
 
     Mac : ∀ {l t τ} -> π ⊢ t ∷ τ -> π ⊢ Mac l t ∷ Mac l τ
     Return : ∀ {l t τ} -> π ⊢ t ∷ τ -> π ⊢ Return l t ∷ Mac l τ
