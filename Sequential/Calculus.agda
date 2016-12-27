@@ -244,8 +244,8 @@ mutual
                        -> π ⊢ᴴ Γ₂ ∷ π₂ 
 
 -- Typing rule for heap and term
-_⊢ᶜ_∷_ : (Context × Context) -> (Heap × Term) -> Ty -> Set
-(π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ = ∃ (λ π₃ -> (π₁ ⊢ᴴ Γ ∷ π₂) × (π₃ ≔ᴹ π₁ ⊔ π₂) × (π₃ ⊢ t ∷ τ))
+data _⊢ᶜ_∷_ : (Context × Context) -> (Heap × Term) -> Ty -> Set where
+  WTC : ∀ {π₁ π₂ Γ t π₃ τ} -> π₁ ⊢ᴴ Γ ∷ π₂ -> π₃ ≔ᴹ π₁ ⊔ π₂ -> π₃ ⊢ t ∷ τ -> (π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ
 
 -- Typing rule for configuration with Stack 
 data _,_⊢ˢ_∷_ (π₁ : Context) {l : Label} : Context -> State l -> Ty -> Set where

@@ -98,7 +98,7 @@ data _⇝_ {l : Label} : State l -> State l -> Set where
  UnId₁ : ∀ {Γ t S} -> ⟨ Γ , unId t , S ⟩ ⇝ ⟨ Γ , t , unId ∷ S ⟩ 
  UnId₂ : ∀ {Γ t S} -> ⟨ Γ , Id t , unId ∷ S ⟩ ⇝ ⟨ Γ , t , S ⟩ 
 
- Fork : ∀ {Γ t S h} -> (p : l ⊑ h) -> ⟨ Γ , (fork p t) , S ⟩ ⇝ ⟨ Γ , Return l t , S ⟩ 
+ Fork : ∀ {Γ t S h} -> (p : l ⊑ h) -> ⟨ Γ , (fork p t) , S ⟩ ⇝ ⟨ Γ , Return l （） , S ⟩ 
 
  Hole : ∀ {Γ S} -> ⟨ Γ , ∙ , S ⟩ ⇝ ⟨ Γ , ∙ , S ⟩
 
@@ -113,7 +113,7 @@ data _⇝_ {l : Label} : State l -> State l -> Set where
 ty-preservation : ∀ {l π₁ π₂ τ Γ₁ Γ₂ t₁ t₂} {S₁ S₂ : Stack l} ->
                    let s₁ = ⟨ Γ₁ , t₁ , S₁ ⟩
                        s₂ = ⟨ Γ₂ , t₂ , S₂ ⟩ in π₁ , π₂ ⊢ˢ s₁ ∷ τ -> s₁ ⇝ s₂ -> π₁ , π₂ ⊢ˢ s₂ ∷ τ
-ty-preservation (EStack (π' , wt-Γ , wt-t)) (App₁ x₁) = {!!} -- App x₁ {!!} {!x!}
+ty-preservation (EStack wtc) (App₁ x₁) = {!!} -- App x₁ {!!} {!x!}
 ty-preservation (EStack x) (Var₁ x₁ x₂) = {!!}
 ty-preservation (EStack x) (Var₁' x₁ x₂) = {!!}
 ty-preservation (EStack x) If = {!!}
@@ -121,8 +121,8 @@ ty-preservation (EStack x) Return = {!!}
 ty-preservation (EStack x) Bind₁ = {!!}
 ty-preservation (EStack x) (Label' p) = {!!}
 ty-preservation (EStack x) (Unlabel₁ p) = {!!}
-ty-preservation (EStack x) UnId₁ = {!!}
-ty-preservation (EStack (π₂' , wt-Γ₁ , u , fork x)) (Fork p) = EStack ({!!} , ({!!} , ({!!} , (Return {!（）!}))))
+ty-preservation (EStack x) UnId₁ = UnId (EStack x)
+ty-preservation (EStack (WTC wtΓ u (fork wt-t))) (Fork p) = EStack (WTC wtΓ u (Return （）))
 ty-preservation (EStack x) Hole = EStack x
 ty-preservation (EStack x) (DeepDup x₁ x₂ x₃ x₄) = {!!}
 ty-preservation (If x) step = {!!}
