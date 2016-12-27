@@ -110,24 +110,58 @@ data _⇝_ {l : Label} : State l -> State l -> Set where
 
 
 -- Type preservation
+-- ty-preservation : ∀ {l π₁ π₂ τ Γ₁ Γ₂ t₁ t₂} {S₁ S₂ : Stack l} ->
+--                    let s₁ = ⟨ Γ₁ , t₁ , S₁ ⟩
+--                        s₂ = ⟨ Γ₂ , t₂ , S₂ ⟩ in π₁ , π₂ ⊢ˢ s₁ ∷ τ -> s₁ ⇝ s₂ -> π₁ , π₂ ⊢ˢ s₂ ∷ τ
+-- -- Must add new binding n ↦ τ'in π for t₁
+-- ty-preservation {t₁ = App t₁ t₂} (EStack (WTC wt-Γ π₁-⊔-π₂ (App wt-t₁ wt-t₂))) (App₁ x₁) = App x₁ {!!} (EStack (WTC {!!} {!!} (App wt-t₁ wt-t₂))) 
+-- ty-preservation (EStack x) (Var₁ x₁ x₂) = {!!}
+-- ty-preservation (EStack x) (Var₁' x₁ x₂) = {!!}
+-- ty-preservation (EStack (WTC wt-Γ π₁-⊔-π₂ (If wt-t Then wt-t₁ Else wt-t₂))) If = If (EStack (WTC wt-Γ π₁-⊔-π₂ (If wt-t Then wt-t₁ Else wt-t₂)))
+-- ty-preservation (EStack (WTC wt-Γ π₁-⊔-π₂ (Return wt-t))) Return = EStack (WTC wt-Γ π₁-⊔-π₂ (Mac wt-t))
+-- ty-preservation (EStack (WTC x x₁ (Bind x₂ x₃))) Bind₁ = Bind (EStack (WTC x x₁ (Bind x₂ x₃)))
+-- ty-preservation (EStack (WTC x x₁ (label x₂))) (Label' p) = EStack (WTC x x₁ (Return (Res (Id x₂))))
+-- ty-preservation (EStack (WTC x x₁ (unlabel x₂))) (Unlabel₁ p) = Unlabel p (EStack (WTC x x₁ (unlabel x₂)))
+-- ty-preservation (EStack x) UnId₁ = UnId (EStack x)
+-- ty-preservation (EStack (WTC wtΓ u (fork wt-t))) (Fork p) = EStack (WTC wtΓ u (Return （）))
+-- ty-preservation (EStack x) Hole = EStack x
+-- -- Here π₁ ⊢ Γ ∷ π₂', where π₂ ‌‌‌≠ π₂', because we add new bindings. Should that be existentially quantified ?
+-- ty-preservation (EStack (WTC wt-Γ π₁-⊔-π₂ (deepDup x))) (DeepDup x₁ x₂ x₃ x₄) = EStack (WTC {!!} {!!} (Var {!!}))
+-- -- We get a lot of spurious uninteresting cases because often the stack is irrelevant in step.
+-- -- We should instead prove this by induction on the step
+-- ty-preservation (If x) step = {!!}
+-- ty-preservation (Bind x) step = ?
+-- ty-preservation (Unlabel p x) step = {!!}
+-- ty-preservation (UnId x) step = {!!}
+-- ty-preservation (App x x₁ x₂) step = {!!}
+-- ty-preservation (Var x x₁ x₂) step = {!!}
+
+
 ty-preservation : ∀ {l π₁ π₂ τ Γ₁ Γ₂ t₁ t₂} {S₁ S₂ : Stack l} ->
                    let s₁ = ⟨ Γ₁ , t₁ , S₁ ⟩
                        s₂ = ⟨ Γ₂ , t₂ , S₂ ⟩ in π₁ , π₂ ⊢ˢ s₁ ∷ τ -> s₁ ⇝ s₂ -> π₁ , π₂ ⊢ˢ s₂ ∷ τ
-ty-preservation (EStack wtc) (App₁ x₁) = {!!} -- App x₁ {!!} {!x!}
-ty-preservation (EStack x) (Var₁ x₁ x₂) = {!!}
-ty-preservation (EStack x) (Var₁' x₁ x₂) = {!!}
+ty-preservation x (App₁ x₁) = {!!}
+ty-preservation x (App₂ x₁) = {!!}
+ty-preservation x (Var₁ x₁ x₂) = {!!}
+ty-preservation x (Var₁' x₁ x₂) = {!!}
+ty-preservation x (Var₂ x₁ x₂) = {!!}
 ty-preservation (EStack x) If = {!!}
-ty-preservation (EStack x) Return = {!!}
-ty-preservation (EStack x) Bind₁ = {!!}
-ty-preservation (EStack x) (Label' p) = {!!}
-ty-preservation (EStack x) (Unlabel₁ p) = {!!}
-ty-preservation (EStack x) UnId₁ = UnId (EStack x)
-ty-preservation (EStack (WTC wtΓ u (fork wt-t))) (Fork p) = EStack (WTC wtΓ u (Return （）))
-ty-preservation (EStack x) Hole = EStack x
-ty-preservation (EStack x) (DeepDup x₁ x₂ x₃ x₄) = {!!}
-ty-preservation (If x) step = {!!}
-ty-preservation (Bind x) step = {!!}
-ty-preservation (Unlabel p x) step = {!!}
-ty-preservation (UnId x) step = {!!}
-ty-preservation (App x x₁ x₂) step = {!!}
-ty-preservation (Var x x₁ x₂) step = {!!}
+ty-preservation (If x) If = {!!}
+ty-preservation (Bind x) If = {!!}
+ty-preservation (Unlabel p x) If = {!!}
+ty-preservation (UnId x) If = {!!}
+ty-preservation (App x x₁ x₂) If = {!!}
+ty-preservation (Var x₂ x x₁) If = {!!}
+ty-preservation x IfTrue = {!!}
+ty-preservation x IfFalse = {!!}
+ty-preservation x Return = {!!}
+ty-preservation x Bind₁ = {!!}
+ty-preservation x Bind₂ = {!!}
+ty-preservation x (Label' p) = {!!}
+ty-preservation x (Unlabel₁ p) = {!!}
+ty-preservation x (Unlabel₂ p) = {!!}
+ty-preservation x UnId₁ = {!!}
+ty-preservation x UnId₂ = {!!}
+ty-preservation x (Fork p) = {!!}
+ty-preservation x Hole = {!!}
+ty-preservation x (DeepDup x₁ x₂ x₃ x₄) = {!!}

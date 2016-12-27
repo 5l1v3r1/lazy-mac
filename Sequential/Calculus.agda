@@ -245,14 +245,17 @@ mutual
 
 -- Typing rule for heap and term
 data _⊢ᶜ_∷_ : (Context × Context) -> (Heap × Term) -> Ty -> Set where
-  WTC : ∀ {π₁ π₂ Γ t π₃ τ} -> π₁ ⊢ᴴ Γ ∷ π₂ -> π₃ ≔ᴹ π₁ ⊔ π₂ -> π₃ ⊢ t ∷ τ -> (π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ
+  WTC : ∀ {π₁ π₂ Γ t π₃ τ} -> (wt-Γ : π₁ ⊢ᴴ Γ ∷ π₂)
+                           -> (π₁-⊔-π₂ : π₃ ≔ᴹ π₁ ⊔ π₂)
+                           -> (wt-t : π₃ ⊢ t ∷ τ)
+                           -> (π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ
 
 -- Typing rule for configuration with Stack 
 data _,_⊢ˢ_∷_ (π₁ : Context) {l : Label} : Context -> State l -> Ty -> Set where
   EStack : ∀ {π₂ t τ Γ} -> (π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ -> π₁ , π₂ ⊢ˢ ⟨ Γ , t , [] ⟩ ∷ τ
   If : ∀ {π₂ t₁ t₂ t₃ τ S Γ} -> π₁ , π₂ ⊢ˢ ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ∷ τ
                              -> π₁ , π₂ ⊢ˢ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩ ∷ τ
-  Bind : ∀ {π₂ t₁ t₂ τ S Γ} -> π₁ , π₂ ⊢ˢ ⟨ Γ , Bind l t₁ t₂ , S ⟩ ∷ τ
+  Bind : ∀ {π₂ t₁ t₂ τ S Γ} -> π₁ , π₂ ⊢ˢ ⟨ Γ , Bind l t₁ t₂ , S ⟩ ∷ Mac l τ
                             -> π₁ , π₂ ⊢ˢ ⟨ Γ , t₁ , Bind l t₂ ∷ S ⟩ ∷ Mac l τ
   Unlabel : ∀ {π₂ t l' τ S Γ} -> (p : l' ⊑ l) -> π₁ , π₂ ⊢ˢ ⟨ Γ , unlabel p t , S ⟩ ∷ Mac l τ
                               -> π₁ , π₂ ⊢ˢ ⟨ Γ , t , unlabel p ∷ S ⟩ ∷ Mac l τ
