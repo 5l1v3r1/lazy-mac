@@ -235,38 +235,41 @@ mutual
     ∙ : ∀ {τ} -> π ⊢ ∙ ∷ τ
 
   data _⊢ᴴ_∷_ (π : Context) : Heap -> Context -> Set where
-    [] : π ⊢ᴴ [] ∷ []
+    Nil : π ⊢ᴴ [] ∷ []
     -- This rule does not allow for recursive bindings when typing
-    _∷_ : ∀ {Γ₁ Γ₂ l t τ π' π₁ π₂ n} -> π ⊢ᴴ Γ₁ ∷ π₁
+    Cons : ∀ {Γ₁ Γ₂ l t τ π' π₁ π₂ n} -> π ⊢ᴴ Γ₁ ∷ π₁
                        -> π' ≔ᴹ π ⊔ π₁
                        -> π' ⊢ t ∷ τ
                        -> π₂ ≔ᴬ π' [ n ↦ τ ]
                        -> Γ₂ ≔ᴬ Γ₁ [ n ↦ l , t ] 
                        -> π ⊢ᴴ Γ₂ ∷ π₂ 
 
--- Typing rule for heap and term
-data _⊢ᶜ_∷_ : (Context × Context) -> (Heap × Term) -> Ty -> Set where
-  WTC : ∀ {π₁ π₂ Γ t π₃ τ} -> (wt-Γ : π₁ ⊢ᴴ Γ ∷ π₂)
-                           -> (π₁-⊔-π₂ : π₃ ≔ᴹ π₁ ⊔ π₂)
-                           -> (wt-t : π₃ ⊢ t ∷ τ)
-                           -> (π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ
+-- A Well-Typed continuation (WCont), contains well-typed terms and
+-- transform the input type (first indexed) in the output type (second
+-- index).
+data WCont (π : Context) : Ty -> Cont -> Ty -> Set where
+ unId : ∀ {τ} -> WCont π (Id τ) unId τ
+ unlabel : ∀ {l h τ} -> (l⊑h : l ⊑ h) -> WCont π (Labeled l τ) (unlabel l⊑h) (Mac h τ)
+ Then_Else_ : ∀ {τ t₂ t₃} -> π ⊢ t₂ ∷ τ  -> π ⊢ t₃ ∷ τ ->  WCont π Bool (Then t₂ Else t₃) τ
+ Var : ∀ {τ₁ τ₂ n} -> π ⊢ Var n ∷ τ₁ -> WCont π (τ₁ => τ₂) (Var n) τ₂
+ # : ∀ {l n τ} -> WCont π τ (# l n) τ 
+ Bind : ∀ {l τ₁ τ₂ t₂} -> π ⊢ t₂ ∷ (τ₁ => Mac l τ₂) ->  WCont π (Mac l τ₁) (Bind l t₂) (Mac l τ₂)
 
--- Typing rule for configuration with Stack 
-data _,_⊢ˢ_∷_ (π₁ : Context) {l : Label} : Context -> State l -> Ty -> Set where
-  EStack : ∀ {π₂ t τ Γ} -> (π₁ , π₂) ⊢ᶜ (Γ , t) ∷ τ -> π₁ , π₂ ⊢ˢ ⟨ Γ , t , [] ⟩ ∷ τ
-  If : ∀ {π₂ t₁ t₂ t₃ τ S Γ} -> π₁ , π₂ ⊢ˢ ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ∷ τ
-                             -> π₁ , π₂ ⊢ˢ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩ ∷ τ
-  Bind : ∀ {π₂ t₁ t₂ τ S Γ} -> π₁ , π₂ ⊢ˢ ⟨ Γ , Bind l t₁ t₂ , S ⟩ ∷ Mac l τ
-                            -> π₁ , π₂ ⊢ˢ ⟨ Γ , t₁ , Bind l t₂ ∷ S ⟩ ∷ Mac l τ
-  Unlabel : ∀ {π₂ t l' τ S Γ} -> (p : l' ⊑ l) -> π₁ , π₂ ⊢ˢ ⟨ Γ , unlabel p t , S ⟩ ∷ Mac l τ
-                              -> π₁ , π₂ ⊢ˢ ⟨ Γ , t , unlabel p ∷ S ⟩ ∷ Mac l τ
-  UnId : ∀ {π₂ t τ S Γ}  -> π₁ , π₂ ⊢ˢ ⟨ Γ , unId t , S ⟩ ∷ τ
-                         -> π₁ , π₂ ⊢ˢ ⟨ Γ , t , unId ∷ S ⟩ ∷ τ
-  App : ∀ {π₂ π₂' t₁ t₂ τ τ' S n Γ Γ'} -> Γ' ≔ᴬ Γ [ n ↦ (l , t₂) ] 
-                                       -> π₂' ≔ᴬ π₂ [ n ↦ τ' ]  -- Any τ' seems to much, but maybe is irrelevant here?
-                                       -> π₁ , π₂ ⊢ˢ ⟨ Γ , App t₁ t₂ , S ⟩ ∷ τ
-                                       -> π₁ , π₂' ⊢ˢ ⟨ Γ' , t₁ , Var n ∷ S ⟩ ∷ τ
-  Var : ∀ {π₂ π₂' t τ S n l' Γ Γ'} -> Γ ≔ᴿ Γ' [ n ↦ l' , t ]  -- What l' ?  ≔ᴿ ?
-                                       -> π₂ ≔ᴿ π₂' [ n ↦ τ ]
-                                       -> π₁ , π₂' ⊢ˢ ⟨ Γ' , Var n , S ⟩ ∷ τ
-                                       -> π₁ , π₂ ⊢ˢ ⟨ Γ , t , # l n ∷ S ⟩ ∷ τ
+
+-- A Well-typed stack (WStack) contains well-typed terms and is indexed
+-- by an input type and an output type.
+-- It transforms the former in the latter according to the continuations.
+data WStack {l} (π : Context) : Ty -> Stack l -> Ty -> Set where
+ [] : ∀ {τ} -> WStack π τ [] τ
+ _∷_ : ∀ {τ₁ τ₂ τ₃ c S} -> WCont π τ₁ c τ₂ -> WStack π τ₂ S τ₃ -> WStack π τ₁ (c ∷ S) τ₃
+
+-- Typing rule for configuration with Stack
+-- I think we need syntax-driven typing rules also for terms.
+-- However how do we make them mutually exclusive? Values and Redex?
+-- Type continuations as functions? 
+data _⊢ˢ_∷_ (π₁ : Context) {l : Label} : State l -> Ty -> Set where
+  WT : ∀ {π₂ Γ t π₃ τ₁ τ₂} {S : Stack l} -> (wt-Γ : π₁ ⊢ᴴ Γ ∷ π₂)
+                           -> (π₁-⊔-π₂ : π₃ ≔ᴹ π₁ ⊔ π₂)
+                           -> (wt-t : π₃ ⊢ t ∷ τ₁)
+                           -> (wt-S : WStack π₃ τ₁ S τ₂)
+                           -> π₁ ⊢ˢ ⟨ Γ , t , S ⟩  ∷ τ₂
