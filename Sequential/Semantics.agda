@@ -74,9 +74,9 @@ data _⇝_ {l : Label} : State l -> State l -> Set where
                           -> Γ ≔ᴿ Γ' [ n ↦ (l' , t) ]
                           -> ⟨ Γ' , Var n , S ⟩ ⇝ ⟨ Γ , t , (# l n) ∷ S ⟩
 
- Var₁' : ∀ {Γ Γ' n v S l'} -> Value v
+ Var₁' : ∀ {Γ n v S l'} -> Value v
                            -> n ↦ (l' , v) ∈ Γ
-                           -> ⟨ Γ' , Var n , S ⟩ ⇝ ⟨ Γ , v , S ⟩
+                           -> ⟨ Γ , Var n , S ⟩ ⇝ ⟨ Γ , v , S ⟩
 
  Var₂ : ∀ {Γ Γ' n v S} -> Γ' ≔ᴾ Γ [ n ↦ (l , v) ]
                        -> Value v
@@ -109,59 +109,51 @@ data _⇝_ {l : Label} : State l -> State l -> Set where
                                 -> ⟨ Γ₁ , (deepDup n) , S ⟩ ⇝ ⟨ Γ₃ , Var n' , S ⟩
 
 
+add-wt : ∀ {π₁ π₂ π₃ Γ₁ Γ₂ n l t τ}
+         -> π₁ ⊢ᴴ Γ₁ ∷ π₂ -> Γ₂ ≔ᴬ Γ₁ [ n ↦ l , t ]
+         -> π₃ ≔ᴹ π₁ ⊔ π₂ -> π₃ ⊢ t ∷ τ
+         -> ∃ (λ π₃' -> π₃' ≔ᴹ π₁ ⊔ {!!} × π₁ ⊢ᴴ Γ₂ ∷ π₃')
+add-wt = {!!}
+
+-- wken-
+
+-- 1) Define ⊂ for mapping
+-- 2) Define wken for Heap, Stack and Terms
+-- 3)
+
+--wt-subst : Subst n' (Var n) t t₂ -> 
+
+wt-lookup : ∀ {n l t Γ τ π₁ π₂ π₃} -> π₁ ⊢ᴴ Γ ∷ π₂
+                                   -> π₃ ≔ᴹ π₁ ⊔ π₂
+                                   -> n ↦ τ ∈ π₃
+                                   -> n ↦ (l , t) ∈ Γ
+                                   -> π₃ ⊢ t ∷ τ
+wt-lookup (Cons wt-Γ ∅₁ wt-t a-π a-Γ) ∅₁ here here = {!!}
+wt-lookup (Cons wt-Γ ∅₂ wt-t a-π a-Γ) ∅₁ here here = {!!}
+wt-lookup (Cons wt-Γ π₁-⊔-π₂ wt-t a-π a-Γ) ∅₂ here here = {!!}
+wt-lookup (Cons wt-Γ π₁-⊔-π₂ wt-t a-π a-Γ) (x ∷ m) here here = {!!}
+wt-lookup wt-Γ m wt-n (next n∈Γ) = {!!}
+
 -- Type preservation
--- ty-preservation : ∀ {l π₁ π₂ τ Γ₁ Γ₂ t₁ t₂} {S₁ S₂ : Stack l} ->
---                    let s₁ = ⟨ Γ₁ , t₁ , S₁ ⟩
---                        s₂ = ⟨ Γ₂ , t₂ , S₂ ⟩ in π₁ , π₂ ⊢ˢ s₁ ∷ τ -> s₁ ⇝ s₂ -> π₁ , π₂ ⊢ˢ s₂ ∷ τ
--- -- Must add new binding n ↦ τ'in π for t₁
--- ty-preservation {t₁ = App t₁ t₂} (EStack (WTC wt-Γ π₁-⊔-π₂ (App wt-t₁ wt-t₂))) (App₁ x₁) = App x₁ {!!} (EStack (WTC {!!} {!!} (App wt-t₁ wt-t₂))) 
--- ty-preservation (EStack x) (Var₁ x₁ x₂) = {!!}
--- ty-preservation (EStack x) (Var₁' x₁ x₂) = {!!}
--- ty-preservation (EStack (WTC wt-Γ π₁-⊔-π₂ (If wt-t Then wt-t₁ Else wt-t₂))) If = If (EStack (WTC wt-Γ π₁-⊔-π₂ (If wt-t Then wt-t₁ Else wt-t₂)))
--- ty-preservation (EStack (WTC wt-Γ π₁-⊔-π₂ (Return wt-t))) Return = EStack (WTC wt-Γ π₁-⊔-π₂ (Mac wt-t))
--- ty-preservation (EStack (WTC x x₁ (Bind x₂ x₃))) Bind₁ = Bind (EStack (WTC x x₁ (Bind x₂ x₃)))
--- ty-preservation (EStack (WTC x x₁ (label x₂))) (Label' p) = EStack (WTC x x₁ (Return (Res (Id x₂))))
--- ty-preservation (EStack (WTC x x₁ (unlabel x₂))) (Unlabel₁ p) = Unlabel p (EStack (WTC x x₁ (unlabel x₂)))
--- ty-preservation (EStack x) UnId₁ = UnId (EStack x)
--- ty-preservation (EStack (WTC wtΓ u (fork wt-t))) (Fork p) = EStack (WTC wtΓ u (Return （）))
--- ty-preservation (EStack x) Hole = EStack x
--- -- Here π₁ ⊢ Γ ∷ π₂', where π₂ ‌‌‌≠ π₂', because we add new bindings. Should that be existentially quantified ?
--- ty-preservation (EStack (WTC wt-Γ π₁-⊔-π₂ (deepDup x))) (DeepDup x₁ x₂ x₃ x₄) = EStack (WTC {!!} {!!} (Var {!!}))
--- -- We get a lot of spurious uninteresting cases because often the stack is irrelevant in step.
--- -- We should instead prove this by induction on the step
--- ty-preservation (If x) step = {!!}
--- ty-preservation (Bind x) step = ?
--- ty-preservation (Unlabel p x) step = {!!}
--- ty-preservation (UnId x) step = {!!}
--- ty-preservation (App x x₁ x₂) step = {!!}
--- ty-preservation (Var x x₁ x₂) step = {!!}
-
-
-ty-preservation : ∀ {l π₁ π₂ τ Γ₁ Γ₂ t₁ t₂} {S₁ S₂ : Stack l} ->
+ty-preservation : ∀ {l π τ Γ₁ Γ₂ t₁ t₂} {S₁ S₂ : Stack l} ->
                    let s₁ = ⟨ Γ₁ , t₁ , S₁ ⟩
-                       s₂ = ⟨ Γ₂ , t₂ , S₂ ⟩ in π₁ , π₂ ⊢ˢ s₁ ∷ τ -> s₁ ⇝ s₂ -> π₁ , π₂ ⊢ˢ s₂ ∷ τ
-ty-preservation x (App₁ x₁) = {!!}
-ty-preservation x (App₂ x₁) = {!!}
-ty-preservation x (Var₁ x₁ x₂) = {!!}
-ty-preservation x (Var₁' x₁ x₂) = {!!}
-ty-preservation x (Var₂ x₁ x₂) = {!!}
-ty-preservation (EStack x) If = {!!}
-ty-preservation (If x) If = {!!}
-ty-preservation (Bind x) If = {!!}
-ty-preservation (Unlabel p x) If = {!!}
-ty-preservation (UnId x) If = {!!}
-ty-preservation (App x x₁ x₂) If = {!!}
-ty-preservation (Var x₂ x x₁) If = {!!}
-ty-preservation x IfTrue = {!!}
-ty-preservation x IfFalse = {!!}
-ty-preservation x Return = {!!}
-ty-preservation x Bind₁ = {!!}
-ty-preservation x Bind₂ = {!!}
-ty-preservation x (Label' p) = {!!}
-ty-preservation x (Unlabel₁ p) = {!!}
-ty-preservation x (Unlabel₂ p) = {!!}
-ty-preservation x UnId₁ = {!!}
-ty-preservation x UnId₂ = {!!}
-ty-preservation x (Fork p) = {!!}
-ty-preservation x Hole = {!!}
-ty-preservation x (DeepDup x₁ x₂ x₃ x₄) = {!!}
+                       s₂ = ⟨ Γ₂ , t₂ , S₂ ⟩ in π ⊢ˢ s₁ ∷ τ -> s₁ ⇝ s₂ -> π ⊢ˢ s₂ ∷ τ
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , App wt-t wt-t₁ , wt-S ⟩ (App₁ x) = WT[ {!!} ]⟨ {!!} , wt-t , (Var {!!} ∷ wt-S) ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Abs x wt-t , Var wt-n ∷ wt-S ⟩ (App₂ x₁) = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , {!!} , wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Var x , wt-S ⟩ (Var₁ x₁ x₂) = WT[ {!!} ]⟨ {!!} , {!!} , (# _ _ ∷ wt-S) ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Var x , wt-S ⟩ (Var₁' x₁ x₂) = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , wt-lookup wt-Γ π₁-⊔-π₂ x x₂ , wt-S ⟩
+ty-preservation wt (Var₂ x x₁) = {!!}
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , If wt-t Then wt-t₁ Else wt-t₂ , wt-S ⟩ If = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , wt-t , (Then wt-t₁ Else wt-t₂) ∷ wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , True , (Then wt-t₂ Else wt-t₃) ∷ wt-S ⟩ IfTrue = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , wt-t₂ , wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , False , (Then wt-t₂ Else wt-t₃) ∷ wt-S ⟩ IfFalse = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , wt-t₃ , wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Return wt-t , wt-S ⟩ Return = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Mac wt-t , wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Bind wt-t wt-t₁ , wt-S ⟩ Bind₁ = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , wt-t , Bind wt-t₁ ∷ wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Mac wt-t , Bind wt-t₂ ∷ wt-S ⟩ Bind₂ = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , App wt-t₂ wt-t , wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , label wt-t , wt-S ⟩ (Label' p) = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Return (Res (Id wt-t)) , wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , unlabel wt-t , wt-S ⟩ (Unlabel₁ p) = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , wt-t , unlabel p ∷ wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Res wt-t , unlabel p ∷ wt-S ⟩ (Unlabel₂ .p) = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Return (unId wt-t) , wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , unId wt-t , wt-S ⟩ UnId₁ = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , wt-t , unId ∷ wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Id wt-t , unId ∷ wt-S ⟩ UnId₂ = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , wt-t , wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , fork wt-t , wt-S ⟩ (Fork p) = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , Return （） , wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , ∙ , wt-S ⟩ Hole = WT[ π₁-⊔-π₂ ]⟨ wt-Γ , ∙ , wt-S ⟩
+ty-preservation WT[ π₁-⊔-π₂ ]⟨ wt-Γ , deepDup x , wt-S ⟩ (DeepDup x₁ x₂ x₃ x₄) = {!!}

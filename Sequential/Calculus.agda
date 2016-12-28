@@ -237,11 +237,12 @@ mutual
   data _⊢ᴴ_∷_ (π : Context) : Heap -> Context -> Set where
     Nil : π ⊢ᴴ [] ∷ []
     -- This rule does not allow for recursive bindings when typing
-    Cons : ∀ {Γ₁ Γ₂ l t τ π' π₁ π₂ n} -> π ⊢ᴴ Γ₁ ∷ π₁
-                       -> π' ≔ᴹ π ⊔ π₁
-                       -> π' ⊢ t ∷ τ
-                       -> π₂ ≔ᴬ π' [ n ↦ τ ]
-                       -> Γ₂ ≔ᴬ Γ₁ [ n ↦ l , t ] 
+    Cons : ∀ {Γ₁ Γ₂ l t τ π' π₁ π₂ n}
+                       -> π ⊢ᴴ Γ₁ ∷ π₁
+                       -> (π₁-⊔-π₂ : π' ≔ᴹ π ⊔ π₁)
+                       -> (wt-t : π' ⊢ t ∷ τ)
+                       -> (a-π : π₂ ≔ᴬ π' [ n ↦ τ ])
+                       -> (a-Γ : Γ₂ ≔ᴬ Γ₁ [ n ↦ (l , t) ])
                        -> π ⊢ᴴ Γ₂ ∷ π₂ 
 
 -- A Well-Typed continuation (WCont), contains well-typed terms and
@@ -250,10 +251,10 @@ mutual
 data WCont (π : Context) : Ty -> Cont -> Ty -> Set where
  unId : ∀ {τ} -> WCont π (Id τ) unId τ
  unlabel : ∀ {l h τ} -> (l⊑h : l ⊑ h) -> WCont π (Labeled l τ) (unlabel l⊑h) (Mac h τ)
- Then_Else_ : ∀ {τ t₂ t₃} -> π ⊢ t₂ ∷ τ  -> π ⊢ t₃ ∷ τ ->  WCont π Bool (Then t₂ Else t₃) τ
- Var : ∀ {τ₁ τ₂ n} -> π ⊢ Var n ∷ τ₁ -> WCont π (τ₁ => τ₂) (Var n) τ₂
- # : ∀ {l n τ} -> WCont π τ (# l n) τ 
- Bind : ∀ {l τ₁ τ₂ t₂} -> π ⊢ t₂ ∷ (τ₁ => Mac l τ₂) ->  WCont π (Mac l τ₁) (Bind l t₂) (Mac l τ₂)
+ Then_Else_ : ∀ {τ t₂ t₃} -> (wt-t₂ : π ⊢ t₂ ∷ τ)  -> (wt-t₃ : π ⊢ t₃ ∷ τ) ->  WCont π Bool (Then t₂ Else t₃) τ
+ Var : ∀ {τ₁ τ₂ n} -> (wt-n : π ⊢ Var n ∷ τ₁) -> WCont π (τ₁ => τ₂) (Var n) τ₂
+ # : ∀ {τ} -> (l : Label) (n : ℕ) -> WCont π τ (# l n) τ 
+ Bind : ∀ {l τ₁ τ₂ t₂} -> (wt-t₂ : π ⊢ t₂ ∷ (τ₁ => Mac l τ₂)) ->  WCont π (Mac l τ₁) (Bind l t₂) (Mac l τ₂)
 
 
 -- A Well-typed stack (WStack) contains well-typed terms and is indexed
@@ -261,15 +262,16 @@ data WCont (π : Context) : Ty -> Cont -> Ty -> Set where
 -- It transforms the former in the latter according to the continuations.
 data WStack {l} (π : Context) : Ty -> Stack l -> Ty -> Set where
  [] : ∀ {τ} -> WStack π τ [] τ
- _∷_ : ∀ {τ₁ τ₂ τ₃ c S} -> WCont π τ₁ c τ₂ -> WStack π τ₂ S τ₃ -> WStack π τ₁ (c ∷ S) τ₃
+ _∷_ : ∀ {τ₁ τ₂ τ₃ c S} -> (wt-c : WCont π τ₁ c τ₂) (wt-S : WStack π τ₂ S τ₃) -> WStack π τ₁ (c ∷ S) τ₃
 
 -- Typing rule for configuration with Stack
 -- I think we need syntax-driven typing rules also for terms.
 -- However how do we make them mutually exclusive? Values and Redex?
 -- Type continuations as functions? 
 data _⊢ˢ_∷_ (π₁ : Context) {l : Label} : State l -> Ty -> Set where
-  WT : ∀ {π₂ Γ t π₃ τ₁ τ₂} {S : Stack l} -> (wt-Γ : π₁ ⊢ᴴ Γ ∷ π₂)
+  WT[_]⟨_,_,_⟩ : ∀ {π₂ Γ t π₃ τ₁ τ₂} {S : Stack l}
                            -> (π₁-⊔-π₂ : π₃ ≔ᴹ π₁ ⊔ π₂)
+                           -> (wt-Γ : π₁ ⊢ᴴ Γ ∷ π₂) 
                            -> (wt-t : π₃ ⊢ t ∷ τ₁)
                            -> (wt-S : WStack π₃ τ₁ S τ₂)
                            -> π₁ ⊢ˢ ⟨ Γ , t , S ⟩  ∷ τ₂
