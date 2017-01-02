@@ -175,7 +175,7 @@ data Stack (l : Label) : Set where
 
 --------------------------------------------------------------------------------
 
--- Selstof's Abstract Lazy Machine State
+-- Sestoft's Abstract Lazy Machine State
 -- The state is labeled to keep track of the security level of the
 -- term (thread) executed.
 record State (l : Label) : Set where
