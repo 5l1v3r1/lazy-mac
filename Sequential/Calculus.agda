@@ -171,7 +171,7 @@ data Heap (π : Context) : List Label -> Set where
 -- The state is labeled to keep track of the security level of the
 -- term (thread) executed.
 
-data State (ls : List Label) (l : Label) : Ty -> Set where
-  ⟨_,_,_⟩ : ∀ {π τ₁ τ₂} -> Heap π ls -> Term π τ₁ -> Stack l π τ₁ τ₂ -> State ls l τ₂
+data State (ls : List Label) : Ty -> Set where
+  ⟨_,_,_⟩ : ∀ {l π τ₁ τ₂} -> Heap π ls -> Term π τ₁ -> Stack l π τ₁ τ₂ -> State ls τ₂
 
 --------------------------------------------------------------------------------
