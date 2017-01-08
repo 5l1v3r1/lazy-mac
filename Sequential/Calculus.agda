@@ -10,268 +10,168 @@ import Data.List as L
 open import Data.Maybe
 open import Data.Product
 
--- A label-annotated, untyped free term.
--- Variables are represented by numbers.
-data Term : Set where
-  （） : Term
+-- The basic Term π τ is a term that has type τ in the context π
+-- π is extended by lambda abstractions, which add the type and name of their argument to it.
+-- I am still using names (ℕ) for variables, even though they are isomorphic to a membership proof
+-- object, e.g. x ∈ xs, because it does not require an extra parameter (xs).
+-- π can be considered in general as a superset of the unguarded free variables
+data Term (π : Context) : Ty -> Set where
+  （） : Term π （）
 
-  True : Term 
-  False : Term
+  True : Term π Bool 
+  False : Term π Bool
 
-  Id : Term -> Term 
-  unId : Term -> Term
+  Id : ∀ {τ} -> Term π τ -> Term π (Id τ)
+  unId : ∀ {τ} -> Term π (Id τ) -> Term π τ
 
-  Var : ℕ -> Term
-  Abs : (n : ℕ) -> Term -> Term  -- n is the name of the variable
-  App : Term -> Term -> Term
+  Var : ∀ {n τ} -> (l : Label) -> (n , τ) ∈ π -> Term π τ
+  Abs : ∀ {α β} -> (n : ℕ) -> Term ((n , α) ∷ π) β -> Term π (α => β)
+  App : ∀ {α β} -> Term π (α => β) -> Term π α -> Term π β
 
-  If_Then_Else_ : Term -> Term -> Term -> Term
+  If_Then_Else_ : ∀ {α} -> Term π Bool -> Term π α -> Term π α -> Term π α
 
-  Return : (l : Label) -> Term -> Term
-  Bind : (l : Label) -> Term -> Term -> Term
+  Return : ∀ {α} -> (l : Label) -> Term π α -> Term π (Mac l α)
+  _>>=_ : ∀ {l} {α β} -> Term π (Mac l α) -> Term π (α => Mac l β) -> Term π (Mac l β)
 
-  Mac : (l : Label) -> Term -> Term
-  Res : (l : Label) -> Term -> Term
+  Mac : ∀ {α} -> (l : Label) -> Term π α -> Term π (Mac l α)
 
-  label : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term -> Term
-  label∙ : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term -> Term
+  Res : ∀ {α} -> (l : Label) -> Term π α -> Term π (Res l α)
 
-  unlabel : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term -> Term
+  label : ∀ {l h α} -> l ⊑ h -> Term π α -> Term π (Mac l (Labeled h α))
+  label∙ : ∀ {l h α} -> l ⊑ h -> Term π α -> Term π (Mac l (Labeled h α))
 
-  -- read : ∀ {α l h} -> l ⊑ h -> Term Δ (Ref l α) -> Term Δ (Mac h α)
-  -- write : ∀ {α l h} -> l ⊑ h -> Term Δ (Ref h α) -> Term Δ α -> Term Δ (Mac l （）)
-  -- new : ∀ {α l h} -> l ⊑ h -> Term Δ α -> Term Δ (Mac l (Ref h α))
+  unlabel : ∀ {l h α} -> l ⊑ h -> Term π (Labeled l α) -> Term π (Mac h α)
+
+  -- read : ∀ {α l h} -> l ⊑ h -> Term π (Ref l α) -> Term π (Mac h α)
+  -- write : ∀ {α l h} -> l ⊑ h -> Term π (Ref h α) -> Term π α -> Term π (Mac l （）)
+  -- new : ∀ {α l h} -> l ⊑ h -> Term π α -> Term π (Mac l (Ref h α))
 
   -- Concurrency
-  fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term -> Term
+  fork : ∀ {l h} -> l ⊑ h -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
-  deepDup : ℕ -> Term
+  deepDup : ∀ {τ} -> ℕ -> Term π τ  -- The variable here could be free
 
   -- Represent sensitive information that has been erased.
-  ∙ : Term
-
+  ∙ : ∀ {{τ}} -> Term π τ
 
 -- The proof that a certain term is a value
-data Value : Term -> Set where
+data Value {π : Context} : ∀ {τ} -> Term π τ -> Set where
   （） : Value （）
   True : Value True
   False : Value False
-  Abs : (n : ℕ) (t : Term) -> Value (Abs n t)
-  Id : (t : Term) -> Value (Id t) 
-  Mac : ∀ {l : Label} (t : Term) -> Value (Mac l t)
-  Res : ∀ {l : Label} (t : Term) -> Value (Res l t)
+  Abs : ∀ {α β} (n : ℕ) (t : Term ((n , α) ∷ π) β) -> Value (Abs n t)
+  Id : ∀ {τ} (t : Term π τ) -> Value (Id t) 
+  Mac : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Mac l t)
+  Res : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Res l t)
 
 --------------------------------------------------------------------------------
 
--- Term substitution (as a function)
--- TODO Remove
-_[_/_] : Term -> Term -> ℕ -> Term
-（） [ t₂ / x ] = （）
-True [ t₂ / x ] = True
-False [ t₂ / x ] = False
-Id t₁ [ t₂ / x ] = Id (t₁ [ t₂ / x ])
-unId t₁ [ t₂ / x ] = unId (t₁ [ t₂ / x ])
-Var y [ t₂ / x ] with y ≟ x
-Var y [ t₂ / .y ] | yes refl = t₂
-Var y [ t₂ / x ] | no ¬p = Var y
--- We assume that variables are distinct so we don't have to care about name clashing and alpha renaming
--- We might instead choose the The Locally Nameless Representation (De Brujin Indexes + Free Variables)
-Abs n t₁ [ t₂ / x ] = Abs n (t₁ [ t₂ / x ])
-App t₁ t₂ [ t₃ / x ] = App (t₁ [ t₃ / x ]) (t₂ [ t₃ / x ])
-(If t₁ Then t₂ Else t₃) [ t₄ / x ] = If (t₁ [ t₄ / x ]) Then (t₂ [ t₄ / x ]) Else (t₃ [ t₄ / x ])
-Return l t₁ [ t₂ / x ] = Return l (t₁ [ t₂ / x ])
-Bind l t₁ t₂ [ t₃ / x ] = Bind l (t₁ [ t₃ / x ]) (t₂ [ t₃ / x ])
-Mac l t₁ [ t₂ / x ] = Mac l (t₁ [ t₂ / x ])
-Res l t₁ [ t₂ / x ] = Res l (t₁ [ t₂ / x ])
-label x t₁ [ t₂ / x₁ ] = label x (t₁ [ t₂ / x₁ ])
-label∙ x t₁ [ t₂ / x₁ ] = label∙ x (t₁ [ t₂ / x₁ ])
-unlabel x t₁ [ t₂ / x₁ ] = unlabel x (t₁ [ t₂ / x₁ ])
-fork x t₁ [ t₂ / x₁ ] = fork x (t₁ [ t₂ / x₁ ])
-deepDup y [ t₂ / x ] = deepDup y
-∙ [ t₂ / x ] = ∙
+-- The context of a term can be extended without harm
+wken : ∀ {τ Δ₁ Δ₂} -> Term Δ₁ τ -> Δ₁ ⊆ˡ Δ₂ -> Term Δ₂ τ
+wken （） p = （）
+wken True p = True
+wken False p = False
+wken (Id t) p = Id (wken t p)
+wken (unId t) p = unId (wken t p)
+wken (Var l x) p = Var l (wken-∈ x p)
+wken (Abs n t) p = Abs n (wken t (cons p))
+wken (App t t₁) p = App (wken t p) (wken t₁ p)
+wken (If t Then t₁ Else t₂) p = If (wken t p) Then (wken t₁ p) Else (wken t₂ p)
+wken (Return l t) p = Return l (wken t p)
+wken (t >>= t₁) p = (wken t p) >>= (wken t₁ p)
+wken (Mac l t) p = Mac l (wken t p)
+wken (Res l t) p = Res l (wken t p)
+wken (label x t) p = label x (wken t p)
+wken (label∙ x t) p = label∙ x (wken t p)
+wken (unlabel x t) p = unlabel x (wken t p)
+-- wken (read x t) p = read x (wken t p)
+-- wken (write x t t₁) p = write x (wken t p) (wken t₁ p)
+-- wken (new x t) p = new x (wken t p)
+wken (fork x t) p = fork x (wken t p)
+wken (deepDup x) p = deepDup x
+wken ∙ p = ∙
 
+_↑¹ : ∀ {α β Δ} -> Term Δ α -> Term (β ∷ Δ) α
+t ↑¹ = wken t (drop refl-⊆ˡ)
 
--- Substs n t t₁ t₁' corresponds to t₁ [n / t] ≡ t₁' with the assumption that there are no name clashes.
-data Subst (n : ℕ) (t : Term) : Term -> Term -> Set where
+-- Performs the variable-term substitution.
+var-subst : ∀ {α β n m} (l : Label) (Δ₁ Δ₂ : Context) -> Term Δ₂ α -> (n , β) ∈ (Δ₁ ++ L.[ (m , α) ] ++ Δ₂) -> Term (Δ₁ ++ Δ₂) β
+var-subst l [] Δ₂ t Here = t
+var-subst l [] Δ t (There p) = Var l p
+var-subst l (β ∷ Δ₁) Δ₂ t Here = Var l Here
+var-subst l (x ∷ Δ₁) Δ₂ t (There p) = (var-subst l Δ₁ Δ₂ t p) ↑¹
 
-  （） : Subst n t （） （）
+tm-subst : ∀ {α n τ} (Δ₁ Δ₂ : Context)-> Term Δ₂ α -> Term (Δ₁ ++ L.[ (n , α ) ] ++ Δ₂) τ -> Term (Δ₁ ++ Δ₂) τ
+tm-subst Δ₁ Δ₂ v （） = （）
+tm-subst Δ₁ Δ₂ v True = True
+tm-subst Δ₁ Δ₂ v False = False
+tm-subst Δ₁ Δ₂ v (Id t) = Id (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (unId t) = unId (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (Var l x) = var-subst l Δ₁ Δ₂ v x
+tm-subst Δ₁ Δ₂ v (Abs n' t) = Abs n' (tm-subst (_ ∷ Δ₁) Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (App t t₁) = App (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
+tm-subst Δ₁ Δ₂ v (If t Then t₁ Else t₂) = If (tm-subst Δ₁ Δ₂ v t) Then (tm-subst Δ₁ Δ₂ v t₁) Else (tm-subst Δ₁ Δ₂ v t₂)
+tm-subst Δ₁ Δ₂ v (Return l t) = Return l (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (t >>= t₁) = (tm-subst Δ₁ Δ₂ v t) >>= (tm-subst Δ₁ Δ₂ v t₁)
+tm-subst Δ₁ Δ₂ v (Mac l t) = Mac l (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (Res l t) = Res l (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (label x t) = label x (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (label∙ x t) = label∙ x (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (unlabel x t) = unlabel x (tm-subst Δ₁ Δ₂ v t)
+-- tm-subst Δ₁ Δ₂ v (read x t) = read x (tm-subst Δ₁ Δ₂ v t)
+-- tm-subst Δ₁ Δ₂ v (write x t t₁) = write x (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
+-- tm-subst Δ₁ Δ₂ v (new x t) = new x (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (fork x t) = fork x (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (deepDup x) = deepDup x  -- x is free
+tm-subst Δ₁ Δ₂ v ∙ = ∙
 
-  True : Subst n t True True
+subst : ∀ {Δ α β n} -> Term Δ α -> Term ((n , α) ∷ Δ) β -> Term Δ β
+subst {Δ} v t = tm-subst [] Δ v t
 
-  False : Subst n t False False
+-- -- Substs t ns ns' t' applies the substitution t [ n / Var n' ] consecutively
+-- -- for every n ∈ ns and n' ∈ ns' and returns the resulting term t'
+-- data Substs (t₁ : Term) : List ℕ -> List ℕ -> Term -> Set where
+--   [] : Substs t₁ [] [] t₁
+--   _∷_ : ∀ {t₂ t₃ n n' ns ns'} -> Subst n (Var n') t₁ t₂ -> Substs t₂ ns ns' t₃
+--                               -> Substs t₁ (n ∷ ns) (n' ∷ ns') t₃ 
 
-  Id : ∀ {t₁ t₁'} -> Subst n t t₁ t₁' -> Subst n t (Id t₁) (Id t₁')
+-- --------------------------------------------------------------------------------
 
-  unId : ∀ {t₁ t₁'} -> Subst n t t₁ t₁' -> Subst n t (unId t₁) (unId t₁')
+-- A Well-Typed continuation (Cont), contains well-typed terms and
+-- transform the input type (first indexed) in the output type (second
+-- index).
+data Cont (π : Context) : Ty -> Ty -> Set where
+ Var : ∀ {n τ₁ τ₂} -> (n , τ₁) ∈ π -> Cont π (τ₁ => τ₂) τ₂
+ # : ∀ {τ} -> Label -> ℕ -> Cont π τ τ
+ Then_Else_ : ∀ {τ} -> Term π τ -> Term π τ -> Cont π Bool τ
+ Bind :  ∀ {τ₁ τ₂ l} -> Term π (τ₁ => Mac l τ₂) -> Cont π (Mac l τ₁) (Mac l τ₂)
+ unlabel : ∀ {l h τ} (p : l ⊑ h) -> Cont π (Res l τ) (Mac h τ)
+ unId : ∀ {τ} -> Cont π (Id τ) τ
 
-  Var : Subst n t (Var n) t
-  
-  Var' : ∀ {m} -> n ≢ m -> Subst n t (Var m) (Var m)
-  
-  Abs : ∀ {m t₁ t₁'} -> n ≢ m -> Subst n t t₁ t₁'
-                              -> Subst n t (Abs m t₁) (Abs m t₁')
-  
-  App : ∀ {t₁ t₁' t₂ t₂'} -> Subst n t t₁ t₁' -> Subst n t t₂ t₂'
-                          -> Subst n t (App t₁ t₂) (App t₁ t₂')
-                                                
-  If_Then_Else_ : ∀ {t₁ t₁' t₂ t₂' t₃ t₃'} -> Subst n t t₁ t₁'
-                                           -> Subst n t t₂ t₂'
-                                           -> Subst n t t₃ t₃'
-                                           -> Subst n t (If t₁ Then t₂ Else t₃) (If t₁' Then t₂' Else t₃')
-  Return : ∀ {t₁ t₁' l} -> Subst n t t₁ t₁'
-                        -> Subst n t (Return l t₁) (Return l t₁')
-
-  Bind : ∀ {t₁ t₁' t₂ t₂' l} -> Subst n t t₁ t₁' -> Subst n t t₂ t₂'
-                             -> Subst n t (Bind l t₁ t₂) (Bind l t₂ t₂')
-
-  Mac : ∀ {t₁ t₁' l} -> Subst n t t₁ t₁' -> Subst n t (Mac l t₁) (Mac l t₁')
-
-  Res : ∀ {t₁ t₁' l} -> Subst n t t₁ t₁' -> Subst n t (Res l t₁) (Res l t₁')
-  
-  label : ∀ {t₁ t₁' l h} {p : l ⊑ h} -> Subst n t t₁ t₁'
-                                     -> Subst n t (label p t₁) (label p t₁')
-
-  label∙ : ∀ {t₁ t₁' l h} {p : l ⊑ h} -> Subst n t t₁ t₁'
-                                      -> Subst n t (label∙ p t₁) (label∙ p t₁')
-
-  unlabel : ∀ {t₁ t₁' l h} {p : l ⊑ h} -> Subst n t t₁ t₁'
-                                       -> Subst n t (unlabel p t₁) (unlabel p t₁')
-
-  fork :  ∀ {t₁ t₁' l h} {p : l ⊑ h} -> Subst n t t₁ t₁'
-                                     -> Subst n t (fork p t₁) (fork p t₁')
-
-  deepDup : ∀ {m} -> Subst n t (deepDup m) (deepDup m) -- m is free
-
-  ∙ : Subst n t ∙ ∙
-
--- Substs t ns ns' t' applies the substitution t [ n / Var n' ] consecutively
--- for every n ∈ ns and n' ∈ ns' and returns the resulting term t'
-data Substs (t₁ : Term) : List ℕ -> List ℕ -> Term -> Set where
-  [] : Substs t₁ [] [] t₁
-  _∷_ : ∀ {t₂ t₃ n n' ns ns'} -> Subst n (Var n') t₁ t₂ -> Substs t₂ ns ns' t₃
-                              -> Substs t₁ (n ∷ ns) (n' ∷ ns') t₃ 
-
---------------------------------------------------------------------------------
-
-open import Data.Map
-
--- A heap is a partial mapping from number (position) to terms.
-Heap : Set
-Heap = Map (Label × Term)
-
--- Continuation 
-data Cont : Set where
- Var : ℕ -> Cont
- # : Label -> ℕ -> Cont
- Then_Else_ : Term -> Term -> Cont
- Bind : Label -> Term -> Cont
- unlabel : ∀ {l h} -> l ⊑ h -> Cont
- unId : Cont
-
--- Just a list of continuation with a fixed label
-data Stack (l : Label) : Set where
- [] : Stack l
- _∷_ : Cont -> Stack l -> Stack l
+-- A Well-typed stack (Stack) contains well-typed terms and is indexed
+-- by an input type and an output type.
+-- It transforms the former in the latter according to the continuations.
+data Stack (l : Label) (π : Context) : Ty -> Ty -> Set where
+ [] : ∀ {τ} -> Stack l π τ τ
+ _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont π τ₁ τ₂ -> Stack l π τ₂ τ₃ -> Stack l π τ₁ τ₃
+ ∙ : ∀ {τ₁ τ₂} -> Stack l π τ₁ τ₂
 
 --------------------------------------------------------------------------------
+
+data Map (l : Label) : Context -> Set where
+  [] : Map l []
+  _∷_ : ∀ {π τ} -> (nt : ℕ × Maybe (Term π τ)) -> Map l π -> Map l ((proj₁ nt , τ) ∷ π)
+  ∙ : ∀ {π} -> Map l π
+
+data Heap (π : Context) : List Label -> Set where
+  [] : Heap π []
+  _∷_ : ∀ {l ls} -> Map l π -> Heap π ls -> Heap π (l ∷ ls) -- Add unique l
 
 -- Sestoft's Abstract Lazy Machine State
 -- The state is labeled to keep track of the security level of the
 -- term (thread) executed.
-record State (l : Label) : Set where
- constructor ⟨_,_,_⟩
- field
-   heap : Heap
-   term : Term
-   stack : Stack l
 
-open State
+data State (ls : List Label) (l : Label) : Ty -> Set where
+  ⟨_,_,_⟩ : ∀ {π τ₁ τ₂} -> Heap π ls -> Term π τ₁ -> Stack l π τ₁ τ₂ -> State ls l τ₂
 
 --------------------------------------------------------------------------------
-
--- Typing Judgment
-
--- A context is a partial mapping ℕ -> Ty
-Context : Set
-Context = Map Ty
-
-mutual
-
-  data _⊢_∷_ (π : Context) : Term -> Ty -> Set where
-    （） : π ⊢ （） ∷ （） 
-
-    True : π ⊢ True ∷ Bool
-    False : π ⊢ False ∷ Bool
-    
-    If_Then_Else_ : ∀ {t₁ t₂ t₃ τ} -> π ⊢ t₁ ∷ Bool
-                                   -> π ⊢ t₂ ∷ τ
-                                   -> π ⊢ t₃ ∷ τ
-                                   -> π ⊢ If t₁ Then t₂ Else t₃ ∷ τ
-                                   
-
-    Id : ∀ {τ t} -> π ⊢ t ∷ τ -> π ⊢ Id t ∷ Id τ
-    unId : ∀ {τ t} -> π ⊢ t ∷ Id τ -> π ⊢ unId t ∷ τ
-
-    Var : ∀ {τ n} -> n ↦ τ ∈ π  -> π ⊢ Var n ∷ τ
-    Abs : ∀ {π' n t τ₁ τ₂} -> π' ≔ᴬ π [ n ↦ τ₁ ] -> π' ⊢ t ∷ τ₂ -> π ⊢ Abs n t ∷ (τ₁ => τ₂)    
-    App : ∀ {t₁ t₂ τ₁ τ₂} -> π ⊢ t₁ ∷ (τ₁ => τ₂)
-                          -> π ⊢ t₂ ∷ τ₁ -> π ⊢ App t₁ t₂ ∷ τ₂
-
-    Mac : ∀ {l t τ} -> π ⊢ t ∷ τ -> π ⊢ Mac l t ∷ Mac l τ
-    Return : ∀ {l t τ} -> π ⊢ t ∷ τ -> π ⊢ Return l t ∷ Mac l τ
-    Bind : ∀ {l τ₁ τ₂ t₁ t₂} -> π ⊢ t₁ ∷ (Mac l τ₁) -> π ⊢ t₂ ∷ (τ₁ => Mac l τ₂) -> π ⊢ Bind l t₁ t₂ ∷ Mac l τ₂
-
-
-    Res : ∀ {l t τ} -> π ⊢ t ∷ τ -> π ⊢ Res l t ∷ Res l τ
-    label : ∀ {l h t τ} {l⊑h : l ⊑ h} -> π ⊢ t ∷ τ -> π ⊢ label l⊑h t ∷ Mac l (Labeled h τ)
-    label∙ : ∀ {l h t τ} {l⊑h : l ⊑ h} -> π ⊢ t ∷ τ -> π ⊢ label∙ l⊑h t ∷ Mac l (Labeled h τ)
-    unlabel : ∀ {l h t τ} {l⊑h : l ⊑ h} -> π ⊢ t ∷ Labeled l τ -> π ⊢ unlabel l⊑h t ∷ Mac h τ
-
-
-    fork : ∀ {l h t} {l⊑h : l ⊑ h} -> π ⊢ t ∷ (Mac h  （） ) -> π ⊢ fork l⊑h t ∷ Mac l  （）
-
-    deepDup : ∀ {τ n} -> n ↦ τ ∈ π -> π ⊢ deepDup n ∷ τ
-
-    ∙ : ∀ {τ} -> π ⊢ ∙ ∷ τ
-
-  data _⊢ᴴ_∷_ (π : Context) : Heap -> Context -> Set where
-    Nil : π ⊢ᴴ [] ∷ []
-    -- This rule does not allow for recursive bindings when typing
-    Cons : ∀ {Γ₁ Γ₂ l t τ π' π₁ π₂ n}
-                       -> π ⊢ᴴ Γ₁ ∷ π₁
-                       -> (π₁-⊔-π₂ : π' ≔ᴹ π ⊔ π₁)
-                       -> (wt-t : π' ⊢ t ∷ τ)
-                       -> (a-π : π₂ ≔ᴬ π' [ n ↦ τ ])
-                       -> (a-Γ : Γ₂ ≔ᴬ Γ₁ [ n ↦ (l , t) ])
-                       -> π ⊢ᴴ Γ₂ ∷ π₂ 
-
--- A Well-Typed continuation (WCont), contains well-typed terms and
--- transform the input type (first indexed) in the output type (second
--- index).
-data WCont (π : Context) : Ty -> Cont -> Ty -> Set where
- unId : ∀ {τ} -> WCont π (Id τ) unId τ
- unlabel : ∀ {l h τ} -> (l⊑h : l ⊑ h) -> WCont π (Labeled l τ) (unlabel l⊑h) (Mac h τ)
- Then_Else_ : ∀ {τ t₂ t₃} -> (wt-t₂ : π ⊢ t₂ ∷ τ)  -> (wt-t₃ : π ⊢ t₃ ∷ τ) ->  WCont π Bool (Then t₂ Else t₃) τ
- Var : ∀ {τ₁ τ₂ n} -> (wt-n : π ⊢ Var n ∷ τ₁) -> WCont π (τ₁ => τ₂) (Var n) τ₂
- # : ∀ {τ} -> (l : Label) (n : ℕ) -> WCont π τ (# l n) τ 
- Bind : ∀ {l τ₁ τ₂ t₂} -> (wt-t₂ : π ⊢ t₂ ∷ (τ₁ => Mac l τ₂)) ->  WCont π (Mac l τ₁) (Bind l t₂) (Mac l τ₂)
-
-
--- A Well-typed stack (WStack) contains well-typed terms and is indexed
--- by an input type and an output type.
--- It transforms the former in the latter according to the continuations.
-data WStack {l} (π : Context) : Ty -> Stack l -> Ty -> Set where
- [] : ∀ {τ} -> WStack π τ [] τ
- _∷_ : ∀ {τ₁ τ₂ τ₃ c S} -> (wt-c : WCont π τ₁ c τ₂) (wt-S : WStack π τ₂ S τ₃) -> WStack π τ₁ (c ∷ S) τ₃
-
--- Typing rule for configuration with Stack
--- I think we need syntax-driven typing rules also for terms.
--- However how do we make them mutually exclusive? Values and Redex?
--- Type continuations as functions? 
-data _⊢ˢ_∷_ (π₁ : Context) {l : Label} : State l -> Ty -> Set where
-  WT[_]⟨_,_,_⟩ : ∀ {π₂ Γ t π₃ τ₁ τ₂} {S : Stack l}
-                           -> (π₁-⊔-π₂ : π₃ ≔ᴹ π₁ ⊔ π₂)
-                           -> (wt-Γ : π₁ ⊢ᴴ Γ ∷ π₂) 
-                           -> (wt-t : π₃ ⊢ t ∷ τ₁)
-                           -> (wt-S : WStack π₃ τ₁ S τ₂)
-                           -> π₁ ⊢ˢ ⟨ Γ , t , S ⟩  ∷ τ₂

@@ -73,8 +73,13 @@ extend-∈ (There x) (cons p) = There (extend-∈ x p)
 
 --------------------------------------------------------------------------------
 
+open import Data.Nat
+
+Context : Set
+Context = List (ℕ × Ty)
+
 -- Subset relation
-data _⊆ˡ_ : List Ty -> List Ty -> Set where
+data _⊆ˡ_ : Context -> Context -> Set where
   base : [] ⊆ˡ [] 
   cons : ∀ {α π₁ π₂} -> π₁ ⊆ˡ π₂ -> (α ∷ π₁) ⊆ˡ (α ∷ π₂)
   drop : ∀ {α π₁ π₂} -> π₁ ⊆ˡ π₂ -> π₁ ⊆ˡ (α ∷ π₂)
