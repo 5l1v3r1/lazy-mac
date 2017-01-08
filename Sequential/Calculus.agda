@@ -140,21 +140,21 @@ subst {Δ} v t = tm-subst [] Δ v t
 -- A Well-Typed continuation (Cont), contains well-typed terms and
 -- transform the input type (first indexed) in the output type (second
 -- index).
-data Cont (π : Context) : Ty -> Ty -> Set where
- Var : ∀ {n τ₁ τ₂} -> (n , τ₁) ∈ π -> Cont π (τ₁ => τ₂) τ₂
- # : ∀ {τ} -> Label -> ℕ -> Cont π τ τ
- Then_Else_ : ∀ {τ} -> Term π τ -> Term π τ -> Cont π Bool τ
- Bind :  ∀ {τ₁ τ₂ l} -> Term π (τ₁ => Mac l τ₂) -> Cont π (Mac l τ₁) (Mac l τ₂)
- unlabel : ∀ {l h τ} (p : l ⊑ h) -> Cont π (Res l τ) (Mac h τ)
- unId : ∀ {τ} -> Cont π (Id τ) τ
+data Cont : Ty -> Ty -> Set where
+ Var : ∀ {π τ₁ τ₂} {n : ℕ} -> (n , τ₁) ∈ π -> Cont (τ₁ => τ₂) τ₂
+ # : ∀ {τ} -> Label -> ℕ -> Cont τ τ
+ Then_Else_ : ∀ {τ π} -> Term π τ -> Term π τ -> Cont Bool τ
+ Bind :  ∀ {τ₁ τ₂ l π} -> Term π (τ₁ => Mac l τ₂) -> Cont (Mac l τ₁) (Mac l τ₂)
+ unlabel : ∀ {l h τ} (p : l ⊑ h) -> Cont (Res l τ) (Mac h τ)
+ unId : ∀ {τ} -> Cont (Id τ) τ
 
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
 -- by an input type and an output type.
 -- It transforms the former in the latter according to the continuations.
-data Stack (l : Label) (π : Context) : Ty -> Ty -> Set where
- [] : ∀ {τ} -> Stack l π τ τ
- _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont π τ₁ τ₂ -> Stack l π τ₂ τ₃ -> Stack l π τ₁ τ₃
- ∙ : ∀ {τ₁ τ₂} -> Stack l π τ₁ τ₂
+data Stack (l : Label) : Ty -> Ty -> Set where
+ [] : ∀ {τ} -> Stack l τ τ
+ _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont τ₁ τ₂ -> Stack l τ₂ τ₃ -> Stack l τ₁ τ₃
+ ∙ : ∀ {τ₁ τ₂} -> Stack l τ₁ τ₂
 
 --------------------------------------------------------------------------------
 
@@ -163,15 +163,40 @@ data Map (l : Label) : Context -> Set where
   _∷_ : ∀ {π τ} -> (nt : ℕ × Maybe (Term π τ)) -> Map l π -> Map l ((proj₁ nt , τ) ∷ π)
   ∙ : ∀ {π} -> Map l π
 
-data Heap (π : Context) : List Label -> Set where
-  [] : Heap π []
-  _∷_ : ∀ {l ls} -> Map l π -> Heap π ls -> Heap π (l ∷ ls) -- Add unique l
+-- data Heap : List Label -> Set where
+--   [] : Heap []
+--   _∷_ : ∀ {l ls π} -> Map l π -> Heap ls -> Heap (l ∷ ls)
+
+Heap :  Set 
+Heap = (l : Label) -> ∃ (λ π -> Map l π)
+
+postulate _≟ᴸ_ : (l₁ l₂ : Label) -> Dec (l₁ ≡ l₂)
+
+update : ∀ {l π} -> Heap -> Map l π -> Heap
+update {l₁} Γ M l₂ with l₁ ≟ᴸ l₂
+update Γ M l | yes refl = _ , M
+update Γ M l₂ | no ¬p = Γ l₂
+
+erase-Map : ∀ {π l} -> Label -> Map l π -> Map l π
+erase-Map {l = l} lₐ M with lₐ ⊑? l
+erase-Map lₐ M | yes p = M
+erase-Map lₐ M | no ¬p = ∙
+
+erase : Label -> Heap -> Heap
+erase lₐ Γ l = _ , erase-Map lₐ (proj₂ (Γ l))
+
+lemma : ∀ {Γ lₐ l } ->
+          let π , M = Γ l in erase lₐ Γ l ≡ (π , erase-Map lₐ M )
+lemma {Γ} {lₐ} {l} = refl
+
+lemma₂ : ∀ {l π} {M : Map l π } -> (Γ : Heap) -> update Γ M ≡ update Γ M
+lemma₂ Γ = refl
 
 -- Sestoft's Abstract Lazy Machine State
 -- The state is labeled to keep track of the security level of the
 -- term (thread) executed.
 
-data State (ls : List Label) : Ty -> Set where
-  ⟨_,_,_⟩ : ∀ {l π τ₁ τ₂} -> Heap π ls -> Term π τ₁ -> Stack l π τ₁ τ₂ -> State ls τ₂
+data State (l : Label) : Ty -> Set where
+  ⟨_,_,_⟩ : ∀ {π τ₁ τ₂} -> Heap -> Term π τ₁ -> Stack l τ₁ τ₂ -> State l τ₂
 
 --------------------------------------------------------------------------------

@@ -13,7 +13,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 -- DeepDup helper functions and data types
 
 open import Data.Bool using (not)
-open import Data.List using (filter)
+open import Data.List using (filter ; length)
 open import Relation.Nullary.Decidable using (⌊_⌋)
 
 
@@ -25,10 +25,12 @@ open import Relation.Nullary.Decidable using (⌊_⌋)
 -- however they could be after α-conversion (we simply don't want to deal with that,
 -- and assume they have already been α-converted).
 -- Note that stuck terms will be dealt with in the concurrent semantics.
-data _⇝_ {l : Label} {ls : List Label} : ∀ {τ} -> State ls τ -> State ls τ -> Set where
+data _⇝_ {l : Label} {ls : List Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
- App₁ : ∀ {π τ₁ τ₂ τ₃ S} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l π τ₂ τ₃} ->
-          ⟨ {!!} , (App t₁ t₂) , S ⟩ ⇝ ⟨ {!!} , t₁ , (Var {!!}) ∷ S ⟩
+ App₁ : ∀ {τ₁ τ₂ τ₃ Γ} ->
+          let π' , M = Γ l  -- Here I am not sure it should be l
+              n = suc (length π') in {t₁ : Term π' (τ₁ => τ₂)} {t₂ : Term π' τ₁} {S : Stack l τ₂ τ₃}  ->
+          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ update Γ ((n , just t₂) ∷ M) , t₁ , (Var {(n , _) ∷ π'} Here) ∷ S ⟩
 
 -- ∀ {Γ Γ' S t₁ t₂ n} -> Γ' ≔ᴬ Γ [ n ↦ (l , t₂) ]
 --                            -> ⟨ Γ , App t₁ t₂ , S ⟩ ⇝ ⟨ Γ' , t₁ , Var n ∷ S ⟩
