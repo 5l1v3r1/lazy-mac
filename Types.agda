@@ -11,12 +11,10 @@ open import Data.Empty public
 
 open Lattice.Lattice 𝓛 public
 
-import Data.List as L
-open import Data.List using (List ; [] ; _∷_ ; _++_) public
-open import Data.Vec using (Vec ; [] ; _∷_ ; lookup) public
+open import Data.Vec using (Vec ; [] ; _∷_ ; lookup ; _++_ ; [_] ; _∈_ ; here ; there) public
 open import Data.Fin using (Fin ; zero ; suc) public
 open import Data.Unit hiding (_≤_ ; _≟_) public
-open import Data.Product using (_×_ ; _,_)
+open import Data.Product using (Σ ; _×_ ; _,_)
 
 -- Types τ
 data Ty : Set where
@@ -39,60 +37,71 @@ Labeled l τ = Res l (Id τ)
 -- MVar : Label -> Ty -> Ty
 -- MVar l τ = Res l Nat
 
--- Reference to a variable, bound during some abstraction.
-data _∈_ {A : Set} : A -> List A -> Set where
- Here : ∀ {π τ} -> τ ∈ (τ ∷ π)
- There : ∀ {π α β} -> α ∈ π -> α ∈ (β ∷ π)
+-- -- Reference to a variable, bound during some abstraction.
+-- data _∈_ {A : Set} : A -> List A -> Set where
+--  Here : ∀ {π τ} -> τ ∈ (τ ∷ π)
+--  There : ∀ {π α β} -> α ∈ π -> α ∈ (β ∷ π)
 
 -- A list is a prefix of another
-data _⊆_ {A : Set} : List A -> List A -> Set where
-  base : ∀ {xs : List A} -> [] ⊆ xs
-  cons : ∀ {xs ys x} -> xs ⊆ ys -> (x ∷ xs) ⊆ (x ∷ ys)
+-- data _⊆_ {A : Set} : List A -> List A -> Set where
+--   base : ∀ {xs : List A} -> [] ⊆ xs
+--   cons : ∀ {xs ys x} -> xs ⊆ ys -> (x ∷ xs) ⊆ (x ∷ ys)
 
-refl-⊆ : ∀ {A} {xs : List A} -> xs ⊆ xs
-refl-⊆ {_} {[]} = base
-refl-⊆ {_} {x ∷ xs} = cons refl-⊆
+-- refl-⊆ : ∀ {A} {xs : List A} -> xs ⊆ xs
+-- refl-⊆ {_} {[]} = base
+-- refl-⊆ {_} {x ∷ xs} = cons refl-⊆
 
-trans-⊆ : ∀ {A} {xs ys zs : List A} -> xs ⊆ ys -> ys ⊆ zs -> xs ⊆ zs
-trans-⊆ base q = base
-trans-⊆ (cons p) (cons q) = cons (trans-⊆ p q)
+-- trans-⊆ : ∀ {A} {xs ys zs : List A} -> xs ⊆ ys -> ys ⊆ zs -> xs ⊆ zs
+-- trans-⊆ base q = base
+-- trans-⊆ (cons p) (cons q) = cons (trans-⊆ p q)
 
-snoc-⊆ : ∀ {A} {xs : List A} {x : A} -> xs ⊆ (xs L.∷ʳ x)
-snoc-⊆ {_} {[]} = base
-snoc-⊆ {_} {x₁ ∷ xs} = cons snoc-⊆
+-- snoc-⊆ : ∀ {A} {xs : List A} {x : A} -> xs ⊆ (xs L.∷ʳ x)
+-- snoc-⊆ {_} {[]} = base
+-- snoc-⊆ {_} {x₁ ∷ xs} = cons snoc-⊆
 
 -- Transform τ ∈ᵗ π in Fin
-fin : ∀ {A : Set} {τ : A} {π : List A} -> τ ∈ π -> Fin (L.length π)
-fin Here = zero
-fin (There p) = suc (fin p)
+-- fin : ∀ {A : Set} {τ : A} {π : List A} -> τ ∈ π -> Fin (L.length π)
+-- fin Here = zero
+-- fin (There p) = suc (fin p)
 
-extend-∈ : ∀ {A : Set} {τ : A} {π₁ π₂ : List A} -> τ ∈ π₁ -> π₁ ⊆ π₂ -> τ ∈ π₂
-extend-∈ () base
-extend-∈ Here (cons p) = Here
-extend-∈ (There x) (cons p) = There (extend-∈ x p)
+-- extend-∈ : ∀ {A : Set} {τ : A} {π₁ π₂ : List A} -> τ ∈ π₁ -> π₁ ⊆ π₂ -> τ ∈ π₂
+-- extend-∈ () base
+-- extend-∈ Here (cons p) = Here
+-- extend-∈ (There x) (cons p) = There (extend-∈ x p)
 
 --------------------------------------------------------------------------------
 
 open import Data.Nat
+open import Data.Vec hiding (drop)
 
-Context : Set
-Context = List (ℕ × Ty)
+record Variable : Set where
+  constructor ⟪_,_,_⟫
+  field num : ℕ
+        ty : Ty
+        lbl : Label
+
+open Variable public
+
+Context : ℕ -> Set
+Context = Vec Variable
 
 -- Subset relation
-data _⊆ˡ_ : Context -> Context -> Set where
+data _⊆ˡ_ : ∀ {n m} -> Context n -> Context m -> Set where
   base : [] ⊆ˡ [] 
-  cons : ∀ {α π₁ π₂} -> π₁ ⊆ˡ π₂ -> (α ∷ π₁) ⊆ˡ (α ∷ π₂)
-  drop : ∀ {α π₁ π₂} -> π₁ ⊆ˡ π₂ -> π₁ ⊆ˡ (α ∷ π₂)
+  cons : ∀ {α n m} {π₁ : Context n} {π₂ : Context m} -> π₁ ⊆ˡ π₂ -> (α ∷ π₁) ⊆ˡ (α ∷ π₂)
+  drop : ∀ {α n m} {π₁ : Context n} {π₂ : Context m} -> π₁ ⊆ˡ π₂ -> π₁ ⊆ˡ (α ∷ π₂)
 
-refl-⊆ˡ : ∀ {π} -> π ⊆ˡ π
-refl-⊆ˡ {[]} = base
-refl-⊆ˡ {x ∷ π} = cons refl-⊆ˡ
+refl-⊆ˡ : ∀ {n} {π : Context n} -> π ⊆ˡ π
+refl-⊆ˡ {_} {[]} = base
+refl-⊆ˡ {_} {x ∷ π} = cons refl-⊆ˡ
 
-wken-∈ : ∀ {τ π₁ π₂} -> τ ∈ π₁ -> π₁ ⊆ˡ π₂ -> τ ∈ π₂
+
+wken-∈ : ∀ {n m} {π₁ : Context n} {π₂ : Context m} -> (x : Fin n) -> π₁ ⊆ˡ π₂ -> Σ (Fin m) (λ y -> lookup x π₁ ≡ lookup y π₂)
 wken-∈ () base
-wken-∈ Here (cons p) = Here
-wken-∈ (There x) (cons p) = There (wken-∈ x p)
-wken-∈ x (drop p) = There (wken-∈ x p)
+wken-∈ zero (cons p) = zero , refl
+wken-∈ (suc x) (cons p) = wken-∈ x (drop p)
+wken-∈ x (drop p) with wken-∈ x p
+... | y , eq = suc y , eq
 
 infixr 2 _⊆ˡ_
 

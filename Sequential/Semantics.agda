@@ -37,7 +37,7 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
  
  Var₁ : ∀ {Γ n l' τ τ'} {S : Stack l τ τ'} ->
           let π , M = Γ l' in {t : Term π τ} ->
-          (x∈π : (n , τ) ∈ π) -- Can we derive this proof object from n ↦ t ∈ M ?
+          (x∈π : (n , τ) ∈ π) -- Can we derive this proof object from n ↦ t ∈ M ? -- TODO use index lookup in π
         -> n ↦ t ∈ M
         ->   ¬ (Value t)
         -> ⟨ Γ , Var l' x∈π , S ⟩ ⇝ ⟨ Γ [ l' ↦ M -[ n ] ]ᴴ , t , (# l n) ∷ S ⟩ -- Here we should prove that l == l'

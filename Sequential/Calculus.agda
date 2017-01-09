@@ -2,20 +2,21 @@ open import Lattice
 
 module Sequential.Calculus {- (𝓛 : Lattice) -} where
 
-open import Types
+open import Types renaming (_≟_ to _≟ᴸ_)
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
-open import Data.List.All
-open import Data.Nat using (ℕ ; zero ; suc) public
-import Data.List as L
+open import Data.Nat using (ℕ ; zero ; suc ; _+_) public
+open import Data.Nat renaming ( _≟_ to  _≟ᴺ_ )
+
 open import Data.Maybe
 open import Data.Product
 open import Function
+        
 -- The basic Term π τ is a term that has type τ in the context π
 -- π is extended by lambda abstractions, which add the type and name of their argument to it.
 -- I am still using names (ℕ) for variables, even though they are isomorphic to a membership proof
 -- object, e.g. x ∈ xs, because it does not require an extra parameter (xs).
 -- π can be considered in general as a superset of the unguarded free variables
-data Term (π : Context) : Ty -> Set where
+data Term {n : ℕ} (π : Context n) : Ty -> Set where
   （） : Term π （）
 
   True : Term π Bool 
@@ -24,8 +25,8 @@ data Term (π : Context) : Ty -> Set where
   Id : ∀ {τ} -> Term π τ -> Term π (Id τ)
   unId : ∀ {τ} -> Term π (Id τ) -> Term π τ
 
-  Var : ∀ {τ n} -> (l : Label) -> (n , τ) ∈ π -> Term π τ
-  Abs : ∀ {α β} -> (n : ℕ) -> Term ((n , α) ∷ π) β -> Term π (α => β)
+  Var : (l : Label) -> (x : Fin n) -> Term π (ty (lookup x π))  -- Here the label is to be looked up in the env
+  Abs : ∀ {β} -> (x : Variable) -> Term (x ∷ π) β -> Term π (ty x => β)
   App : ∀ {α β} -> Term π (α => β) -> Term π α -> Term π β
 
   If_Then_Else_ : ∀ {α} -> Term π Bool -> Term π α -> Term π α -> Term π α
@@ -49,31 +50,32 @@ data Term (π : Context) : Ty -> Set where
   -- Concurrency
   fork : ∀ {l h} -> l ⊑ h -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
-  deepDup : ∀ {τ} -> ℕ -> Term π τ  -- The variable here is unguarded
+  deepDup : ∀ {τ} -> Variable -> Term π τ  -- The variable here is unguarded
 
   -- Represent sensitive information that has been erased.
   ∙ : ∀ {{τ}} -> Term π τ
 
 -- The proof that a certain term is a value
-data Value {π : Context} : ∀ {τ} -> Term π τ -> Set where
+data Value {n} {π : Context n} : ∀ {τ} -> Term π τ -> Set where
   （） : Value （）
   True : Value True
   False : Value False
-  Abs : ∀ {α β} (n : ℕ) (t : Term ((n , α) ∷ π) β) -> Value (Abs n t)
+  Abs : ∀ {β} (x : Variable) (t : Term (x ∷ π) β) -> Value (Abs x t)
   Id : ∀ {τ} (t : Term π τ) -> Value (Id t) 
   Mac : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Mac l t)
   Res : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Res l t)
 
 --------------------------------------------------------------------------------
 
--- The context of a term can be extended without harm
-wken : ∀ {τ Δ₁ Δ₂} -> Term Δ₁ τ -> Δ₁ ⊆ˡ Δ₂ -> Term Δ₂ τ
+-- -- The context of a term can be extended without harm
+wken : ∀ {τ n₁ n₂} {Δ₁ : Context n₁} {Δ₂ : Context n₂} -> Term Δ₁ τ -> Δ₁ ⊆ˡ Δ₂ -> Term Δ₂ τ
 wken （） p = （）
 wken True p = True
 wken False p = False
 wken (Id t) p = Id (wken t p)
 wken (unId t) p = unId (wken t p)
-wken (Var l x) p = Var l (wken-∈ x p)
+wken (Var l x) p with wken-∈ x p
+... | y , eq rewrite eq = Var l y
 wken (Abs n t) p = Abs n (wken t (cons p))
 wken (App t t₁) p = App (wken t p) (wken t₁ p)
 wken (If t Then t₁ Else t₂) p = If (wken t p) Then (wken t₁ p) Else (wken t₂ p)
@@ -91,23 +93,25 @@ wken (fork x t) p = fork x (wken t p)
 wken (deepDup x) p = deepDup x
 wken ∙ p = ∙
 
-_↑¹ : ∀ {α β Δ} -> Term Δ α -> Term (β ∷ Δ) α
+_↑¹ : ∀ {α β n} {Δ : Context n} -> Term Δ α -> Term (β ∷ Δ) α
 t ↑¹ = wken t (drop refl-⊆ˡ)
 
 -- Performs the variable-term substitution.
-var-subst : ∀ {α β n m} (l : Label) (Δ₁ Δ₂ : Context) -> Term Δ₂ α -> (n , β) ∈ (Δ₁ ++ L.[ (m , α) ] ++ Δ₂) -> Term (Δ₁ ++ Δ₂) β
-var-subst l [] Δ₂ t Here = t
-var-subst l [] Δ t (There p) = Var l p
-var-subst l (β ∷ Δ₁) Δ₂ t Here = Var l Here
-var-subst l (x ∷ Δ₁) Δ₂ t (There p) = (var-subst l Δ₁ Δ₂ t p) ↑¹
+var-subst : ∀ {n₁ n₂} (x : Variable) (l : Label) (Δ₁ : Context n₁) (Δ₂ : Context n₂)
+            -> Term Δ₂ (ty x) -> (y : Fin (n₁ + (suc n₂))) -> Term (Δ₁ ++ Δ₂) (ty (lookup y (Δ₁ ++ [ x ] ++ Δ₂)))
+var-subst x l [] Δ₂ v zero = v
+var-subst x l [] Δ₂ v (suc y) = Var l y
+var-subst x l (x₁ ∷ Δ₁) Δ₂ v zero = Var l zero
+var-subst x l (x₁ ∷ Δ₁) Δ₂ v (suc y) = (var-subst x l Δ₁ Δ₂ v y) ↑¹ 
 
-tm-subst : ∀ {α n τ} (Δ₁ Δ₂ : Context)-> Term Δ₂ α -> Term (Δ₁ ++ L.[ (n , α ) ] ++ Δ₂) τ -> Term (Δ₁ ++ Δ₂) τ
+
+tm-subst : ∀ {τ n₁ n₂} {x : Variable} (Δ₁ : Context n₁) (Δ₂ : Context n₂)-> Term Δ₂ (ty x) -> Term (Δ₁ ++ [ x ] ++ Δ₂) τ -> Term (Δ₁ ++ Δ₂) τ
 tm-subst Δ₁ Δ₂ v （） = （）
 tm-subst Δ₁ Δ₂ v True = True
 tm-subst Δ₁ Δ₂ v False = False
 tm-subst Δ₁ Δ₂ v (Id t) = Id (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (unId t) = unId (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (Var l x) = var-subst l Δ₁ Δ₂ v x
+tm-subst {x = x} Δ₁ Δ₂ v (Var l y) = var-subst x l Δ₁ Δ₂ v y
 tm-subst Δ₁ Δ₂ v (Abs n' t) = Abs n' (tm-subst (_ ∷ Δ₁) Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (App t t₁) = App (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
 tm-subst Δ₁ Δ₂ v (If t Then t₁ Else t₂) = If (tm-subst Δ₁ Δ₂ v t) Then (tm-subst Δ₁ Δ₂ v t₁) Else (tm-subst Δ₁ Δ₂ v t₂)
@@ -125,8 +129,8 @@ tm-subst Δ₁ Δ₂ v (fork x t) = fork x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (deepDup x) = deepDup x  -- x is free
 tm-subst Δ₁ Δ₂ v ∙ = ∙
 
-subst : ∀ {Δ α β n} -> Term Δ α -> Term ((n , α) ∷ Δ) β -> Term Δ β
-subst {Δ} v t = tm-subst [] Δ v t
+subst : ∀ {β n} {Δ : Context n} {x : Variable}-> Term Δ (ty x) -> Term (x ∷ Δ) β -> Term Δ β
+subst {Δ = Δ} v t = tm-subst [] Δ v t
 
 -- -- Substs t ns ns' t' applies the substitution t [ n / Var n' ] consecutively
 -- -- for every n ∈ ns and n' ∈ ns' and returns the resulting term t'
@@ -141,16 +145,17 @@ subst {Δ} v t = tm-subst [] Δ v t
 -- transform the input type (first indexed) in the output type (second
 -- index).
 data Cont : Ty -> Ty -> Set where
- Var : ∀ {π τ₁ τ₂} {n : ℕ} -> (n , τ₁) ∈ π -> Cont (τ₁ => τ₂) τ₂
+ Var : ∀ {τ₁ τ₂ n} {π : Context n} -> (x : Fin n) -> Cont (τ₁ => τ₂) τ₂
  # : ∀ {τ} -> Label -> ℕ -> Cont τ τ
- Then_Else_ : ∀ {τ π} -> Term π τ -> Term π τ -> Cont Bool τ
- Bind :  ∀ {τ₁ τ₂ l π} -> Term π (τ₁ => Mac l τ₂) -> Cont (Mac l τ₁) (Mac l τ₂)
+ Then_Else_ : ∀ {τ n} {π : Context n} -> Term π τ -> Term π τ -> Cont Bool τ
+ Bind :  ∀ {τ₁ τ₂ l n} {π : Context n} -> Term π (τ₁ => Mac l τ₂) -> Cont (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l h τ} (p : l ⊑ h) -> Cont (Labeled l τ) (Mac h τ)
  unId : ∀ {τ} -> Cont (Id τ) τ
 
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
 -- by an input type and an output type.
 -- It transforms the former in the latter according to the continuations.
+-- TODO can we remove the label if we State is already labeled?
 data Stack (l : Label) : Ty -> Ty -> Set where
  [] : ∀ {τ} -> Stack l τ τ
  _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont τ₁ τ₂ -> Stack l τ₂ τ₃ -> Stack l τ₁ τ₃
@@ -160,7 +165,7 @@ data Stack (l : Label) : Ty -> Ty -> Set where
 
 -- TODO with this lightweight representation l might not be resolved
 -- A partial mapping from variables to well-typed terms
-Env : Label -> (π : Context) -> Set
+Env : ∀ {n} -> Label -> (π : Context n) -> Set
 Env l π = (n : ℕ) -> ∃ (λ τ -> Maybe (Term π τ))
 
 -- data Env (l : Label) : Context -> Set where
@@ -168,34 +173,33 @@ Env l π = (n : ℕ) -> ∃ (λ τ -> Maybe (Term π τ))
 --   _∷_ : ∀ {π τ} -> (nt : ℕ × Maybe (Term π τ)) -> Env l π -> Env l ((proj₁ nt , τ) ∷ π)
 --   ∙ : ∀ {π} -> Env l π
 
--- TODO remove: Probably not needed
-_[_↦ᴬ_] : ∀ {π₁ π₂ τ l} -> Env l π₁ -> ℕ -> Maybe (Term π₂ τ) × π₁ ⊆ˡ π₂ -> Env l π₂
-_[_↦ᴬ_] M n₁ (mt , p) n₂ with n₁ Data.Nat.≟ n₂
-_[_↦ᴬ_] M n₁ (mt , p) .n₁ | yes refl = _ , mt
-_[_↦ᴬ_] M n₁ (_ , p) n₂ | no ¬p with M n₁
-_[_↦ᴬ_] M n₁ (_ , p) n₂ | no ¬p | τ , mt = τ , (Data.Maybe.map (flip wken p) mt)
-
-_[_↦_] : ∀ {π τ l} -> Env l π -> ℕ -> Maybe (Term π τ) -> Env l π
-_[_↦_] {l = l} M n₁ mt = _[_↦ᴬ_] {l = l} M n₁ (mt  , refl-⊆ˡ)
+_[_↦_] : ∀ {τ l n} {π : Context n} -> Env l π -> ℕ -> Maybe (Term π τ) -> Env l π
+_[_↦_] {l = l} M n₁ mt n₂ with n₁ ≟ᴺ n₂
+_[_↦_] M n₁ mt .n₁ | yes refl = _ , mt
+_[_↦_] M n₁ mt n₂ | no ¬p = M n₂
 
 -- Remove a binding from the environment
-_-[_] : ∀ {π l} -> Env l π -> ℕ -> Env l π
-_-[_] Γ n₁ n₂ with n₁ Data.Nat.≟ n₂
+_-[_] : ∀ {n l} {π : Context n} -> Env l π -> ℕ -> Env l π
+_-[_] Γ n₁ n₂ with n₁ ≟ᴺ n₂
 _-[_] Γ n₁ .n₁ | yes refl = proj₁ (Γ n₁) , nothing 
 _-[_] Γ n₁ n₂ | no ¬p = Γ n₂
 
-_↦_∈_ : ∀ {τ l π} -> ℕ -> Term π τ -> Env l π -> Set
-_↦_∈_ {τ} n t Γ = Γ n ≡ τ , just t
+_↦_∈_ : ∀ {τ l n} {π : Context n} -> ℕ -> Term π τ -> Env l π -> Set
+_↦_∈_ {τ} n t Γ = Γ n ≡ (τ , just t)
 
 --------------------------------------------------------------------------------
 
+-- Exists context (hides index n) 
+∃ᶜ : (P : ∀ {n} -> Context n -> Set) -> Set
+∃ᶜ P = ∃ (λ n -> Σ (Context n) P)
+
 Heap : Set 
-Heap = (l : Label) -> ∃ (λ π -> Env l π)
+Heap = (l : Label) -> ∃ᶜ (λ π -> Env l π)
 
 -- Update
-_[_↦_]ᴴ : ∀ {π} -> Heap -> (l : Label) -> Env l π -> Heap
-_[_↦_]ᴴ Γ l₁ M l₂ with l₁ ≟ l₂
-_[_↦_]ᴴ Γ l₁ M .l₁ | yes refl = _ , M
+_[_↦_]ᴴ : ∀ {n} {π : Context n} -> Heap -> (l : Label) -> Env l π -> Heap
+_[_↦_]ᴴ Γ l₁ M l₂ with l₁ ≟ᴸ l₂
+_[_↦_]ᴴ Γ l₁ M .l₁ | yes refl = _ , _ , M
 _[_↦_]ᴴ Γ l₁ M l₂ | no ¬p = Γ l₂
 
 --------------------------------------------------------------------------------
@@ -205,6 +209,6 @@ _[_↦_]ᴴ Γ l₁ M l₂ | no ¬p = Γ l₂
 -- term (thread) executed.
 
 data State (l : Label) : Ty -> Set where
-  ⟨_,_,_⟩ : ∀ {π τ₁ τ₂} -> Heap -> Term π τ₁ -> Stack l τ₁ τ₂ -> State l τ₂
+  ⟨_,_,_⟩ : ∀ {τ₁ τ₂ n} {π : Context n} -> Heap -> Term π τ₁ -> Stack l τ₁ τ₂ -> State l τ₂
 
 --------------------------------------------------------------------------------
