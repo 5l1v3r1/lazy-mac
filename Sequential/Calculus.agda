@@ -50,7 +50,7 @@ data Term {n : ℕ} (π : Context n) : Ty -> Set where
   -- Concurrency
   fork : ∀ {l h} -> l ⊑ h -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
-  deepDup : ∀ {τ} -> Variable -> Term π τ  -- The variable here is unguarded
+  deepDup : (x : Variable) -> Term π (ty x)  -- This variable is unguarded
 
   -- Represent sensitive information that has been erased.
   ∙ : ∀ {{τ}} -> Term π τ
@@ -189,7 +189,7 @@ _↦_∈_ {τ} n t Γ = Γ n ≡ (τ , just t)
 
 --------------------------------------------------------------------------------
 
--- Exists context (hides index n) 
+-- Exists Context, (hides index n) 
 ∃ᶜ : (P : ∀ {n} -> Context n -> Set) -> Set
 ∃ᶜ P = ∃ (λ n -> Σ (Context n) P)
 
