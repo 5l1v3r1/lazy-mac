@@ -5,11 +5,11 @@ module Sequential.Calculus {- (𝓛 : Lattice) -} where
 open import Types
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 open import Data.List.All
-open import Data.Nat using (ℕ ; zero ; suc ; _≟_) public
+open import Data.Nat using (ℕ ; zero ; suc) public
 import Data.List as L
 open import Data.Maybe
 open import Data.Product
-
+open import Function
 -- The basic Term π τ is a term that has type τ in the context π
 -- π is extended by lambda abstractions, which add the type and name of their argument to it.
 -- I am still using names (ℕ) for variables, even though they are isomorphic to a membership proof
@@ -24,7 +24,7 @@ data Term (π : Context) : Ty -> Set where
   Id : ∀ {τ} -> Term π τ -> Term π (Id τ)
   unId : ∀ {τ} -> Term π (Id τ) -> Term π τ
 
-  Var : ∀ {n τ} -> (l : Label) -> (n , τ) ∈ π -> Term π τ
+  Var : ∀ {τ n} -> (l : Label) -> (n , τ) ∈ π -> Term π τ
   Abs : ∀ {α β} -> (n : ℕ) -> Term ((n , α) ∷ π) β -> Term π (α => β)
   App : ∀ {α β} -> Term π (α => β) -> Term π α -> Term π β
 
@@ -49,7 +49,7 @@ data Term (π : Context) : Ty -> Set where
   -- Concurrency
   fork : ∀ {l h} -> l ⊑ h -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
-  deepDup : ∀ {τ} -> ℕ -> Term π τ  -- The variable here could be free
+  deepDup : ∀ {τ} -> ℕ -> Term π τ  -- The variable here is unguarded
 
   -- Represent sensitive information that has been erased.
   ∙ : ∀ {{τ}} -> Term π τ
@@ -145,7 +145,7 @@ data Cont : Ty -> Ty -> Set where
  # : ∀ {τ} -> Label -> ℕ -> Cont τ τ
  Then_Else_ : ∀ {τ π} -> Term π τ -> Term π τ -> Cont Bool τ
  Bind :  ∀ {τ₁ τ₂ l π} -> Term π (τ₁ => Mac l τ₂) -> Cont (Mac l τ₁) (Mac l τ₂)
- unlabel : ∀ {l h τ} (p : l ⊑ h) -> Cont (Res l τ) (Mac h τ)
+ unlabel : ∀ {l h τ} (p : l ⊑ h) -> Cont (Labeled l τ) (Mac h τ)
  unId : ∀ {τ} -> Cont (Id τ) τ
 
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
@@ -158,39 +158,47 @@ data Stack (l : Label) : Ty -> Ty -> Set where
 
 --------------------------------------------------------------------------------
 
-data Map (l : Label) : Context -> Set where
-  [] : Map l []
-  _∷_ : ∀ {π τ} -> (nt : ℕ × Maybe (Term π τ)) -> Map l π -> Map l ((proj₁ nt , τ) ∷ π)
-  ∙ : ∀ {π} -> Map l π
+-- TODO with this lightweight representation l might not be resolved
+-- A partial mapping from variables to well-typed terms
+Env : Label -> (π : Context) -> Set
+Env l π = (n : ℕ) -> ∃ (λ τ -> Maybe (Term π τ))
 
--- data Heap : List Label -> Set where
---   [] : Heap []
---   _∷_ : ∀ {l ls π} -> Map l π -> Heap ls -> Heap (l ∷ ls)
+-- data Env (l : Label) : Context -> Set where
+--   [] : Env l []
+--   _∷_ : ∀ {π τ} -> (nt : ℕ × Maybe (Term π τ)) -> Env l π -> Env l ((proj₁ nt , τ) ∷ π)
+--   ∙ : ∀ {π} -> Env l π
 
-Heap :  Set 
-Heap = (l : Label) -> ∃ (λ π -> Map l π)
+-- TODO remove: Probably not needed
+_[_↦ᴬ_] : ∀ {π₁ π₂ τ l} -> Env l π₁ -> ℕ -> Maybe (Term π₂ τ) × π₁ ⊆ˡ π₂ -> Env l π₂
+_[_↦ᴬ_] M n₁ (mt , p) n₂ with n₁ Data.Nat.≟ n₂
+_[_↦ᴬ_] M n₁ (mt , p) .n₁ | yes refl = _ , mt
+_[_↦ᴬ_] M n₁ (_ , p) n₂ | no ¬p with M n₁
+_[_↦ᴬ_] M n₁ (_ , p) n₂ | no ¬p | τ , mt = τ , (Data.Maybe.map (flip wken p) mt)
 
-postulate _≟ᴸ_ : (l₁ l₂ : Label) -> Dec (l₁ ≡ l₂)
+_[_↦_] : ∀ {π τ l} -> Env l π -> ℕ -> Maybe (Term π τ) -> Env l π
+_[_↦_] {l = l} M n₁ mt = _[_↦ᴬ_] {l = l} M n₁ (mt  , refl-⊆ˡ)
 
-update : ∀ {l π} -> Heap -> Map l π -> Heap
-update {l₁} Γ M l₂ with l₁ ≟ᴸ l₂
-update Γ M l | yes refl = _ , M
-update Γ M l₂ | no ¬p = Γ l₂
+-- Remove a binding from the environment
+_-[_] : ∀ {π l} -> Env l π -> ℕ -> Env l π
+_-[_] Γ n₁ n₂ with n₁ Data.Nat.≟ n₂
+_-[_] Γ n₁ .n₁ | yes refl = proj₁ (Γ n₁) , nothing 
+_-[_] Γ n₁ n₂ | no ¬p = Γ n₂
 
-erase-Map : ∀ {π l} -> Label -> Map l π -> Map l π
-erase-Map {l = l} lₐ M with lₐ ⊑? l
-erase-Map lₐ M | yes p = M
-erase-Map lₐ M | no ¬p = ∙
+_↦_∈_ : ∀ {τ l π} -> ℕ -> Term π τ -> Env l π -> Set
+_↦_∈_ {τ} n t Γ = Γ n ≡ τ , just t
 
-erase : Label -> Heap -> Heap
-erase lₐ Γ l = _ , erase-Map lₐ (proj₂ (Γ l))
+--------------------------------------------------------------------------------
 
-lemma : ∀ {Γ lₐ l } ->
-          let π , M = Γ l in erase lₐ Γ l ≡ (π , erase-Map lₐ M )
-lemma {Γ} {lₐ} {l} = refl
+Heap : Set 
+Heap = (l : Label) -> ∃ (λ π -> Env l π)
 
-lemma₂ : ∀ {l π} {M : Map l π } -> (Γ : Heap) -> update Γ M ≡ update Γ M
-lemma₂ Γ = refl
+-- Update
+_[_↦_]ᴴ : ∀ {π} -> Heap -> (l : Label) -> Env l π -> Heap
+_[_↦_]ᴴ Γ l₁ M l₂ with l₁ ≟ l₂
+_[_↦_]ᴴ Γ l₁ M .l₁ | yes refl = _ , M
+_[_↦_]ᴴ Γ l₁ M l₂ | no ¬p = Γ l₂
+
+--------------------------------------------------------------------------------
 
 -- Sestoft's Abstract Lazy Machine State
 -- The state is labeled to keep track of the security level of the

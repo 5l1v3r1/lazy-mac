@@ -9,6 +9,7 @@ record Lattice : Set₁ where
     Label : Set
     _⊑_ : Label -> Label -> Set
     _⊑?_ : (l₁ l₂ : Label) -> Dec (l₁ ⊑ l₂)
+    _≟_ : (l₁ l₂ : Label) -> Dec (l₁ ≡ l₂)
 
     -- Even though this lemma is not strictly necessary it does simplify
     -- some proofs.

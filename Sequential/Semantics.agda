@@ -6,7 +6,6 @@ open import Types
 open import Sequential.Calculus
 open import Data.Maybe
 open import Data.Product
-open import Data.Map
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 
 --------------------------------------------------------------------------------
@@ -25,49 +24,56 @@ open import Relation.Nullary.Decidable using (⌊_⌋)
 -- however they could be after α-conversion (we simply don't want to deal with that,
 -- and assume they have already been α-converted).
 -- Note that stuck terms will be dealt with in the concurrent semantics.
-data _⇝_ {l : Label} {ls : List Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
+data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
  App₁ : ∀ {τ₁ τ₂ τ₃ Γ} ->
-          let π' , M = Γ l  -- Here I am not sure it should be l
-              n = suc (length π') in {t₁ : Term π' (τ₁ => τ₂)} {t₂ : Term π' τ₁} {S : Stack l τ₂ τ₃}  ->
-          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ update Γ ((n , just t₂) ∷ M) , t₁ , (Var {(n , _) ∷ π'} Here) ∷ S ⟩
+          let π , M = Γ l  -- FIX Here I am not sure it should be l
+              n = suc (length π) in {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃}  ->
+          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ [ l ↦ M [ n ↦ just t₂ ] ]ᴴ , t₁ , (Var {(n , _) ∷ π} Here) ∷ S ⟩
 
--- ∀ {Γ Γ' S t₁ t₂ n} -> Γ' ≔ᴬ Γ [ n ↦ (l , t₂) ]
---                            -> ⟨ Γ , App t₁ t₂ , S ⟩ ⇝ ⟨ Γ' , t₁ , Var n ∷ S ⟩
-
--- App₂ : ∀ {Γ n m t t' S} -> Subst m (Var n) t t' -> ⟨ Γ , Abs m t , Var n ∷ S ⟩ ⇝ ⟨ Γ , t' , S ⟩
+ App₂ : ∀ {Γ n m α β π τ'} {S : Stack l β τ'}  (x∈π : (n , α) ∈ π) {t : Term ((m , α) ∷ π) β} ->
+          ⟨ Γ , Abs m t , Var {n = n} x∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var {!!} x∈π) t , S ⟩
+          -- TODO: What should be the label here? Should I put the label also in the stack 
  
- -- Var₁ : ∀ {Γ Γ' n t S l'} -> ¬ (Value t)
- --                          -> Γ ≔ᴿ Γ' [ n ↦ (l' , t) ]
- --                          -> ⟨ Γ' , Var n , S ⟩ ⇝ ⟨ Γ , t , (# l n) ∷ S ⟩
+ Var₁ : ∀ {Γ n l' τ τ'} {S : Stack l τ τ'} ->
+          let π , M = Γ l' in {t : Term π τ} ->
+          (x∈π : (n , τ) ∈ π) -- Can we derive this proof object from n ↦ t ∈ M ?
+        -> n ↦ t ∈ M
+        ->   ¬ (Value t)
+        -> ⟨ Γ , Var l' x∈π , S ⟩ ⇝ ⟨ Γ [ l' ↦ M -[ n ] ]ᴴ , t , (# l n) ∷ S ⟩ -- Here we should prove that l == l'
 
- -- Var₁' : ∀ {Γ n v S l'} -> Value v
- --                           -> n ↦ (l' , v) ∈ Γ
- --                           -> ⟨ Γ , Var n , S ⟩ ⇝ ⟨ Γ , v , S ⟩
+ Var₁' : ∀ {n τ Γ τ'} {S : Stack l _ τ'} ->
+         let π , M = Γ l in {v : Term π τ} {x∈π : (n , τ) ∈ π}
+                      -> Value v
+                      -> n ↦ v ∈ M
+                      -> ⟨ Γ , Var l x∈π , S ⟩ ⇝ ⟨ Γ , v , S ⟩
 
- -- Var₂ : ∀ {Γ Γ' n v S} -> Γ' ≔ᴾ Γ [ n ↦ (l , v) ]
- --                       -> Value v
- --                       -> ⟨ Γ , v , (# l n) ∷ S ⟩ ⇝ ⟨ Γ' , v , S ⟩
+ Var₂ : ∀ {Γ n τ τ' l'} {S : Stack l τ τ'} ->
+        let π , M = Γ l' in {v : Term π τ}
+                       -> Value v
+                       -> ⟨ Γ , v , (# l' n) ∷ S ⟩ ⇝ ⟨ Γ [ l' ↦ M [ n ↦ just v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
 
- -- If : ∀ {Γ t₁ t₂ t₃ S} -> ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩
- -- IfTrue : ∀ {Γ t₂ t₃ S} -> ⟨ Γ , True , (Then t₂ Else t₃) ∷ S ⟩ ⇝ ⟨ Γ , t₂ , S ⟩
- -- IfFalse : ∀ {Γ t₂ t₃ S} -> ⟨ Γ , False , (Then t₂ Else t₃) ∷ S ⟩ ⇝ ⟨ Γ , t₃ , S ⟩
+ If : ∀ {Γ π τ τ'} {S : Stack l τ τ'} {t₁ : Term π Bool} {t₂ t₃ : Term π τ} ->
+        ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩
 
- -- Return : ∀ {Γ t S} -> ⟨ Γ , Return l t , S ⟩ ⇝ ⟨ Γ , Mac l t , S ⟩
- -- Bind₁ : ∀ {Γ t₁ t₂ S} -> ⟨ Γ , Bind l t₁ t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (Bind l t₂ ∷ S ) ⟩
- -- Bind₂ : ∀ {Γ t₁ t₂ S} -> ⟨ Γ , Mac l t₁ , Bind l t₂ ∷ S ⟩ ⇝ ⟨ Γ , App t₂ t₁ , S  ⟩
+ IfTrue : ∀ {Γ π τ τ'} {S : Stack l τ τ'} {t₂ t₃ : Term π τ} -> ⟨ Γ , True {π}, (Then t₂ Else t₃) ∷ S ⟩ ⇝ ⟨ Γ , t₂ , S ⟩
+ IfFalse : ∀ {Γ π τ τ'} {S : Stack l τ τ'} {t₂ t₃ : Term π τ} -> ⟨ Γ , False {π}, (Then t₂ Else t₃) ∷ S ⟩ ⇝ ⟨ Γ , t₂ , S ⟩
 
- -- Label' : ∀ {Γ t S h} -> (p : l ⊑ h) -> ⟨ Γ , label p t , S ⟩ ⇝ ⟨ Γ , (Return l (Res h (Id t))) , S ⟩
+ Return : ∀ {Γ π τ τ'} {S : Stack l _ τ'} {t : Term π τ} -> ⟨ Γ , Return l t , S ⟩ ⇝ ⟨ Γ , Mac l t , S ⟩
+ Bind₁ : ∀ {Γ π α β τ'} {S : Stack l _ τ'} {t₁ : Term π (Mac l α)} {t₂ : Term π (α => Mac l β)} -> ⟨ Γ , t₁ >>= t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (Bind t₂ ∷ S ) ⟩
+ Bind₂ : ∀ {Γ π α β τ'} {S : Stack l _ τ'} {t₁ : Term π α} {t₂ : Term π (α => (Mac l β))} -> ⟨ Γ , Mac l t₁ , Bind t₂ ∷ S ⟩ ⇝ ⟨ Γ , App t₂ t₁ , S ⟩
 
- -- Unlabel₁ : ∀ {Γ t S l'} -> (p : l' ⊑ l) -> ⟨ Γ , unlabel p t , S ⟩ ⇝ ⟨ Γ , t , unlabel p ∷ S ⟩
- -- Unlabel₂ : ∀ {Γ t S l'} -> (p : l' ⊑ l) -> ⟨ Γ , Res l' t , unlabel p ∷ S ⟩ ⇝ ⟨ Γ , Return l (unId t) , S ⟩
+ Label' : ∀ {Γ π h τ τ'} {S : Stack l _ τ'} {t : Term π τ} -> (p : l ⊑ h) -> ⟨ Γ , label p t , S ⟩ ⇝ ⟨ Γ , (Return l (Res h (Id t))) , S ⟩
 
- -- UnId₁ : ∀ {Γ t S} -> ⟨ Γ , unId t , S ⟩ ⇝ ⟨ Γ , t , unId ∷ S ⟩ 
- -- UnId₂ : ∀ {Γ t S} -> ⟨ Γ , Id t , unId ∷ S ⟩ ⇝ ⟨ Γ , t , S ⟩ 
+ Unlabel₁ : ∀ {Γ π τ τ' l'} {S : Stack l _ τ'} {t : Term π (Labeled l' τ)} -> (p : l' ⊑ l) -> ⟨ Γ , unlabel p t , S ⟩ ⇝ ⟨ Γ , t , unlabel p ∷ S ⟩
+ Unlabel₂ : ∀ {Γ π τ τ' l'} {S : Stack l _ τ'} {t : Term π (Id τ)} -> (p : l' ⊑ l) -> ⟨ Γ , Res l' t , unlabel p ∷ S ⟩ ⇝ ⟨ Γ , Return l (unId t) , S ⟩
 
- -- Fork : ∀ {Γ t S h} -> (p : l ⊑ h) -> ⟨ Γ , (fork p t) , S ⟩ ⇝ ⟨ Γ , Return l （） , S ⟩ 
+ UnId₁ : ∀ {Γ π τ τ'} {S : Stack l τ τ'} {t : Term π (Id τ)} -> ⟨ Γ , unId t , S ⟩ ⇝ ⟨ Γ , t , unId ∷ S ⟩ 
+ UnId₂ : ∀ {Γ π τ τ'} {S : Stack l τ τ'} {t : Term π τ} -> ⟨ Γ , Id t , unId ∷ S ⟩ ⇝ ⟨ Γ , t , S ⟩ 
 
- -- Hole : ∀ {Γ S} -> ⟨ Γ , ∙ , S ⟩ ⇝ ⟨ Γ , ∙ , S ⟩
+ Fork : ∀ {Γ π τ h} {S : Stack l _ τ} {t : Term π (Mac h _)} -> (p : l ⊑ h) -> ⟨ Γ , (fork p t) , S ⟩ ⇝ ⟨ Γ , Return {π} l （） , S ⟩ 
+
+ Hole : ∀ {Γ} {τ₁ τ₂ π₁ π₂}  -> ⟨ Γ , ∙ {π₁}, ∙ {l} {τ₁} {τ₂} ⟩ ⇝ ⟨ Γ , ∙ {π₂} , ∙ {l} {τ₁} {τ₂} ⟩
 
  -- DeepDup : ∀ {Γ₁ Γ₂ Γ₃ n n' ns' S l' t t'} -> n ↦ (l' , t) ∈ Γ₁
  --                                -> Substs t (ufv t) ns' t'
