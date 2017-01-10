@@ -25,7 +25,7 @@ data Term {n : ℕ} (π : Context n) : Ty -> Set where
   Id : ∀ {τ} -> Term π τ -> Term π (Id τ)
   unId : ∀ {τ} -> Term π (Id τ) -> Term π τ
 
-  Var : (l : Label) -> (x : Fin n) -> Term π (ty (lookup x π))  -- Here the label is to be looked up in the env
+  Var : ∀ {x} -> (x∈π : x ∈ π) -> Term π (ty x)
   Abs : ∀ {β} -> (x : Variable) -> Term (x ∷ π) β -> Term π (ty x => β)
   App : ∀ {α β} -> Term π (α => β) -> Term π α -> Term π β
 
@@ -74,8 +74,7 @@ wken True p = True
 wken False p = False
 wken (Id t) p = Id (wken t p)
 wken (unId t) p = unId (wken t p)
-wken (Var l x) p with wken-∈ x p
-... | y , eq rewrite eq = Var l y
+wken (Var x) p = Var (wken-∈ p x)
 wken (Abs n t) p = Abs n (wken t (cons p))
 wken (App t t₁) p = App (wken t p) (wken t₁ p)
 wken (If t Then t₁ Else t₂) p = If (wken t p) Then (wken t₁ p) Else (wken t₂ p)
@@ -97,13 +96,12 @@ _↑¹ : ∀ {α β n} {Δ : Context n} -> Term Δ α -> Term (β ∷ Δ) α
 t ↑¹ = wken t (drop refl-⊆ˡ)
 
 -- Performs the variable-term substitution.
-var-subst : ∀ {n₁ n₂} (x : Variable) (l : Label) (Δ₁ : Context n₁) (Δ₂ : Context n₂)
-            -> Term Δ₂ (ty x) -> (y : Fin (n₁ + (suc n₂))) -> Term (Δ₁ ++ Δ₂) (ty (lookup y (Δ₁ ++ [ x ] ++ Δ₂)))
-var-subst x l [] Δ₂ v zero = v
-var-subst x l [] Δ₂ v (suc y) = Var l y
-var-subst x l (x₁ ∷ Δ₁) Δ₂ v zero = Var l zero
-var-subst x l (x₁ ∷ Δ₁) Δ₂ v (suc y) = (var-subst x l Δ₁ Δ₂ v y) ↑¹ 
-
+var-subst : ∀ {n₁ n₂} {x y : Variable} (Δ₁ : Context n₁) (Δ₂ : Context n₂)
+            -> Term Δ₂ (ty x) -> y ∈ (Δ₁ ++ [ x ] ++ Δ₂) -> Term (Δ₁ ++ Δ₂) (ty y)
+var-subst [] Δ₂ v here = v
+var-subst [] Δ₂ v (there p) = Var p
+var-subst (._ ∷ Δ₁) Δ₂ v here = Var here
+var-subst (x ∷ Δ₁) Δ₂ v (there p) = (var-subst Δ₁ Δ₂ v p) ↑¹
 
 tm-subst : ∀ {τ n₁ n₂} {x : Variable} (Δ₁ : Context n₁) (Δ₂ : Context n₂)-> Term Δ₂ (ty x) -> Term (Δ₁ ++ [ x ] ++ Δ₂) τ -> Term (Δ₁ ++ Δ₂) τ
 tm-subst Δ₁ Δ₂ v （） = （）
@@ -111,7 +109,7 @@ tm-subst Δ₁ Δ₂ v True = True
 tm-subst Δ₁ Δ₂ v False = False
 tm-subst Δ₁ Δ₂ v (Id t) = Id (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (unId t) = unId (tm-subst Δ₁ Δ₂ v t)
-tm-subst {x = x} Δ₁ Δ₂ v (Var l y) = var-subst x l Δ₁ Δ₂ v y
+tm-subst Δ₁ Δ₂ v (Var y∈π) = var-subst Δ₁ Δ₂ v y∈π
 tm-subst Δ₁ Δ₂ v (Abs n' t) = Abs n' (tm-subst (_ ∷ Δ₁) Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (App t t₁) = App (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
 tm-subst Δ₁ Δ₂ v (If t Then t₁ Else t₂) = If (tm-subst Δ₁ Δ₂ v t) Then (tm-subst Δ₁ Δ₂ v t₁) Else (tm-subst Δ₁ Δ₂ v t₂)
@@ -145,8 +143,8 @@ subst {Δ = Δ} v t = tm-subst [] Δ v t
 -- transform the input type (first indexed) in the output type (second
 -- index).
 data Cont : Ty -> Ty -> Set where
- Var : ∀ {τ₁ τ₂ n} {π : Context n} -> (x : Fin n) -> Cont (τ₁ => τ₂) τ₂
- # : ∀ {τ} -> Label -> ℕ -> Cont τ τ
+ Var : ∀ {τ₂ n} {π : Context n} {x : Variable} -> (x∈π : x ∈ π) -> Cont (ty x => τ₂) τ₂
+ # : (x : Variable) -> Cont (ty x) (ty x)
  Then_Else_ : ∀ {τ n} {π : Context n} -> Term π τ -> Term π τ -> Cont Bool τ
  Bind :  ∀ {τ₁ τ₂ l n} {π : Context n} -> Term π (τ₁ => Mac l τ₂) -> Cont (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l h τ} (p : l ⊑ h) -> Cont (Labeled l τ) (Mac h τ)

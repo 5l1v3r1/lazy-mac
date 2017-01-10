@@ -91,18 +91,17 @@ data _⊆ˡ_ : ∀ {n m} -> Context n -> Context m -> Set where
   cons : ∀ {α n m} {π₁ : Context n} {π₂ : Context m} -> π₁ ⊆ˡ π₂ -> (α ∷ π₁) ⊆ˡ (α ∷ π₂)
   drop : ∀ {α n m} {π₁ : Context n} {π₂ : Context m} -> π₁ ⊆ˡ π₂ -> π₁ ⊆ˡ (α ∷ π₂)
 
+infixr 2 _⊆ˡ_
+
 refl-⊆ˡ : ∀ {n} {π : Context n} -> π ⊆ˡ π
 refl-⊆ˡ {_} {[]} = base
 refl-⊆ˡ {_} {x ∷ π} = cons refl-⊆ˡ
 
 
-wken-∈ : ∀ {n m} {π₁ : Context n} {π₂ : Context m} -> (x : Fin n) -> π₁ ⊆ˡ π₂ -> Σ (Fin m) (λ y -> lookup x π₁ ≡ lookup y π₂)
-wken-∈ () base
-wken-∈ zero (cons p) = zero , refl
-wken-∈ (suc x) (cons p) = wken-∈ x (drop p)
-wken-∈ x (drop p) with wken-∈ x p
-... | y , eq = suc y , eq
-
-infixr 2 _⊆ˡ_
+wken-∈ : ∀ {n m x} {π₁ : Context n} {π₂ : Context m} -> π₁ ⊆ˡ π₂ -> x ∈ π₁ -> x ∈ π₂
+wken-∈ base ()
+wken-∈ (cons p) here = here
+wken-∈ (cons p) (there q) = there (wken-∈ p q)
+wken-∈ (drop p) q = there (wken-∈ p q)
 
 --------------------------------------------------------------------------------
