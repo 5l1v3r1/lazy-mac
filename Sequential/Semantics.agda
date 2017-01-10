@@ -29,29 +29,31 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
  App₁ : ∀ {τ₁ τ₂ τ₃ Γ} ->
           let n , π , M = Γ l in -- FIX Here it could be any l' ⊑ l, it should be in App
           {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} -> 
-          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ [ l ↦ M [ suc n ↦ just t₂ ] ]ᴴ , t₁ , (Var {π = {!!} ∷ π} zero) ∷ S ⟩
+          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ [ l ↦ M [ suc n ↦ just t₂ ] ]ᴴ , t₁ , (Var {π = ⟪ suc n , τ₁ , l ⟫ ∷ π} here) ∷ S ⟩
 
- App₂ : ∀ {Γ n m α β π τ'} {S : Stack l β τ'}  (x∈π : {!!} {- (n , α) ∈ π) -}) {t : Term {!!} {!!}} -> -- ((m , α) ∷ π) β} ->
-          ⟨ Γ , Abs m t , Var {n = n} x∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var {!!} x∈π) {!!} , S ⟩
+ App₂ : ∀ {Γ n m β τ'} {π : Context n} {S : Stack l β τ'} {x y : Variable}
+           (y∈π : y ∈ π) (x∈π : ⟪ m , (ty y) , (lbl y) ⟫ ∈ π) {t : Term (y ∷ π) β} -> 
+          ⟨ Γ , Abs y t , Var x∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var x∈π) t , S ⟩
           -- TODO: What should be the label here? Should I put the label also in the stack 
  
- Var₁ : ∀ {Γ n l' τ τ'} {S : Stack l {!!} τ'} ->
-          let n , π , M = Γ l' in {t : Term π τ} ->
-          (x∈π : {!!}) -- (n , τ) ∈ π) -- Can we derive this proof object from n ↦ t ∈ M ? -- TODO use index lookup in π
-        -> n ↦ t ∈ M
+ Var₁ : ∀ {Γ τ'} {x : Variable} {S : Stack l (ty x) τ'} ->
+          let n , π , M = Γ (lbl x) in {t : Term π (ty x)} ->
+          (x∈π : x ∈ π) -- Can we derive this proof object from n ↦ t ∈ M ? -- TODO use index lookup in π
+        -> (num x) ↦ t ∈ M
         ->   ¬ (Value t)
-        -> ⟨ Γ , Var l' x∈π , {!!} ⟩ ⇝ ⟨ Γ [ l' ↦ M -[ n ] ]ᴴ , t , (# l n) ∷ S ⟩ -- Here we should prove that l == l'
+        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ [ (lbl x) ↦ M -[ (num x) ] ]ᴴ , t , (# x) ∷ S ⟩ -- Here we should prove that l == lbl x
 
- Var₁' : ∀ {n τ Γ τ'} {S : Stack l _ τ'} ->
-         let n , π , M = Γ l in {v : Term π τ} -- {x∈π : (n , τ) ∈ π}
+ Var₁' : ∀ {Γ τ'} {x : Variable} {S : Stack l (ty x) τ'} -> 
+         let n , π , M = Γ l in {v : Term π (ty x)}
+                      -> (x∈π : x ∈ π)
                       -> Value v
-                      -> n ↦ v ∈ M
-                      -> ⟨ Γ , Var l {!!} , S ⟩ ⇝ ⟨ Γ , v , S ⟩
+                      -> (num x) ↦ v ∈ M
+                      -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ , v , S ⟩
 
- Var₂ : ∀ {Γ n τ τ' l'} {S : Stack l τ τ'} ->
-        let n , π , M = Γ l' in {v : Term π τ}
+ Var₂ : ∀ {Γ τ' l' x} {S : Stack l (ty x) τ'} ->
+        let n , π , M = Γ l' in {v : Term π (ty x)}
                        -> Value v
-                       -> ⟨ Γ , v , (# l' n) ∷ S ⟩ ⇝ ⟨ Γ [ l' ↦ M [ n ↦ just v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
+                       -> ⟨ Γ , v , (# x) ∷ S ⟩ ⇝ ⟨ Γ [ l' ↦ M [ (num x) ↦ just v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
 
  If : ∀ {Γ n τ τ'} {π : Context n} {S : Stack l τ τ'} {t₁ : Term π Bool} {t₂ t₃ : Term π τ} ->
         ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩
