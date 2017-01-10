@@ -198,6 +198,9 @@ _[_↦_] Γ v₁ t v₂ | no ¬p = Γ v₂
 _↦_∈_  : Variable -> Maybe Term -> Heap -> Set
 x ↦ mt ∈ Γ = Γ x ≡ mt
 
+fresh : Variable -> Heap -> Set
+fresh x Γ = x ↦ nothing ∈ Γ
+
 -- Continuation 
 data Cont : Set where
  Var : Variable -> Cont

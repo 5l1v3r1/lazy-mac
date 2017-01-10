@@ -64,7 +64,7 @@ data UFV : Term -> List ℕ -> Set where
 -- Note that stuck terms will be dealt with in the concurrent semantics.
 data _⇝_ {l : Label} : State l -> State l -> Set where
 
- App₁ : ∀ {Γ S t₁ t₂ n} -> -- Γ' ≔ᴬ Γ [ n ↦ (l , t₂) ]
+ App₁ : ∀ {Γ S t₁ t₂ n} -> fresh (l , n) Γ ->
                          ⟨ Γ , App t₁ t₂ , S ⟩ ⇝ ⟨ Γ [ l , n ↦ just t₂ ] , t₁ , Var (l , n ) ∷ S ⟩
 
  App₂ : ∀ {Γ n m t t' S} -> Subst m (Var n) t t' -> ⟨ Γ , Abs m t , Var n ∷ S ⟩ ⇝ ⟨ Γ , t' , S ⟩
@@ -106,12 +106,34 @@ data _⇝_ {l : Label} : State l -> State l -> Set where
  --                                -> ⟨ Γ₁ , (deepDup n) , S ⟩ ⇝ ⟨ Γ₃ , Var n' , S ⟩
 
 
+wken : ∀ {π t x τ₁ τ₂ Γ} -> ⊢ᴴ Γ ∷ π -> π ⊢ t ∷ τ₁ -> fresh x Γ -> π [ x ↦ τ₂ ]ᶜ ⊢ t ∷ τ₁ 
+wken Γ-π （） fx = （）
+wken Γ-π True fx = True
+wken Γ-π False fx = False
+wken Γ-π (If wt-t Then wt-t₁ Else wt-t₂) fx = If (wken Γ-π wt-t fx) Then (wken Γ-π wt-t₁ fx) Else (wken Γ-π wt-t₂ fx)
+wken Γ-π (Id wt-t) fx = {!!}
+wken Γ-π (unId wt-t) fx = {!!}
+wken {x = x} {Γ = Γ} (just x∈Γ t-τ) (Var p) fx with Γ x
+wken (just {lbl , num} x∈Γ t-τ) (Var {._} {lbl₁ , num₁} p) () | just x
+wken (just {lbl , num} x∈Γ t-τ) (Var {._} {lbl₁ , num₁} p) fx | nothing = Var {!p!}
+wken Γ-π (Abs wt-t) fx = {!!}
+wken Γ-π (App wt-t wt-t₁) fx = {!!}
+wken Γ-π (Mac wt-t) fx = {!!}
+wken Γ-π (Return wt-t) fx = {!!}
+wken Γ-π (Bind wt-t wt-t₁) fx = {!!}
+wken Γ-π (Res wt-t) fx = {!!}
+wken Γ-π (label wt-t) fx = {!!}
+wken Γ-π (label∙ wt-t) fx = {!!}
+wken Γ-π (unlabel wt-t) fx = {!!}
+wken Γ-π (fork wt-t) fx = {!!}
+wken Γ-π (deepDup x) fx = {!!}
+wken Γ-π ∙ fx = {!!}
 
 -- Type preservation
 ty-preservation : ∀ {l τ Γ₁ Γ₂ t₁ t₂} {S₁ S₂ : Stack l} ->
                    let s₁ = ⟨ Γ₁ , t₁ , S₁ ⟩
                        s₂ = ⟨ Γ₂ , t₂ , S₂ ⟩ in ⊢ˢ s₁ ∷ τ -> s₁ ⇝ s₂ -> ⊢ˢ s₂ ∷ τ
-ty-preservation ⟨ just x∈Γ t-τ , App t₂ t₄ , S ⟩ App₁ = ⟨ just {!x∈Γ!} {!!} , {!!} , (Var {!!} ∷ S) ⟩
+ty-preservation ⟨ just x∈Γ t-τ , App t₂ t₄ , S ⟩ (App₁ p) = ⟨ just {!x∈Γ!} {!!} , {!!} , (Var {!!} ∷ S) ⟩
 ty-preservation s (App₂ x) = {!!}
 ty-preservation s (Var₁ x∈Γ ¬val) = {!!}
 ty-preservation s (Var₁' val x∈Γ) = {!!}
