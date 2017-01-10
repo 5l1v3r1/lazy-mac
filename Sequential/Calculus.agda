@@ -161,31 +161,39 @@ data Stack (l : Label) : Ty -> Ty -> Set where
 
 --------------------------------------------------------------------------------
 
--- TODO with this lightweight representation l might not be resolved
--- A partial mapping from variables to well-typed terms
-Env : ∀ {n} -> Label -> (π : Context n) -> Set
-Env l π = (n : ℕ) -> ∃ (λ τ -> Maybe (Term π τ))
+RawEnv : {n : ℕ} -> (π : Context n) -> Set
+RawEnv π = (n : ℕ) -> ∃ (λ τ -> Maybe (Term π τ))
 
+_[_↦_]ᴿ : ∀ {τ n} {π : Context n} -> RawEnv π -> ℕ -> Maybe (Term π τ) -> RawEnv π
+_[_↦_]ᴿ M n₁ mt n₂ with n₁ ≟ᴺ n₂
+_[_↦_]ᴿ M n₁ mt .n₁ | yes refl = _ , mt
+_[_↦_]ᴿ M n₁ mt n₂ | no ¬p = M n₂
+
+_-[_]ᴿ : ∀ {n} {π : Context n} -> RawEnv π -> ℕ -> RawEnv π
+_-[_]ᴿ Γ n₁ n₂ with n₁ ≟ᴺ n₂
+_-[_]ᴿ Γ n₁ .n₁ | yes refl = proj₁ (Γ n₁) , nothing 
+_-[_]ᴿ Γ n₁ n₂ | no ¬p = Γ n₂
+
+
+data Env {n : ℕ} (l : Label) (π : Context n) : Set where
+  RE : RawEnv π -> Env l π
+  
 -- data Env (l : Label) : Context -> Set where
 --   [] : Env l []
 --   _∷_ : ∀ {π τ} -> (nt : ℕ × Maybe (Term π τ)) -> Env l π -> Env l ((proj₁ nt , τ) ∷ π)
 --   ∙ : ∀ {π} -> Env l π
 
 _[_↦_] : ∀ {τ l n} {π : Context n} -> Env l π -> ℕ -> Maybe (Term π τ) -> Env l π
-_[_↦_] {l = l} M n₁ mt n₂ with n₁ ≟ᴺ n₂
-_[_↦_] M n₁ mt .n₁ | yes refl = _ , mt
-_[_↦_] M n₁ mt n₂ | no ¬p = M n₂
+_[_↦_] (RE M) n mt = RE (M [ n ↦ mt ]ᴿ)
 
 -- Remove a binding from the environment
 _-[_] : ∀ {n l} {π : Context n} -> Env l π -> ℕ -> Env l π
-_-[_] Γ n₁ n₂ with n₁ ≟ᴺ n₂
-_-[_] Γ n₁ .n₁ | yes refl = proj₁ (Γ n₁) , nothing 
-_-[_] Γ n₁ n₂ | no ¬p = Γ n₂
+RE M -[ n ] = RE (M -[ n ]ᴿ)
 
 _↦_∈_ : ∀ {τ l n} {π : Context n} -> ℕ -> Term π τ -> Env l π -> Set
-_↦_∈_ {τ} n t Γ = Γ n ≡ (τ , just t)
+_↦_∈_ {τ} n t (RE M) = M n ≡ (τ , just t)
 
---------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------------
 
 -- Exists Context, (hides index n) 
 ∃ᶜ : (P : ∀ {n} -> Context n -> Set) -> Set
