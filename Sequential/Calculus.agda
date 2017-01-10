@@ -5,10 +5,32 @@ module Sequential.Calculus {- (𝓛 : Lattice) -} where
 open import Types
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 open import Data.List.All
-open import Data.Nat using (ℕ ; zero ; suc ; _≟_) public
+open import Data.Nat using (ℕ ; zero ; suc) public
+open import Data.Nat renaming ( _≟_ to _≟ᴺ_) 
 import Data.List as L
 open import Data.Maybe
 open import Data.Product
+
+record Variable : Set where
+   constructor _,_
+   field lbl : Label
+         num : ℕ
+
+open Variable public
+
+open import Data.Sum
+
+aux : ∀ {v₁ v₂ : Variable} -> (lbl v₁) ≢ (lbl v₂) ⊎ (num v₁) ≢ (num v₂) -> v₁ ≢ v₂
+aux (inj₁ x) refl = x refl
+aux (inj₂ y) refl = y refl
+
+_≟ⱽ_ : (v₁ v₂ : Variable) -> Dec (v₁ ≡ v₂)
+(lbl , num) ≟ⱽ (lbl₁ , num₁) with lbl ≟ᴸ lbl₁ | num ≟ᴺ num₁
+(lbl , num) ≟ⱽ (.lbl , .num) | yes refl | yes refl = yes refl
+(lbl , num) ≟ⱽ (lbl₁ , num₁) | yes p | no ¬p = no (aux (inj₂ ¬p))
+(lbl , num) ≟ⱽ (lbl₁ , num₁) | no ¬p | yes p = no (aux (inj₁ ¬p))
+(lbl , num) ≟ⱽ (lbl₁ , num₁) | no ¬p | no ¬p₁ = no (aux (inj₁ ¬p))
+
 
 -- A label-annotated, untyped free term.
 -- Variables are represented by numbers.
@@ -21,8 +43,8 @@ data Term : Set where
   Id : Term -> Term 
   unId : Term -> Term
 
-  Var : ℕ -> Term
-  Abs : (n : ℕ) -> Term -> Term  -- n is the name of the variable
+  Var : Variable -> Term
+  Abs : Variable -> Term -> Term  -- n is the name of the variable
   App : Term -> Term -> Term
 
   If_Then_Else_ : Term -> Term -> Term -> Term
@@ -45,7 +67,7 @@ data Term : Set where
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term -> Term
 
-  deepDup : ℕ -> Term
+  deepDup : Variable -> Term
 
   -- Represent sensitive information that has been erased.
   ∙ : Term
@@ -56,7 +78,7 @@ data Value : Term -> Set where
   （） : Value （）
   True : Value True
   False : Value False
-  Abs : (n : ℕ) (t : Term) -> Value (Abs n t)
+  Abs : (x : Variable) (t : Term) -> Value (Abs x t)
   Id : (t : Term) -> Value (Id t) 
   Mac : ∀ {l : Label} (t : Term) -> Value (Mac l t)
   Res : ∀ {l : Label} (t : Term) -> Value (Res l t)
@@ -65,13 +87,13 @@ data Value : Term -> Set where
 
 -- Term substitution (as a function)
 -- TODO Remove
-_[_/_] : Term -> Term -> ℕ -> Term
+_[_/_] : Term -> Term -> Variable -> Term
 （） [ t₂ / x ] = （）
 True [ t₂ / x ] = True
 False [ t₂ / x ] = False
 Id t₁ [ t₂ / x ] = Id (t₁ [ t₂ / x ])
 unId t₁ [ t₂ / x ] = unId (t₁ [ t₂ / x ])
-Var y [ t₂ / x ] with y ≟ x
+Var y [ t₂ / x ] with y ≟ⱽ x
 Var y [ t₂ / .y ] | yes refl = t₂
 Var y [ t₂ / x ] | no ¬p = Var y
 -- We assume that variables are distinct so we don't have to care about name clashing and alpha renaming
@@ -92,7 +114,7 @@ deepDup y [ t₂ / x ] = deepDup y
 
 
 -- Substs n t t₁ t₁' corresponds to t₁ [n / t] ≡ t₁' with the assumption that there are no name clashes.
-data Subst (n : ℕ) (t : Term) : Term -> Term -> Set where
+data Subst (n : Variable) (t : Term) : Term -> Term -> Set where
 
   （） : Subst n t （） （）
 
@@ -146,23 +168,40 @@ data Subst (n : ℕ) (t : Term) : Term -> Term -> Set where
 
 -- Substs t ns ns' t' applies the substitution t [ n / Var n' ] consecutively
 -- for every n ∈ ns and n' ∈ ns' and returns the resulting term t'
-data Substs (t₁ : Term) : List ℕ -> List ℕ -> Term -> Set where
+data Substs (t₁ : Term) : List Variable -> List Variable -> Term -> Set where
   [] : Substs t₁ [] [] t₁
   _∷_ : ∀ {t₂ t₃ n n' ns ns'} -> Subst n (Var n') t₁ t₂ -> Substs t₂ ns ns' t₃
                               -> Substs t₁ (n ∷ ns) (n' ∷ ns') t₃ 
 
 --------------------------------------------------------------------------------
 
-open import Data.Map
+Context : Set
+Context = Variable -> Ty
+
+_[_↦_]ᶜ : Context -> Variable -> Ty -> Context
+_[_↦_]ᶜ π x τ y with x ≟ⱽ y
+_[_↦_]ᶜ π x τ .x | yes refl = τ
+_[_↦_]ᶜ π x τ y | no ¬p = π y
+
+_↦_∈ᶜ_  : Variable -> Ty -> Context -> Set
+x ↦ τ ∈ᶜ π = π x ≡ τ
 
 -- A heap is a partial mapping from number (position) to terms.
 Heap : Set
-Heap = Map (Label × Term)
+Heap = Variable -> Maybe Term
+
+_[_↦_] : Heap -> Variable -> Maybe Term -> Heap
+_[_↦_] Γ v₁ t v₂ with v₁ ≟ⱽ v₂
+_[_↦_] Γ v₁ t .v₁ | yes refl = t
+_[_↦_] Γ v₁ t v₂ | no ¬p = Γ v₂
+
+_↦_∈_  : Variable -> Maybe Term -> Heap -> Set
+x ↦ mt ∈ Γ = Γ x ≡ mt
 
 -- Continuation 
 data Cont : Set where
- Var : ℕ -> Cont
- # : Label -> ℕ -> Cont
+ Var : Variable -> Cont
+ # : Variable -> Cont
  Then_Else_ : Term -> Term -> Cont
  Bind : Label -> Term -> Cont
  unlabel : ∀ {l h} -> l ⊑ h -> Cont
@@ -185,15 +224,11 @@ record State (l : Label) : Set where
    term : Term
    stack : Stack l
 
-open State
+open State public
 
 --------------------------------------------------------------------------------
 
 -- Typing Judgment
-
--- A context is a partial mapping ℕ -> Ty
-Context : Set
-Context = Map Ty
 
 mutual
 
@@ -212,8 +247,8 @@ mutual
     Id : ∀ {τ t} -> π ⊢ t ∷ τ -> π ⊢ Id t ∷ Id τ
     unId : ∀ {τ t} -> π ⊢ t ∷ Id τ -> π ⊢ unId t ∷ τ
 
-    Var : ∀ {τ n} -> n ↦ τ ∈ π  -> π ⊢ Var n ∷ τ
-    Abs : ∀ {π' n t τ₁ τ₂} -> π' ≔ᴬ π [ n ↦ τ₁ ] -> π' ⊢ t ∷ τ₂ -> π ⊢ Abs n t ∷ (τ₁ => τ₂)    
+    Var : ∀ {τ n} -> n ↦ τ ∈ᶜ π  -> π ⊢ Var n ∷ τ
+    Abs : ∀ {n t τ₁ τ₂} -> π [ n ↦ τ₁ ]ᶜ ⊢ t ∷ τ₂ -> π ⊢ Abs n t ∷ (τ₁ => τ₂)    
     App : ∀ {t₁ t₂ τ₁ τ₂} -> π ⊢ t₁ ∷ (τ₁ => τ₂)
                           -> π ⊢ t₂ ∷ τ₁ -> π ⊢ App t₁ t₂ ∷ τ₂
 
@@ -230,20 +265,13 @@ mutual
 
     fork : ∀ {l h t} {l⊑h : l ⊑ h} -> π ⊢ t ∷ (Mac h  （） ) -> π ⊢ fork l⊑h t ∷ Mac l  （）
 
-    deepDup : ∀ {τ n} -> n ↦ τ ∈ π -> π ⊢ deepDup n ∷ τ
+    deepDup : ∀ {τ n} -> n ↦ τ ∈ᶜ π -> π ⊢ deepDup n ∷ τ
 
     ∙ : ∀ {τ} -> π ⊢ ∙ ∷ τ
 
-  data _⊢ᴴ_∷_ (π : Context) : Heap -> Context -> Set where
-    Nil : π ⊢ᴴ [] ∷ []
-    -- This rule does not allow for recursive bindings when typing
-    Cons : ∀ {Γ₁ Γ₂ l t τ π' π₁ π₂ n}
-                       -> π ⊢ᴴ Γ₁ ∷ π₁
-                       -> (π₁-⊔-π₂ : π' ≔ᴹ π ⊔ π₁)
-                       -> (wt-t : π' ⊢ t ∷ τ)
-                       -> (a-π : π₂ ≔ᴬ π' [ n ↦ τ ])
-                       -> (a-Γ : Γ₂ ≔ᴬ Γ₁ [ n ↦ (l , t) ])
-                       -> π ⊢ᴴ Γ₂ ∷ π₂ 
+  data ⊢ᴴ_∷_ (Γ : Heap) (π : Context) : Set where
+    just : ∀ {x t} -> x ↦ just t ∈ Γ -> π ⊢ t ∷ π x -> ⊢ᴴ Γ ∷ π     
+    -- nothing : ∀ {x} -> x ↦ nothing ∈ Γ -> ⊢ᴴ Γ ∷ π    -- Do we need this?
 
 -- A Well-Typed continuation (WCont), contains well-typed terms and
 -- transform the input type (first indexed) in the output type (second
@@ -253,9 +281,8 @@ data WCont (π : Context) : Ty -> Cont -> Ty -> Set where
  unlabel : ∀ {l h τ} -> (l⊑h : l ⊑ h) -> WCont π (Labeled l τ) (unlabel l⊑h) (Mac h τ)
  Then_Else_ : ∀ {τ t₂ t₃} -> (wt-t₂ : π ⊢ t₂ ∷ τ)  -> (wt-t₃ : π ⊢ t₃ ∷ τ) ->  WCont π Bool (Then t₂ Else t₃) τ
  Var : ∀ {τ₁ τ₂ n} -> (wt-n : π ⊢ Var n ∷ τ₁) -> WCont π (τ₁ => τ₂) (Var n) τ₂
- # : ∀ {τ} -> (l : Label) (n : ℕ) -> WCont π τ (# l n) τ 
+ # : ∀ {τ x} -> π ⊢ Var x ∷ τ -> WCont π τ (# x) τ 
  Bind : ∀ {l τ₁ τ₂ t₂} -> (wt-t₂ : π ⊢ t₂ ∷ (τ₁ => Mac l τ₂)) ->  WCont π (Mac l τ₁) (Bind l t₂) (Mac l τ₂)
-
 
 -- A Well-typed stack (WStack) contains well-typed terms and is indexed
 -- by an input type and an output type.
@@ -264,14 +291,7 @@ data WStack {l} (π : Context) : Ty -> Stack l -> Ty -> Set where
  [] : ∀ {τ} -> WStack π τ [] τ
  _∷_ : ∀ {τ₁ τ₂ τ₃ c S} -> (wt-c : WCont π τ₁ c τ₂) (wt-S : WStack π τ₂ S τ₃) -> WStack π τ₁ (c ∷ S) τ₃
 
--- Typing rule for configuration with Stack
--- I think we need syntax-driven typing rules also for terms.
--- However how do we make them mutually exclusive? Values and Redex?
--- Type continuations as functions? 
-data _⊢ˢ_∷_ (π₁ : Context) {l : Label} : State l -> Ty -> Set where
-  WT[_]⟨_,_,_⟩ : ∀ {π₂ Γ t π₃ τ₁ τ₂} {S : Stack l}
-                           -> (π₁-⊔-π₂ : π₃ ≔ᴹ π₁ ⊔ π₂)
-                           -> (wt-Γ : π₁ ⊢ᴴ Γ ∷ π₂) 
-                           -> (wt-t : π₃ ⊢ t ∷ τ₁)
-                           -> (wt-S : WStack π₃ τ₁ S τ₂)
-                           -> π₁ ⊢ˢ ⟨ Γ , t , S ⟩  ∷ τ₂
+data ⊢ˢ_∷_ {l : Label} : State l -> Ty -> Set where
+  ⟨_,_,_⟩ : ∀ {π Γ t τ τ' S} -> ⊢ᴴ Γ ∷ π
+                             -> π ⊢ t ∷ τ
+                             -> WStack π τ S τ' -> ⊢ˢ ⟨ Γ , t , S ⟩ ∷ τ'

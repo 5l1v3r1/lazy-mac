@@ -4,12 +4,11 @@ module Types where
 
 postulate 𝓛 : Lattice
 
-
 open import Relation.Nullary public
 open import Relation.Binary.PropositionalEquality
 open import Data.Empty public
 
-open Lattice.Lattice 𝓛 public
+open Lattice.Lattice 𝓛 renaming (_≟_ to _≟ᴸ_) public
 
 import Data.List as L
 open import Data.List using (List ; [] ; _∷_ ; _++_) public

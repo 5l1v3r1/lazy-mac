@@ -19,6 +19,9 @@ record Lattice : Set₁ where
     refl-⊑ : ∀ {l} -> l ⊑ l
     trans-⊑ : ∀ {l₁ l₂ l₃} -> l₁ ⊑ l₂ -> l₂ ⊑ l₃ -> l₁ ⊑ l₃
 
+    _≟_ : (l₁ l₂ : Label) -> Dec (l₁ ≡ l₂)
+
+
 -- TODO add what other postulates about lattices we have
 
   module Lemma (𝓛 : Lattice) where
