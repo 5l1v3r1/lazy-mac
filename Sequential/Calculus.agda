@@ -270,7 +270,7 @@ mutual
     ∙ : ∀ {τ} -> π ⊢ ∙ ∷ τ
 
   data ⊢ᴴ_∷_ (Γ : Heap) (π : Context) : Set where
-    just : ∀ {x t} -> x ↦ just t ∈ Γ -> π ⊢ t ∷ π x -> ⊢ᴴ Γ ∷ π     
+    just : ∀ {x t} -> (x∈Γ : x ↦ just t ∈ Γ) -> (t-τ : π ⊢ t ∷ π x) -> ⊢ᴴ Γ ∷ π     
     -- nothing : ∀ {x} -> x ↦ nothing ∈ Γ -> ⊢ᴴ Γ ∷ π    -- Do we need this?
 
 -- A Well-Typed continuation (WCont), contains well-typed terms and

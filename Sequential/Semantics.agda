@@ -111,4 +111,21 @@ data _⇝_ {l : Label} : State l -> State l -> Set where
 ty-preservation : ∀ {l τ Γ₁ Γ₂ t₁ t₂} {S₁ S₂ : Stack l} ->
                    let s₁ = ⟨ Γ₁ , t₁ , S₁ ⟩
                        s₂ = ⟨ Γ₂ , t₂ , S₂ ⟩ in ⊢ˢ s₁ ∷ τ -> s₁ ⇝ s₂ -> ⊢ˢ s₂ ∷ τ
-ty-preservation s step = {!!}
+ty-preservation ⟨ just x∈Γ t-τ , App t₂ t₄ , S ⟩ App₁ = ⟨ just {!x∈Γ!} {!!} , {!!} , (Var {!!} ∷ S) ⟩
+ty-preservation s (App₂ x) = {!!}
+ty-preservation s (Var₁ x∈Γ ¬val) = {!!}
+ty-preservation s (Var₁' val x∈Γ) = {!!}
+ty-preservation s (Var₂ val) = {!!}
+ty-preservation ⟨ x , If x₂ Then x₃ Else x₄ , x₁ ⟩ If = ⟨ x , x₂ , (Then x₃ Else x₄) ∷ x₁ ⟩
+ty-preservation ⟨ x , True , (Then wt-t₂ Else wt-t₃) ∷ x₂ ⟩ IfTrue = ⟨ x , wt-t₂ , x₂ ⟩
+ty-preservation ⟨ x , False , (Then wt-t₂ Else wt-t₃) ∷ x₂ ⟩ IfFalse = ⟨ x , wt-t₃ , x₂ ⟩
+ty-preservation ⟨ x , Return x₂ , x₁ ⟩ Return = ⟨ x , Mac x₂ , x₁ ⟩
+ty-preservation ⟨ x , Bind x₂ x₃ , x₁ ⟩ Bind₁ = ⟨ x , x₂ , Bind x₃ ∷ x₁ ⟩
+ty-preservation ⟨ x , Mac x₁ , Bind wt-t₂ ∷ x₂ ⟩ Bind₂ = ⟨ x , App wt-t₂ x₁ , x₂ ⟩
+ty-preservation ⟨ x , label x₂ , x₁ ⟩ (Label' p) = ⟨ x , Return (Res (Id x₂)) , x₁ ⟩
+ty-preservation ⟨ x , unlabel x₂ , x₁ ⟩ (Unlabel₁ p) = ⟨ x , x₂ , unlabel p ∷ x₁ ⟩
+ty-preservation ⟨ x , Res x₁ , unlabel p ∷ x₂ ⟩ (Unlabel₂ .p) = ⟨ x , Return (unId x₁) , x₂ ⟩
+ty-preservation ⟨ x , unId x₁ , x₂ ⟩ UnId₁ = ⟨ x , x₁ , unId ∷ x₂ ⟩
+ty-preservation ⟨ x , Id x₁ , unId ∷ x₂ ⟩ UnId₂ = ⟨ x , x₁ , x₂ ⟩
+ty-preservation ⟨ x , fork x₂ , x₁ ⟩ (Fork p) = ⟨ x , Return （） , x₁ ⟩
+ty-preservation ⟨ x , ∙ , x₂ ⟩ Hole = ⟨ x , ∙ , x₂ ⟩
