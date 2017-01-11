@@ -144,7 +144,7 @@ subst {Δ = Δ} v t = tm-subst [] Δ v t
 -- index).
 data Cont : Ty -> Ty -> Set where
  Var : ∀ {τ₂ n} {π : Context n} {x : Variable} -> (x∈π : x ∈ π) -> Cont (ty x => τ₂) τ₂
- # : (x : Variable) -> Cont (ty x) (ty x)
+ # : ∀ {n} {π : Context n} {x : Variable} -> (x∈π : x ∈ π)  -> Cont (ty x) (ty x) -- TODO maybe here we'd need x ∈ π ?
  Then_Else_ : ∀ {τ n} {π : Context n} -> Term π τ -> Term π τ -> Cont Bool τ
  Bind :  ∀ {τ₁ τ₂ l n} {π : Context n} -> Term π (τ₁ => Mac l τ₂) -> Cont (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l h τ} (p : l ⊑ h) -> Cont (Labeled l τ) (Mac h τ)
@@ -207,6 +207,10 @@ _[_↦_]ᴴ : ∀ {n} {π : Context n} -> Heap -> (l : Label) -> Env l π -> Hea
 _[_↦_]ᴴ Γ l₁ M l₂ with l₁ ≟ᴸ l₂
 _[_↦_]ᴴ Γ l₁ M .l₁ | yes refl = _ , _ , M
 _[_↦_]ᴴ Γ l₁ M l₂ | no ¬p = Γ l₂
+
+
+_↦_∈ᴴ_ : ∀ {n} {π : Context n} -> (l : Label) -> Env l π -> Heap -> Set -- {τ l n} {π : Context n} -> ℕ -> Term π τ -> Env l π -> Set
+_↦_∈ᴴ_ {n} {π} l M Γ = (Γ l) ≡ (n , (π , M))
 
 --------------------------------------------------------------------------------
 

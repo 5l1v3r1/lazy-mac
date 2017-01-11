@@ -26,35 +26,46 @@ open import Relation.Nullary.Decidable using (⌊_⌋)
 -- Note that stuck terms will be dealt with in the concurrent semantics.
 data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
- App₁ : ∀ {τ₁ τ₂ τ₃ Γ} ->
-          let n , π , M = Γ l in -- FIX Here it could be any l' ⊑ l, it should be in App
-          {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} -> 
-          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ [ l ↦ M [ suc n ↦ just t₂ ] ]ᴴ , t₁ , (Var {π = ⟪ suc n , τ₁ , l ⟫ ∷ π} here) ∷ S ⟩
+ App₁ : ∀ {τ₁ τ₂ τ₃ Γ Γ' n} {π : Context n} {M : Env l π} ->
+--          let n , π , M = Γ l in -- FIX Here it could be any l' ⊑ l, it should be in App
+          {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
+          l ↦ M ∈ᴴ Γ -> -- n , π , M  ≡ {!Γ l!} ->
+          Γ' ≡ Γ [ l ↦ M [ suc n ↦ just t₂ ] ]ᴴ ->
+          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ' , t₁ , (Var {π = ⟪ suc n , τ₁ , l ⟫ ∷ π} here) ∷ S ⟩
 
- App₂ : ∀ {Γ n m β τ'} {π : Context n} {S : Stack l β τ'} {x y : Variable}
-           (y∈π : y ∈ π) (x∈π : ⟪ m , (ty y) , (lbl y) ⟫ ∈ π) {t : Term (y ∷ π) β} -> 
+ App₂ : ∀ {Γ n n₁ n₂ β l' α τ'} {π : Context n} {S : Stack l β τ'} ->
+          let x = ⟪ n₁ , α , l' ⟫
+              y = ⟪ n₂ , α , l' ⟫ in
+           (y∈π : y ∈ π) ->
+           (x∈π : x ∈ π) ->
+           {t : Term (y ∷ π) β} ->
           ⟨ Γ , Abs y t , Var x∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var x∈π) t , S ⟩
-          -- TODO: What should be the label here? Should I put the label also in the stack 
  
- Var₁ : ∀ {Γ τ'} {x : Variable} {S : Stack l (ty x) τ'} ->
-          let n , π , M = Γ (lbl x) in {t : Term π (ty x)} ->
-          (x∈π : x ∈ π) -- Can we derive this proof object from n ↦ t ∈ M ? -- TODO use index lookup in π
-        -> (num x) ↦ t ∈ M
-        ->   ¬ (Value t)
-        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ [ (lbl x) ↦ M -[ (num x) ] ]ᴴ , t , (# x) ∷ S ⟩ -- Here we should prove that l == lbl x
+ Var₁ : ∀ {Γ Γ' n l' τ τ'}{n'} {π : Context n'} {M : Env l' π}  {S : Stack l τ τ'} ->
+          let x = ⟪ n , τ , l' ⟫ in {t : Term π τ}
+        -> l' ↦ M ∈ᴴ Γ 
+        -> (x∈π : x ∈ π) 
+        -> (t∈M : n ↦ t ∈ M)
+        -> (¬val :  ¬ (Value t))
+        -> Γ' ≡ Γ [ l' ↦ M -[ n ] ]ᴴ
+        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ'  , t , (# x∈π) ∷ S ⟩ -- Here we should prove that l == l'
 
- Var₁' : ∀ {Γ τ'} {x : Variable} {S : Stack l (ty x) τ'} -> 
-         let n , π , M = Γ l in {v : Term π (ty x)}
-                      -> (x∈π : x ∈ π)
-                      -> Value v
-                      -> (num x) ↦ v ∈ M
-                      -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ , v , S ⟩
+ Var₁' : ∀ {Γ l' τ n τ'} {n'} {π : Context n'} {M : Env l' π} {S : Stack l τ τ'} -> 
+         let x = ⟪ n , τ , l' ⟫ in {v : Term π τ}
+         -> l' ↦ M ∈ᴴ Γ 
+         -> (x∈π : x ∈ π)
+         -> (val : Value v)
+         -> (v∈M : n ↦ v ∈ M)
+         -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ , v , S ⟩
 
- Var₂ : ∀ {Γ τ' l' x} {S : Stack l (ty x) τ'} ->
-        let n , π , M = Γ l' in {v : Term π (ty x)}
-                       -> Value v
-                       -> ⟨ Γ , v , (# x) ∷ S ⟩ ⇝ ⟨ Γ [ l' ↦ M [ (num x) ↦ just v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
-
+ Var₂ : ∀ {Γ Γ' n τ τ' l'} {S : Stack l τ τ'} ->
+        let  x = ⟪ n , τ , l' ⟫
+             _ , π , M = Γ l' in {v : Term π τ}
+        -> (x∈π : x ∈ π)
+        -> (val : Value v)
+       -> Γ' ≡  Γ [ l' ↦ M [ n ↦ just v ] ]ᴴ
+        -> ⟨ Γ , v , (# x∈π) ∷ S ⟩ ⇝ ⟨ Γ' , v , S ⟩  -- Here we should prove that l == l'
+                                                                                                                           
  If : ∀ {Γ n τ τ'} {π : Context n} {S : Stack l τ τ'} {t₁ : Term π Bool} {t₂ t₃ : Term π τ} ->
         ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩
 
