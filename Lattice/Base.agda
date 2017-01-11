@@ -28,3 +28,5 @@ record Lattice : Set₁ where
 
   _⋤_ : Label -> Label -> Set
   l₁ ⋤ l₂ = ¬ (l₁ ⊑ l₂)
+
+open Lattice public

@@ -37,17 +37,17 @@ data Term {n : ℕ} (π : Context n) : Ty -> Set where
 
   Res : ∀ {α} -> (l : Label) -> Term π α -> Term π (Res l α)
 
-  label : ∀ {l h α} -> l ⊑ h -> Term π α -> Term π (Mac l (Labeled h α))
-  label∙ : ∀ {l h α} -> l ⊑ h -> Term π α -> Term π (Mac l (Labeled h α))
+  label : ∀ {l h α} -> (l⊑h : l ⊑ h) -> Term π α -> Term π (Mac l (Labeled h α))
+  label∙ : ∀ {l h α} -> (l⊑h : l ⊑ h) -> Term π α -> Term π (Mac l (Labeled h α))
 
-  unlabel : ∀ {l h α} -> l ⊑ h -> Term π (Labeled l α) -> Term π (Mac h α)
+  unlabel : ∀ {l h α} -> (l⊑h : l ⊑ h) -> Term π (Labeled l α) -> Term π (Mac h α)
 
   -- read : ∀ {α l h} -> l ⊑ h -> Term π (Ref l α) -> Term π (Mac h α)
   -- write : ∀ {α l h} -> l ⊑ h -> Term π (Ref h α) -> Term π α -> Term π (Mac l （）)
   -- new : ∀ {α l h} -> l ⊑ h -> Term π α -> Term π (Mac l (Ref h α))
 
   -- Concurrency
-  fork : ∀ {l h} -> l ⊑ h -> Term π (Mac h  （）) -> Term π (Mac l  （）)
+  fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
   deepDup : (x : Variable) -> Term π (ty x)  -- This variable is unguarded
 
