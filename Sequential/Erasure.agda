@@ -72,3 +72,29 @@ isSecret? lᴬ (Id τ) = inj₂ Id
 ε {τ} lᴬ t with isSecret? lᴬ τ
 ε lᴬ t | inj₁ x = εᴴ x t
 ε lᴬ t | inj₂ y = εᴸ y t
+
+--------------------------------------------------------------------------------
+
+open import Data.Product as P
+open import Data.Maybe as M
+open import Function
+
+-- Point-wise erasure of a RawEnv
+εᴿ : ∀ {n} {π : Context n} -> Label -> RawEnv π -> RawEnv π
+εᴿ lᴬ M n = P.map id (M.map (ε lᴬ)) (M n)
+
+-- Constant mapping to ∙ (it can be modified and this is a problem)
+-- We need the old environment for the type
+∙ᴿ : ∀ {n} {π : Context n} -> RawEnv π -> RawEnv π
+∙ᴿ M n = proj₁ (M n) , just ∙
+
+εᴱ : ∀ {l lᴬ n} {π : Context n} -> Dec (l ⊑ lᴬ) ->  Env l π -> Env l π
+εᴱ {_} {lᴬ} (yes p) (RE x) = RE (εᴿ lᴬ x)
+εᴱ (no ¬p) (RE x) = RE (∙ᴿ x)  -- Here I should have a different Env that is not updateable
+
+-- Heap Erasure Function
+εʰ : (lᴬ : Label) -> Heap -> Heap
+εʰ lᴬ Γ l with Γ l
+εʰ lᴬ Γ l | n , π , Δ = n , π , εᴱ (l ⊑? lᴬ) Δ
+
+
