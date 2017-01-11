@@ -27,7 +27,7 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 --          let n , π , M = Γ l in -- FIX Here it could be any l' ⊑ l, it should be in App
           {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
           (Δ∈Γ : l ↦ Δ ∈ᴴ Γ) -> -- n , π , M  ≡ {!Γ l!} ->
-          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ [ l ↦ Δ [ suc n ↦ just t₂ ] ]ᴴ , t₁ , (Var {π = ⟪ suc n , τ₁ , l ⟫ ∷ π} here) ∷ S ⟩
+          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ [ l ↦ Δ [ suc n ↦ t₂ ] ]ᴴ , t₁ , (Var {π = ⟪ suc n , τ₁ , l ⟫ ∷ π} here) ∷ S ⟩
 
  App₂ : ∀ {Γ n n₁ n₂ β l' α τ'} {π : Context n} {S : Stack l β τ'} ->
           let x = ⟪ n₁ , α , l' ⟫
@@ -43,7 +43,7 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
         -> (x∈π : x ∈ π) 
         -> (t∈Δ : n ↦ t ∈ Δ)
         -> (¬val :  ¬ (Value t))        
-        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨  Γ [ l' ↦ Δ -[ n ] ]ᴴ  , t , (# x∈π) ∷ S ⟩ -- Here we should prove that l == l'
+        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨  Γ [ l' ↦ Δ [ n ↛ t ] ]ᴴ  , t , (# x∈π) ∷ S ⟩ -- Here we should prove that l == l'
 
  Var₁' : ∀ {Γ l' τ n τ'} {n'} {π : Context n'} {Δ : Env l' π} {S : Stack l τ τ'} -> 
          let x = ⟪ n , τ , l' ⟫ in {v : Term π τ}
@@ -58,7 +58,7 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
            (Δ∈Γ : l' ↦ Δ ∈ᴴ Γ)
         -> (x∈π : x ∈ π)
         -> (val : Value v)
-        -> ⟨ Γ , v , (# x∈π) ∷ S ⟩ ⇝ ⟨  Γ [ l' ↦ Δ [ n ↦ just v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
+        -> ⟨ Γ , v , (# x∈π) ∷ S ⟩ ⇝ ⟨  Γ [ l' ↦ Δ [ n ↦ v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
                                                                                                                            
  If : ∀ {Γ n τ τ'} {π : Context n} {S : Stack l τ τ'} {t₁ : Term π Bool} {t₂ t₃ : Term π τ} ->
         ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩
