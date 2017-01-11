@@ -23,18 +23,15 @@ open import Relation.Nullary.Decidable using (⌊_⌋)
 -- Note that stuck terms will be dealt with in the concurrent semantics.
 data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
- App₁ : ∀ {τ₁ τ₂ τ₃ Γ n} {π : Context n} {Δ : Env l π} ->
---          let n , π , M = Γ l in -- FIX Here it could be any l' ⊑ l, it should be in App
-          {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
-          (Δ∈Γ : l ↦ Δ ∈ᴴ Γ) -> -- n , π , M  ≡ {!Γ l!} ->
+ App₁ : ∀ {τ₁ τ₂ τ₃ Γ n} {π : Context n} {Δ : Env l π} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
+          (Δ∈Γ : l ↦ Δ ∈ᴴ Γ) -> 
           ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ [ l ↦ Δ [ suc n ↦ t₂ ] ]ᴴ , t₁ , (Var {π = ⟪ suc n , τ₁ , l ⟫ ∷ π} here) ∷ S ⟩
 
  App₂ : ∀ {Γ n n₁ n₂ β l' α τ'} {π : Context n} {S : Stack l β τ'} ->
           let x = ⟪ n₁ , α , l' ⟫
-              y = ⟪ n₂ , α , l' ⟫ in
-           (y∈π : y ∈ π) ->
-           (x∈π : x ∈ π) ->
-           {t : Term (y ∷ π) β} ->
+              y = ⟪ n₂ , α , l' ⟫ in {t : Term (y ∷ π) β}
+            -> (y∈π : y ∈ π)
+            -> (x∈π : x ∈ π) ->
           ⟨ Γ , Abs y t , Var x∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var x∈π) t , S ⟩
  
  Var₁ : ∀ {Γ n l' τ τ'}{n'} {π : Context n'} {Δ : Env l' π}  {S : Stack l τ τ'} ->
@@ -46,7 +43,7 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
         -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨  Γ [ l' ↦ Δ [ n ↛ t ] ]ᴴ  , t , (# x∈π) ∷ S ⟩ -- Here we should prove that l == l'
 
  Var₁' : ∀ {Γ l' τ n τ'} {n'} {π : Context n'} {Δ : Env l' π} {S : Stack l τ τ'} -> 
-         let x = ⟪ n , τ , l' ⟫ in {v : Term π τ}
+           let x = ⟪ n , τ , l' ⟫ in {v : Term π τ}
          -> (Δ∈Γ : l' ↦ Δ ∈ᴴ Γ)
          -> (x∈π : x ∈ π)
          -> (v∈Δ : n ↦ v ∈ Δ)
@@ -54,7 +51,7 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
          -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ , v , S ⟩
 
  Var₂ : ∀ {Γ n τ τ' l'} {n'} {π : Context n'} {Δ : Env l' π} {S : Stack l τ τ'} {v : Term π τ} ->
-        let  x = ⟪ n , τ , l' ⟫ in
+          let  x = ⟪ n , τ , l' ⟫ in
            (Δ∈Γ : l' ↦ Δ ∈ᴴ Γ)
         -> (x∈π : x ∈ π)
         -> (val : Value v)
