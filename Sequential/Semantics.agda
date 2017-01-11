@@ -26,11 +26,11 @@ open import Relation.Nullary.Decidable using (⌊_⌋)
 -- Note that stuck terms will be dealt with in the concurrent semantics.
 data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
- App₁ : ∀ {τ₁ τ₂ τ₃ Γ n} {π : Context n} {E : Env l π} ->
+ App₁ : ∀ {τ₁ τ₂ τ₃ Γ n} {π : Context n} {Δ : Env l π} ->
 --          let n , π , M = Γ l in -- FIX Here it could be any l' ⊑ l, it should be in App
           {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
-          (E∈Γ : l ↦ E ∈ᴴ Γ) -> -- n , π , M  ≡ {!Γ l!} ->
-          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ [ l ↦ E [ suc n ↦ just t₂ ] ]ᴴ , t₁ , (Var {π = ⟪ suc n , τ₁ , l ⟫ ∷ π} here) ∷ S ⟩
+          (Δ∈Γ : l ↦ Δ ∈ᴴ Γ) -> -- n , π , M  ≡ {!Γ l!} ->
+          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ [ l ↦ Δ [ suc n ↦ just t₂ ] ]ᴴ , t₁ , (Var {π = ⟪ suc n , τ₁ , l ⟫ ∷ π} here) ∷ S ⟩
 
  App₂ : ∀ {Γ n n₁ n₂ β l' α τ'} {π : Context n} {S : Stack l β τ'} ->
           let x = ⟪ n₁ , α , l' ⟫
@@ -40,28 +40,28 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
            {t : Term (y ∷ π) β} ->
           ⟨ Γ , Abs y t , Var x∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var x∈π) t , S ⟩
  
- Var₁ : ∀ {Γ n l' τ τ'}{n'} {π : Context n'} {E : Env l' π}  {S : Stack l τ τ'} ->
+ Var₁ : ∀ {Γ n l' τ τ'}{n'} {π : Context n'} {Δ : Env l' π}  {S : Stack l τ τ'} ->
           let x = ⟪ n , τ , l' ⟫ in {t : Term π τ}
-        -> (E∈Γ : l' ↦ E ∈ᴴ Γ)
+        -> (Δ∈Γ : l' ↦ Δ ∈ᴴ Γ)
         -> (x∈π : x ∈ π) 
-        -> (t∈M : n ↦ t ∈ E)
+        -> (t∈Δ : n ↦ t ∈ Δ)
         -> (¬val :  ¬ (Value t))        
-        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨  Γ [ l' ↦ E -[ n ] ]ᴴ  , t , (# x∈π) ∷ S ⟩ -- Here we should prove that l == l'
+        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨  Γ [ l' ↦ Δ -[ n ] ]ᴴ  , t , (# x∈π) ∷ S ⟩ -- Here we should prove that l == l'
 
- Var₁' : ∀ {Γ l' τ n τ'} {n'} {π : Context n'} {E : Env l' π} {S : Stack l τ τ'} -> 
+ Var₁' : ∀ {Γ l' τ n τ'} {n'} {π : Context n'} {Δ : Env l' π} {S : Stack l τ τ'} -> 
          let x = ⟪ n , τ , l' ⟫ in {v : Term π τ}
-         -> (E∈Γ : l' ↦ E ∈ᴴ Γ)
+         -> (Δ∈Γ : l' ↦ Δ ∈ᴴ Γ)
          -> (x∈π : x ∈ π)
-         -> (v∈M : n ↦ v ∈ E)
+         -> (v∈Δ : n ↦ v ∈ Δ)
          -> (val : Value v)
          -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ , v , S ⟩
 
- Var₂ : ∀ {Γ n τ τ' l'} {n'} {π : Context n'} {E : Env l' π} {S : Stack l τ τ'} {v : Term π τ} ->
+ Var₂ : ∀ {Γ n τ τ' l'} {n'} {π : Context n'} {Δ : Env l' π} {S : Stack l τ τ'} {v : Term π τ} ->
         let  x = ⟪ n , τ , l' ⟫ in
-           (E∈Γ : l' ↦ E ∈ᴴ Γ)
+           (Δ∈Γ : l' ↦ Δ ∈ᴴ Γ)
         -> (x∈π : x ∈ π)
         -> (val : Value v)
-        -> ⟨ Γ , v , (# x∈π) ∷ S ⟩ ⇝ ⟨  Γ [ l' ↦ E [ n ↦ just v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
+        -> ⟨ Γ , v , (# x∈π) ∷ S ⟩ ⇝ ⟨  Γ [ l' ↦ Δ [ n ↦ just v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
                                                                                                                            
  If : ∀ {Γ n τ τ'} {π : Context n} {S : Stack l τ τ'} {t₁ : Term π Bool} {t₂ t₃ : Term π τ} ->
         ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩
