@@ -109,9 +109,15 @@ open import Function
 εᶜ lᴬ (unlabel p) = unlabel p
 εᶜ lᴬ unId = unId
 
-εˢ : ∀ {τ₁ τ₂ l lᴬ} -> (Secret lᴬ τ₁) ⊎ (Public lᴬ τ₁) -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
-εˢ (inj₁ x) S = ∙
-εˢ (inj₂ y) [] = []
-εˢ {lᴬ = lᴬ} (inj₂ y) (c ∷ S) = (εᶜ lᴬ c) ∷ (εˢ (isSecret? lᴬ _) S)
-εˢ (inj₂ y) ∙ = ∙
+εˢ : ∀ {τ₁ τ₂ l} -> (lᴬ : Label) -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
+εˢ {τ₁} lᴬ S with isSecret? lᴬ τ₁
+εˢ lᴬ S | inj₁ x = ∙
+εˢ lᴬ [] | inj₂ y = []
+εˢ lᴬ (c ∷ S) | inj₂ y = (εᶜ lᴬ c) ∷ (εˢ lᴬ S)
+εˢ lᴬ ∙ | inj₂ y = ∙
+
+--------------------------------------------------------------------------------
+
+ε : ∀ {l τ} (lᴬ : Label) -> State l τ -> State l τ
+ε lᴬ ⟨ Γ , t , S ⟩ = ⟨ εʰ lᴬ Γ , εᵀ lᴬ t , εˢ lᴬ S ⟩
 
