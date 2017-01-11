@@ -13,8 +13,7 @@ open import Function
         
 -- The basic Term π τ is a term that has type τ in the context π
 -- π is extended by lambda abstractions, which add the type and name of their argument to it.
--- I am still using names (ℕ) for variables, even though they are isomorphic to a membership proof
--- object, e.g. x ∈ xs, because it does not require an extra parameter (xs).
+-- 
 -- π can be considered in general as a superset of the unguarded free variables
 data Term {n : ℕ} (π : Context n) : Ty -> Set where
   （） : Term π （）
