@@ -1,5 +1,3 @@
-open import Lattice
-
 module Sequential.Semantics {- (𝓛 : Lattice) -} where
 
 open import Types
@@ -14,7 +12,6 @@ open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 open import Data.Bool using (not)
 open import Data.List using (filter ; length)
 open import Relation.Nullary.Decidable using (⌊_⌋)
-
 
 --------------------------------------------------------------------------------
 

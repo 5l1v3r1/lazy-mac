@@ -1,9 +1,7 @@
-open import Lattice
+import Lattice
+postulate 𝓛 : Lattice.Lattice
 
 module Types where
-
-postulate 𝓛 : Lattice
-
 
 open import Relation.Nullary public
 open import Relation.Binary.PropositionalEquality
@@ -21,8 +19,8 @@ data Ty : Set where
   （） : Ty
   Bool : Ty
   _=>_ : (τ₁ t₂ : Ty) -> Ty
-  Mac : Label -> Ty -> Ty
-  Res : Label -> Ty -> Ty
+  Mac : (l : Label) -> Ty -> Ty
+  Res : (l : Label) -> Ty -> Ty
   Id : Ty -> Ty
   
 infixr 3 _=>_

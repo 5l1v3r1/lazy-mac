@@ -20,11 +20,11 @@ record Lattice : Set₁ where
     refl-⊑ : ∀ {l} -> l ⊑ l
     trans-⊑ : ∀ {l₁ l₂ l₃} -> l₁ ⊑ l₂ -> l₂ ⊑ l₃ -> l₁ ⊑ l₃
 
--- TODO add what other postulates about lattices we have
-
-  module Lemma (𝓛 : Lattice) where
-
-    open import Data.Empty
+   
+  open import Data.Empty
     
-    trans-⋢  : ∀ {a b c} -> a ⊑ b -> ¬ (a ⊑ c) -> ¬ (b ⊑ c)
-    trans-⋢ a⊑b ¬a⊑c b⊑c = ⊥-elim (¬a⊑c (trans-⊑ a⊑b b⊑c))
+  trans-⋢  : ∀ {a b c} -> a ⊑ b -> ¬ (a ⊑ c) -> ¬ (b ⊑ c)
+  trans-⋢ a⊑b ¬a⊑c b⊑c = ⊥-elim (¬a⊑c (trans-⊑ a⊑b b⊑c))
+
+  _⋤_ : Label -> Label -> Set
+  l₁ ⋤ l₂ = ¬ (l₁ ⊑ l₂)

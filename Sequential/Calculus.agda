@@ -1,4 +1,4 @@
-open import Lattice
+import Lattice
 
 module Sequential.Calculus {- (𝓛 : Lattice) -} where
 
@@ -10,7 +10,7 @@ open import Data.Nat renaming ( _≟_ to  _≟ᴺ_ )
 open import Data.Maybe
 open import Data.Product
 open import Function
-        
+
 -- The basic Term π τ is a term that has type τ in the context π
 -- π is extended by lambda abstractions, which add the type and name of their argument to it.
 -- 
@@ -176,7 +176,8 @@ _-[_]ᴿ Γ n₁ n₂ | no ¬p = Γ n₂
 
 data Env {n : ℕ} (l : Label) (π : Context n) : Set where
   RE : RawEnv π -> Env l π
-  
+
+
 -- data Env (l : Label) : Context -> Set where
 --   [] : Env l []
 --   _∷_ : ∀ {π τ} -> (nt : ℕ × Maybe (Term π τ)) -> Env l π -> Env l ((proj₁ nt , τ) ∷ π)
