@@ -44,23 +44,24 @@ isSecret? lᴬ (Id τ) = inj₂ Id
 
 -- Erasure Function (entry-point)
 εᵀ : ∀ {τ n} {π : Context n} -> (lᴬ : Label) -> Term π τ -> Term π τ
-
-εᴴ : ∀ {n τ lᴬ} {π : Context n} -> Secret lᴬ τ -> Term π τ -> Term π τ
-εᴴ (Macᴴ h⋤lᴬ) (unId t) = ?
-εᴴ (Macᴴ h⋤lᴬ) (Var x∈π) = ?
-εᴴ (Macᴴ h⋤lᴬ) (App t t₁) = ?
-εᴴ (Macᴴ h⋤lᴬ) (If t Then t₁ Else t₂) = ?
-εᴴ (Macᴴ h⋤lᴬ) (Return l t) = ?
-εᴴ (Macᴴ h⋤lᴬ) (t >>= t₁) = ?
-εᴴ (Macᴴ h⋤lᴬ) (Mac l t) = ?
-εᴴ (Macᴴ h⋤lᴬ) (label l⊑h t) = ?
-εᴴ (Macᴴ h⋤lᴬ) (label∙ l⊑h t) = ?
-εᴴ (Macᴴ h⋤lᴬ) (unlabel l⊑h t) = ?
-εᴴ (Macᴴ h⋤lᴬ) (fork l⊑h t) = ?
-εᴴ (Macᴴ h⋤lᴬ) (deepDup x) = ?
-εᴴ (Macᴴ h⋤lᴬ) ∙ = ?
-
+εᴴ : ∀ {lᴬ n τ} {π : Context n} -> Secret lᴬ τ -> Term π τ -> Term π τ
 εᴸ : ∀ {lᴬ n τ} {π : Context n} -> Public lᴬ τ -> Term π τ -> Term π τ
+
+
+εᴴ {lᴬ} (Macᴴ h⋤lᴬ) (unId t) = unId (εᴸ {lᴬ} Id t)
+εᴴ (Macᴴ h⋤lᴬ) (Var x∈π) = Var x∈π
+εᴴ (Macᴴ h⋤lᴬ) (App t t₁) = ∙
+εᴴ {lᴬ} (Macᴴ h⋤lᴬ) (If t Then t₁ Else t₂) = If (εᴸ {lᴬ} Bool t) Then (εᴴ (Macᴴ h⋤lᴬ) t₁) Else (εᴴ (Macᴴ h⋤lᴬ) t₂)
+εᴴ (Macᴴ h⋤lᴬ) (Return l t) = ∙
+εᴴ (Macᴴ h⋤lᴬ) (t >>= t₁) = ∙
+εᴴ (Macᴴ h⋤lᴬ) (Mac l t) = ∙
+εᴴ (Macᴴ h⋤lᴬ) (label l⊑h t) = ∙
+εᴴ (Macᴴ h⋤lᴬ) (label∙ l⊑h t) = ∙
+εᴴ {lᴬ} (Macᴴ h⋤lᴬ) (unlabel l⊑h t) = unlabel l⊑h (εᵀ lᴬ t)
+εᴴ (Macᴴ h⋤lᴬ) (fork l⊑h t) = ∙
+εᴴ (Macᴴ h⋤lᴬ) (deepDup x) = ∙
+εᴴ (Macᴴ h⋤lᴬ) ∙ = ∙
+
 εᴸ p （） = （）
 εᴸ p True = True
 εᴸ p False = True
@@ -129,7 +130,7 @@ open import Function
 εᵏ : ∀ {τ₁ τ₂ l lᴬ} -> (Secret lᴬ τ₁) ⊎ (Public lᴬ τ₁) -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
 εᵏ (inj₁ x) S = ∙
 εᵏ (inj₂ y) [] = []
-εᵏ {lᴬ = lᴬ} (inj₂ y) (x ∷ S) = εᶜ lᴬ x ∷ εˢ lᴬ S
+εᵏ {lᴬ = lᴬ} (inj₂ y) (x ∷ S) = εᶜ lᴬ x ∷ εᵏ (isSecret? lᴬ _) S
 εᵏ (inj₂ y) ∙ = ∙
 
 εˢ {τ₁} lᴬ S = εᵏ (isSecret? lᴬ τ₁) S
@@ -159,58 +160,58 @@ Bind₂:
 -}
 
 -- Simulation Property
--- ε-sim' : ∀ {l lᴬ τ₁ τ₁' τ₂ n n' Γ Γ'} {S : Stack l τ₁ τ₂} {S' : Stack l τ₁' τ₂} {π : Context n} {π' : Context n'} {t : Term π τ₁} {t' : Term π' τ₁'} ->
---          (x : Level lᴬ τ₁) (y : Level lᴬ τ₁') ->
---            ⟨ Γ , t , S ⟩ ⇝ ⟨ Γ' , t' , S' ⟩ -> ⟨ (εʰ lᴬ Γ) , (εᵗ x t) , (εᵏ x S) ⟩ ⇝ ⟨ (εʰ lᴬ Γ') , (εᵗ y t') , (εᵏ y S') ⟩
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) y (App₁ Δ∈Γ) = {!!}
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) y (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = {!!}
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) y (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) y (Var₂ Δ∈Γ x∈π val) = {!!}
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ ()) If
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ Bool) If = {!!} -- :( ?
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) Return = Hole
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) Return = ⊥-elim (h⋤lᴬ l⊑lᴬ)
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) Bind₁ = {!Hole!} -- The type of ∙ might change
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) Bind₁ = ⊥-elim (h⋤lᴬ l⊑lᴬ)
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) Bind₂ = {!Hole!} -- Idem
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) Bind₂ = ⊥-elim (h⋤lᴬ l⊑lᴬ)
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) (Label' p) = Hole
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) (Label' p) = ⊥-elim (h⋤lᴬ l⊑lᴬ)
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ ()) (Unlabel₁ p)
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Res x)) (Unlabel₁ p₁) = {!unlabel p₁ ∷ S!} -- :(
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ ()) UnId₁
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ Id) UnId₁ = {!!} -- :(
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) (Fork p) = Hole
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) (Fork p) = ⊥-elim (h⋤lᴬ l⊑lᴬ)
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) Hole = Hole
--- ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ y) Hole = Hole
--- ε-sim' (inj₂ y) y₁ (App₁ Δ∈Γ) = {!!}
--- ε-sim' (inj₂ y) y₁ (App₂ y∈π x∈π) = {!!}
--- ε-sim' (inj₂ y) y₁ (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = {!!}
--- ε-sim' (inj₂ y) y₁ (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
--- ε-sim' (inj₂ y) y₁ (Var₂ Δ∈Γ x∈π val) = {!!}
--- ε-sim' (inj₂ y) (inj₁ ()) If
--- ε-sim' (inj₂ y) (inj₂ Bool) If = {!If!} -- Lemma
--- ε-sim' (inj₂ y) (inj₁ (Macᴴ h⋤lᴬ)) IfTrue = {!!} -- Lemma
--- ε-sim' (inj₂ y) (inj₂ y₁) IfTrue = {!!}
--- ε-sim' (inj₂ y) y₁ IfFalse = {!!}
--- ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₁ (Macᴴ h⋤lᴬ)) Return = ⊥-elim (h⋤lᴬ l⊑lᴬ)
--- ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₂ (Macᴸ l⊑lᴬ₁)) Return = {!Return!} -- Lemma
--- ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₁ (Macᴴ h⋤lᴬ)) Bind₁ = ⊥-elim (h⋤lᴬ l⊑lᴬ)
--- ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₂ (Macᴸ l⊑lᴬ₁)) Bind₁ = {!Bind₁!} -- Lemma
--- ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₁ (Macᴴ h⋤lᴬ)) Bind₂ = ⊥-elim (h⋤lᴬ l⊑lᴬ)
--- ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₂ (Macᴸ l⊑lᴬ₁)) Bind₂ = {!!} -- Lemma
--- ε-sim' (inj₂ y) y₁ (Label' p) = {!!}
--- ε-sim' (inj₂ y) y₁ (Unlabel₁ p) = {!!}
--- ε-sim' (inj₂ y) y₁ (Unlabel₂ p) = {!!}
--- ε-sim' (inj₂ y) (inj₁ ()) UnId₁
--- ε-sim' (inj₂ y) (inj₂ Id) UnId₁ = {!UnId₁!}
--- ε-sim' (inj₂ y) (inj₁ (Macᴴ h⋤lᴬ)) UnId₂ = {!!}
--- ε-sim' (inj₂ y) (inj₂ y₁) UnId₂ = {!!}
--- ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₁ (Macᴴ h⋤lᴬ)) (Fork p) = ⊥-elim (h⋤lᴬ l⊑lᴬ)
--- ε-sim' (inj₂ y) (inj₂ y₁) (Fork p) = {!!}
--- ε-sim' (inj₂ y) (inj₁ (Macᴴ h⋤lᴬ)) Hole = Hole
--- ε-sim' (inj₂ y) (inj₂ y₁) Hole = Hole
+ε-sim' : ∀ {l lᴬ τ₁ τ₁' τ₂ n n' Γ Γ'} {S : Stack l τ₁ τ₂} {S' : Stack l τ₁' τ₂} {π : Context n} {π' : Context n'} {t : Term π τ₁} {t' : Term π' τ₁'} ->
+         (x : Level lᴬ τ₁) (y : Level lᴬ τ₁') ->
+           ⟨ Γ , t , S ⟩ ⇝ ⟨ Γ' , t' , S' ⟩ -> ⟨ (εʰ lᴬ Γ) , (εᵗ x t) , (εᵏ x S) ⟩ ⇝ ⟨ (εʰ lᴬ Γ') , (εᵗ y t') , (εᵏ y S') ⟩
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) y (App₁ Δ∈Γ) = {!!}
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) y (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = {!!}
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) y (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) y (Var₂ Δ∈Γ x∈π val) = {!!}
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ ()) If
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ Bool) If = {!!} -- :( ?
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) Return = Hole
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) Return = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) Bind₁ = {!Hole!} -- Does not commute anymore
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) Bind₁ = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) Bind₂ = {!Hole!} -- Idem
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) Bind₂ = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) (Label' p) = Hole
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) (Label' p) = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ ()) (Unlabel₁ p)
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Res x)) (Unlabel₁ p₁) = {!unlabel p₁ ∷ S!} -- :(
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ ()) UnId₁
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ Id) UnId₁ = {!!} -- :(
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) (Fork p) = Hole
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) (Fork p) = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₁ (Macᴴ h⋤lᴬ₁)) Hole = Hole
+ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ y) Hole = Hole
+ε-sim' (inj₂ y) y₁ (App₁ Δ∈Γ) = {!!}
+ε-sim' (inj₂ y) y₁ (App₂ y∈π x∈π) = {!!}
+ε-sim' (inj₂ y) y₁ (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = {!!}
+ε-sim' (inj₂ y) y₁ (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
+ε-sim' (inj₂ y) y₁ (Var₂ Δ∈Γ x∈π val) = {!!}
+ε-sim' (inj₂ y) (inj₁ ()) If
+ε-sim' (inj₂ y) (inj₂ Bool) If = {!If!} -- Lemma
+ε-sim' (inj₂ y) (inj₁ (Macᴴ h⋤lᴬ)) IfTrue = {!!} -- Lemma
+ε-sim' (inj₂ y) (inj₂ y₁) IfTrue = {!!}
+ε-sim' (inj₂ y) y₁ IfFalse = {!!}
+ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₁ (Macᴴ h⋤lᴬ)) Return = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₂ (Macᴸ l⊑lᴬ₁)) Return = {!Return!} -- Lemma
+ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₁ (Macᴴ h⋤lᴬ)) Bind₁ = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₂ (Macᴸ l⊑lᴬ₁)) Bind₁ = {!Bind₁!} -- Lemma
+ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₁ (Macᴴ h⋤lᴬ)) Bind₂ = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₂ (Macᴸ l⊑lᴬ₁)) Bind₂ = {!!} -- Lemma
+ε-sim' (inj₂ y) y₁ (Label' p) = {!!}
+ε-sim' (inj₂ y) y₁ (Unlabel₁ p) = {!!}
+ε-sim' (inj₂ y) y₁ (Unlabel₂ p) = {!!}
+ε-sim' (inj₂ y) (inj₁ ()) UnId₁
+ε-sim' (inj₂ y) (inj₂ Id) UnId₁ = {!UnId₁!}
+ε-sim' (inj₂ y) (inj₁ (Macᴴ h⋤lᴬ)) UnId₂ = {!!}
+ε-sim' (inj₂ y) (inj₂ y₁) UnId₂ = {!!}
+ε-sim' (inj₂ (Macᴸ l⊑lᴬ)) (inj₁ (Macᴴ h⋤lᴬ)) (Fork p) = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' (inj₂ y) (inj₂ y₁) (Fork p) = {!!}
+ε-sim' (inj₂ y) (inj₁ (Macᴴ h⋤lᴬ)) Hole = Hole
+ε-sim' (inj₂ y) (inj₂ y₁) Hole = Hole
 
--- ε-sim : ∀ {l τ} {s₁ s₂ : State l τ} -> (lᴬ : Label) -> s₁ ⇝ s₂ -> ε lᴬ s₁ ⇝ ε lᴬ s₂
--- ε-sim {s₁ = ⟨ x , x₁ , x₂ ⟩} {⟨ x₃ , x₄ , x₅ ⟩} lᴬ step = ε-sim' (isSecret? lᴬ _) (isSecret? lᴬ _) step
+ε-sim : ∀ {l τ} {s₁ s₂ : State l τ} -> (lᴬ : Label) -> s₁ ⇝ s₂ -> ε lᴬ s₁ ⇝ ε lᴬ s₂
+ε-sim {s₁ = ⟨ x , x₁ , x₂ ⟩} {⟨ x₃ , x₄ , x₅ ⟩} lᴬ step = ε-sim' (isSecret? lᴬ _) (isSecret? lᴬ _) step
