@@ -13,19 +13,19 @@ open import Function
 
 -- The basic Term π τ is a term that has type τ in the context π
 -- π is extended by lambda abstractions, which add the type and name of their argument to it.
--- 
+--
 -- π can be considered in general as a superset of the unguarded free variables
 data Term {n : ℕ} (π : Context n) : Ty -> Set where
   （） : Term π （）
 
-  True : Term π Bool 
+  True : Term π Bool
   False : Term π Bool
 
   Id : ∀ {τ} -> Term π τ -> Term π (Id τ)
   unId : ∀ {τ} -> Term π (Id τ) -> Term π τ
 
   -- TODO: This unifies only when ty x is universally quantified, existentially quantify the type of the var.
-  Var : ∀ {x} -> (x∈π : x ∈ π) -> Term π (ty x) 
+  Var : ∀ {n l τ} -> (x∈π : ⟪ n , τ , l ⟫ ∈ π) -> Term π τ
   Abs : ∀ {β} -> (x : Variable) -> Term (x ∷ π) β -> Term π (ty x => β)
   App : ∀ {α β} -> Term π (α => β) -> Term π α -> Term π β
 
@@ -50,7 +50,7 @@ data Term {n : ℕ} (π : Context n) : Ty -> Set where
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
-  deepDup : (x : Variable) -> Term π (ty x)  -- This variable is unguarded
+  deepDup : ∀ {τ} -> ℕ × Label -> Term π τ  -- This variable is unguarded
 
   -- Represent sensitive information that has been erased.
   ∙ : ∀ {{τ}} -> Term π τ
@@ -61,13 +61,13 @@ data Value {n} {π : Context n} : ∀ {τ} -> Term π τ -> Set where
   True : Value True
   False : Value False
   Abs : ∀ {β} (x : Variable) (t : Term (x ∷ π) β) -> Value (Abs x t)
-  Id : ∀ {τ} (t : Term π τ) -> Value (Id t) 
+  Id : ∀ {τ} (t : Term π τ) -> Value (Id t)
   Mac : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Mac l t)
   Res : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Res l t)
 
 --------------------------------------------------------------------------------
 
--- -- The context of a term can be extended without harm
+-- The context of a term can be extended without harm
 wken : ∀ {τ n₁ n₂} {Δ₁ : Context n₁} {Δ₂ : Context n₂} -> Term Δ₁ τ -> Δ₁ ⊆ˡ Δ₂ -> Term Δ₂ τ
 wken （） p = （）
 wken True p = True
@@ -135,7 +135,7 @@ subst {Δ = Δ} v t = tm-subst [] Δ v t
 -- data Substs (t₁ : Term) : List ℕ -> List ℕ -> Term -> Set where
 --   [] : Substs t₁ [] [] t₁
 --   _∷_ : ∀ {t₂ t₃ n n' ns ns'} -> Subst n (Var n') t₁ t₂ -> Substs t₂ ns ns' t₃
---                               -> Substs t₁ (n ∷ ns) (n' ∷ ns') t₃ 
+--                               -> Substs t₁ (n ∷ ns) (n' ∷ ns') t₃
 
 -- --------------------------------------------------------------------------------
 
@@ -185,11 +185,11 @@ _↦_∈_ {τ} n t (RE M) = M n ≡ (τ , just t)
 
 --------------------------------------------------------------------------------
 
--- Exists Context, (hides index n) 
+-- Exists Context, (hides index n)
 ∃ᶜ : (P : ∀ {n} -> Context n -> Set) -> Set
 ∃ᶜ P = ∃ (λ n -> Σ (Context n) P)
 
-Heap : Set 
+Heap : Set
 Heap = (l : Label) -> ∃ᶜ (λ π -> Env l π)
 
 -- Update
