@@ -35,14 +35,15 @@ data Term {n : ℕ} (π : Context n) (l : Label) : Ty -> Set where
 
   If_Then_Else_ : ∀ {α} -> Term π l Bool -> Term π l α -> Term π l α -> Term π l α
 
-  Return : ∀ {α} -> Term π l α -> Term π l (Mac l α)
+  -- I need l' to allow for nested families, e.g. Mac l (Res h _)
+  Return : ∀ {α l'} -> Term π l' α -> Term π l (Mac l α)
   _>>=_ : ∀ {α β} -> Term π l (Mac l α) -> Term π l (α => Mac l β) -> Term π l (Mac l β)
 
   Mac : ∀ {α} -> Term π l α -> Term π l (Mac l α)
 
   Res : ∀ {α} -> Term π l α -> Term π l (Res l α)
 
-  label : ∀ {h α} -> (l⊑h : l ⊑ h) -> Term π l α -> Term π l (Mac l (Labeled h α))
+  label : ∀ {h α} -> (l⊑h : l ⊑ h) -> Term π h α -> Term π l (Mac l (Labeled h α))
   label∙ : ∀ {h α} -> (l⊑h : l ⊑ h) -> Term π l α -> Term π l (Mac l (Labeled h α))
 
   unlabel : ∀ {l' α} -> (l⊑h : l' ⊑ l) -> Term π l' (Labeled l' α) -> Term π l (Mac l α)
