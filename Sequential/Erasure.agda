@@ -154,6 +154,20 @@ open import Function
 εᶜ (unlabel p) = unlabel p
 εᶜ unId = unId
 
+-- This definition is inconvinient because we inspect the result of calling εˢ,
+-- hence it is not clear to Agda that it is homomorphic.
+-- I propose to use the Stack label as an approximation
+-- of the sensitivity of the computation.
+-- For instance unId :: >>= t :: [] : Stack H, is a stack that at some point will yield
+-- a computation Mac H.
+--
+
+-- Plan
+-- 1) Add labels to Cont
+-- 2) Tie Cont l in the >>= and unlabel constructor.
+-- 3) Erase terms to ∙ if the the label of the stack is H.
+-- 4) The label of the stack corresponds to the security level of the term under evaluation
+--    How can we enforce that ?
 
 εˢ : ∀ {τ₁ τ₂ l} -> Level τ₁ -> Level τ₂ -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
 εˢ a b ∙ = ∙
@@ -194,25 +208,30 @@ Bind₂:
 
 -}
 
+-- ε-sim' : ∀ {l n n' τ₁ τ₂}{π : Context n} {π' : Context n'} {S : Stack l τ₁ τ₂} {t₁ : Term π τ₁} {t₂ : Term π' τ₁'} ->
+
 
 
 -- Simulation Property
-ε-sim : ∀ { l τ} {s₁ s₂ : State l τ} -> s₁ ⇝ s₂ -> ε s₁ ⇝ ε s₂
-ε-sim (App₁ Δ∈Γ) = {!!}
-ε-sim (App₂ y∈π x∈π) = {!!}
-ε-sim (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = {!!}
-ε-sim (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
-ε-sim (Var₂ Δ∈Γ x∈π val) = {!!}
-ε-sim (If {S = S}) = {!!}
-ε-sim IfTrue = {!!}
-ε-sim IfFalse = {!!}
-ε-sim Return = {!!}
-ε-sim Bind₁ = {!!}
-ε-sim Bind₂ = {!!}
-ε-sim (Label' p) = {!!}
-ε-sim (Unlabel₁ p) = {!!}
-ε-sim (Unlabel₂ p) = {!!}
-ε-sim UnId₁ = {!!}
-ε-sim UnId₂ = {!!}
-ε-sim (Fork p) = {!!}
-ε-sim Hole = Hole
+ε-sim : ∀ {l τ} (s₁ s₂ : State l τ) -> s₁ ⇝ s₂ -> ε s₁ ⇝ ε s₂
+ε-sim ⟨ Γ , t , S ⟩ s₂ step with εᴷ S
+ε-sim ⟨ Γ , t , S ⟩ s₂ step | [] = {!!}
+ε-sim ⟨ Γ , t , S ⟩ s₂ step | x ∷ r = {!!}
+ε-sim ⟨ Γ , ._ , S ⟩ ._ (App₁ Δ∈Γ) | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , ._ ⟩ ._ (App₂ y∈π x∈π) | ∙ = {!!}
+ε-sim ⟨ Γ , .(Var x∈π) , S ⟩ ._ (Var₁ Δ∈Γ x∈π t∈Δ ¬val) | ∙ = {!!}
+ε-sim ⟨ Γ , .(Var x∈π) , S ⟩ ._ (Var₁' Δ∈Γ x∈π v∈Δ val) | ∙ = {!!}
+ε-sim ⟨ Γ , t , ._ ⟩ ._ (Var₂ Δ∈Γ x∈π val) | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , S ⟩ ._ If | ∙ = {!!}
+ε-sim ⟨ Γ , .True , ._ ⟩ ._ IfTrue | ∙ = {!!}
+ε-sim ⟨ Γ , .False , ._ ⟩ ._ IfFalse | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , S ⟩ ._ Return | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , S ⟩ ._ Bind₁ | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , ._ ⟩ ._ Bind₂ | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , S ⟩ ._ (Label' p) | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , S ⟩ ._ (Unlabel₁ p) | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , ._ ⟩ ._ (Unlabel₂ p) | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , S ⟩ ._ UnId₁ | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , ._ ⟩ ._ UnId₂ | ∙ = {!!}
+ε-sim ⟨ Γ , ._ , S ⟩ ._ (Fork p) | ∙ = {!!}
+ε-sim ⟨ Γ , .∙ , .∙ ⟩ .(⟨ Γ , ∙ , ∙ ⟩) Hole | ∙ = Hole
