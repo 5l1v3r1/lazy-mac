@@ -20,9 +20,9 @@ record Lattice : Set₁ where
     refl-⊑ : ∀ {l} -> l ⊑ l
     trans-⊑ : ∀ {l₁ l₂ l₃} -> l₁ ⊑ l₂ -> l₂ ⊑ l₃ -> l₁ ⊑ l₃
 
-   
+
   open import Data.Empty
-    
+
   trans-⋢  : ∀ {a b c} -> a ⊑ b -> ¬ (a ⊑ c) -> ¬ (b ⊑ c)
   trans-⋢ a⊑b ¬a⊑c b⊑c = ⊥-elim (¬a⊑c (trans-⊑ a⊑b b⊑c))
 

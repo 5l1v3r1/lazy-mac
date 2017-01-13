@@ -1,5 +1,4 @@
 import Lattice
-postulate 𝓛 : Lattice.Lattice
 
 module Types where
 
@@ -7,7 +6,9 @@ open import Relation.Nullary public
 open import Relation.Binary.PropositionalEquality
 open import Data.Empty public
 
-open Lattice.Lattice 𝓛 public
+postulate 𝓛 : Lattice.Lattice
+open Lattice.Lattice 𝓛
+--open Lattice.Lattice 𝓛 public
 
 open import Data.Vec using (Vec ; [] ; _∷_ ; lookup ; _++_ ; [_] ; _∈_ ; here ; there) public
 open import Data.Fin using (Fin ; zero ; suc) public
@@ -22,7 +23,7 @@ data Ty : Set where
   Mac : (l : Label) -> Ty -> Ty
   Res : (l : Label) -> Ty -> Ty
   Id : Ty -> Ty
-  
+
 infixr 3 _=>_
 
 -- Ref : Label -> Ty -> Ty
@@ -85,7 +86,7 @@ Context = Vec Variable
 
 -- Subset relation
 data _⊆ˡ_ : ∀ {n m} -> Context n -> Context m -> Set where
-  base : [] ⊆ˡ [] 
+  base : [] ⊆ˡ []
   cons : ∀ {α n m} {π₁ : Context n} {π₂ : Context m} -> π₁ ⊆ˡ π₂ -> (α ∷ π₁) ⊆ˡ (α ∷ π₂)
   drop : ∀ {α n m} {π₁ : Context n} {π₂ : Context m} -> π₁ ⊆ˡ π₂ -> π₁ ⊆ˡ (α ∷ π₂)
 

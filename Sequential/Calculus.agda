@@ -1,8 +1,11 @@
-import Lattice
+--import Lattice
 
 module Sequential.Calculus {- (𝓛 : Lattice) -} where
 
-open import Types renaming (_≟_ to _≟ᴸ_)
+open import Types
+import Lattice
+open Lattice.Lattice 𝓛 renaming (_≟_ to _≟ᴸ_)
+
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 open import Data.Nat using (ℕ ; zero ; suc ; _+_) public
 open import Data.Nat renaming ( _≟_ to  _≟ᴺ_ )

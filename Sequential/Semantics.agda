@@ -1,6 +1,10 @@
 module Sequential.Semantics {- (𝓛 : Lattice) -} where
 
+
 open import Types
+import Lattice
+open Lattice.Lattice 𝓛 renaming (_≟_ to _≟ᴸ_)
+
 open import Sequential.Calculus
 open import Data.Maybe
 open import Data.Product
