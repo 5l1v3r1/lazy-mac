@@ -38,13 +38,13 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
             -> (x∈π : x ∈ π) ->
           ⟨ Γ , Abs y t , Var x∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var x∈π) t , S ⟩
 
- Var₁ : ∀ {Γ n l' τ τ'}{n'} {π : Context n'} {Δ : Env l' π}  {S : Stack l τ τ'} ->
-          let x = ⟪ n , τ , l' ⟫ in {t : Term π τ}
-        -> (Δ∈Γ : l' ↦ Δ ∈ᴴ Γ)
+ Var₁ : ∀ {Γ n τ τ'} {n'} {π : Context n'} {Δ : Env l π}  {S : Stack l τ τ'} ->
+          let x = ⟪ n , τ , l ⟫ in {t : Term π τ}
+        -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
         -> (x∈π : x ∈ π)
         -> (t∈Δ : n ↦ t ∈ Δ)
         -> (¬val :  ¬ (Value t))
-        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨  Γ [ l' ↦ Δ [ n ↛ t ] ]ᴴ  , t , (# x∈π) ∷ S ⟩ -- Here we should prove that l == l'
+        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨  Γ [ l ↦ Δ [ n ↛ t ] ]ᴴ  , t , (# x∈π) ∷ S ⟩ -- Here we should prove that l == l'
 
  Var₁' : ∀ {Γ l' τ n τ'} {n'} {π : Context n'} {Δ : Env l' π} {S : Stack l τ τ'} ->
            let x = ⟪ n , τ , l' ⟫ in {v : Term π τ}
@@ -54,12 +54,12 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
          -> (val : Value v)
          -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ , v , S ⟩
 
- Var₂ : ∀ {Γ n τ τ' l'} {n'} {π : Context n'} {Δ : Env l' π} {S : Stack l τ τ'} {v : Term π τ} ->
-          let  x = ⟪ n , τ , l' ⟫ in
-           (Δ∈Γ : l' ↦ Δ ∈ᴴ Γ)
+ Var₂ : ∀ {Γ n τ τ'} {n'} {π : Context n'} {Δ : Env l π} {S : Stack l τ τ'} {v : Term π τ} ->
+          let  x = ⟪ n , τ , l ⟫ in
+           (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
         -> (x∈π : x ∈ π)
         -> (val : Value v)
-        -> ⟨ Γ , v , (# x∈π) ∷ S ⟩ ⇝ ⟨  Γ [ l' ↦ Δ [ n ↦ v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
+        -> ⟨ Γ , v , (# x∈π) ∷ S ⟩ ⇝ ⟨  Γ [ l ↦ Δ [ n ↦ v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
 
  If : ∀ {Γ n τ τ'} {π : Context n} {S : Stack l τ τ'} {t₁ : Term π Bool} {t₂ t₃ : Term π τ} ->
         ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩

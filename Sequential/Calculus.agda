@@ -145,13 +145,13 @@ subst {Δ = Δ} v t = tm-subst [] Δ v t
 -- A Well-Typed continuation (Cont), contains well-typed terms and
 -- transform the input type (first indexed) in the output type (second
 -- index).
-data Cont : Ty -> Ty -> Set where
- Var : ∀ {τ₂ n} {π : Context n} {x : Variable} -> (x∈π : x ∈ π) -> Cont (ty x => τ₂) τ₂
- # : ∀ {n τ n' l} {π : Context n} -> (x∈π : ⟪ n' , τ , l ⟫ ∈ π)  -> Cont τ τ -- TODO maybe here we'd need x ∈ π ?
- Then_Else_ : ∀ {τ n} {π : Context n} -> Term π τ -> Term π τ -> Cont Bool τ
- Bind :  ∀ {τ₁ τ₂ l n} {π : Context n} -> Term π (τ₁ => Mac l τ₂) -> Cont (Mac l τ₁) (Mac l τ₂)
- unlabel : ∀ {l h τ} (p : l ⊑ h) -> Cont (Labeled l τ) (Mac h τ)
- unId : ∀ {τ} -> Cont (Id τ) τ
+data Cont (l : Label) : Ty -> Ty -> Set where
+ Var : ∀ {τ₂ n} {π : Context n} {x : Variable} -> (x∈π : x ∈ π) -> Cont l (ty x => τ₂) τ₂
+ # : ∀ {n τ n'} {π : Context n} -> (x∈π : ⟪ n' , τ , l ⟫ ∈ π)  -> Cont l τ τ
+ Then_Else_ : ∀ {τ n} {π : Context n} -> Term π τ -> Term π τ -> Cont l Bool τ
+ Bind :  ∀ {τ₁ τ₂ n} {π : Context n} -> Term π (τ₁ => Mac l τ₂) -> Cont l (Mac l τ₁) (Mac l τ₂)
+ unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Cont l (Labeled l' τ) (Mac l τ)
+ unId : ∀ {τ} -> Cont l (Id τ) τ
 
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
 -- by an input type and an output type.
@@ -159,7 +159,7 @@ data Cont : Ty -> Ty -> Set where
 -- TODO can we remove the label if we State is already labeled?
 data Stack (l : Label) : Ty -> Ty -> Set where
  [] : ∀ {τ} -> Stack l τ τ
- _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont τ₁ τ₂ -> Stack l τ₂ τ₃ -> Stack l τ₁ τ₃
+ _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont l τ₁ τ₂ -> Stack l τ₂ τ₃ -> Stack l τ₁ τ₃
  ∙ : ∀ {τ₁ τ₂} -> Stack l τ₁ τ₂
 
 --------------------------------------------------------------------------------
