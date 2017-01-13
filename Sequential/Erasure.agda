@@ -64,7 +64,7 @@ isSecret? lᴬ (Id τ) = inj₂ Id
 
 εᴸ p （） = （）
 εᴸ p True = True
-εᴸ p False = True
+εᴸ p False = False
 εᴸ {l} p (Id t) = Id (εᵀ l t)
 εᴸ {l} p (unId t) = unId (εᴸ {l} Id t)
 εᴸ p (Var x∈π) = Var x∈π
