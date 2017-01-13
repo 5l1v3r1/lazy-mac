@@ -147,7 +147,7 @@ subst {Δ = Δ} v t = tm-subst [] Δ v t
 -- index).
 data Cont : Ty -> Ty -> Set where
  Var : ∀ {τ₂ n} {π : Context n} {x : Variable} -> (x∈π : x ∈ π) -> Cont (ty x => τ₂) τ₂
- # : ∀ {n} {π : Context n} {x : Variable} -> (x∈π : x ∈ π)  -> Cont (ty x) (ty x) -- TODO maybe here we'd need x ∈ π ?
+ # : ∀ {n τ n' l} {π : Context n} -> (x∈π : ⟪ n' , τ , l ⟫ ∈ π)  -> Cont τ τ -- TODO maybe here we'd need x ∈ π ?
  Then_Else_ : ∀ {τ n} {π : Context n} -> Term π τ -> Term π τ -> Cont Bool τ
  Bind :  ∀ {τ₁ τ₂ l n} {π : Context n} -> Term π (τ₁ => Mac l τ₂) -> Cont (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l h τ} (p : l ⊑ h) -> Cont (Labeled l τ) (Mac h τ)

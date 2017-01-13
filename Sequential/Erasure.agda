@@ -145,6 +145,13 @@ open import Function
 
 open import Relation.Binary.PropositionalEquality
 
+-- Proof irrelevance
+εᴸ-≡  : ∀ {τ lᴬ n} {π : Context n} -> (x y : Public lᴬ τ) (t : Term π τ) -> εᴸ x t ≡ εᴸ y t
+εᴸ-≡ x y t = {!!}
+
+
+open import Relation.Binary.PropositionalEquality
+
 {-
 
 Homomorphic erasure function for MAC H and stack does works for Bind₁ but not for Bind₂
@@ -201,24 +208,41 @@ Bind₂:
 ε-sim' (inj₁ (Macᴴ h⋤lᴬ)) (inj₂ (Macᴸ l⊑lᴬ)) (Fork p) = ⊥-elim (h⋤lᴬ l⊑lᴬ)
 ε-sim' (inj₁ x) (inj₁ x₁) Hole = Hole
 ε-sim' (inj₁ x) (inj₂ y) Hole = Hole
-ε-sim' (inj₂ y) y₁ (App₁ Δ∈Γ) = ?
-ε-sim' (inj₂ y) y₁ (App₂ y∈π x∈π) = ?
-ε-sim' (inj₂ y) y₁ (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = ?
-ε-sim' (inj₂ y) y₁ (Var₁' Δ∈Γ x∈π v∈Δ val) = ?
-ε-sim' (inj₂ y) y₁ (Var₂ Δ∈Γ x∈π val) = ?
-ε-sim' (inj₂ y) y₁ If = ?
-ε-sim' (inj₂ y) y₁ IfTrue = ?
-ε-sim' (inj₂ y) y₁ IfFalse = ?
-ε-sim' (inj₂ y) y₁ Return = ?
-ε-sim' (inj₂ y) y₁ Bind₁ = ?
-ε-sim' (inj₂ y) y₁ Bind₂ = ?
-ε-sim' (inj₂ y) y₁ (Label' p) = ?
-ε-sim' (inj₂ y) y₁ (Unlabel₁ p) = ?
-ε-sim' (inj₂ y) y₁ (Unlabel₂ p) = ?
-ε-sim' (inj₂ y) y₁ UnId₁ = ?
-ε-sim' (inj₂ y) y₁ UnId₂ = ?
-ε-sim' (inj₂ y) y₁ (Fork p) = ?
-ε-sim' (inj₂ y) y₁ Hole = ?
+ε-sim' (inj₂ y) y₁ (App₁ Δ∈Γ) = {!!}
+ε-sim' (inj₂ y) y₁ (App₂ y∈π x∈π) = {!!}
+ε-sim' (inj₂ y) y₁ (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = {!!}
+ε-sim' (inj₂ y) y₁ (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
+ε-sim' (inj₂ y) y₁ (Var₂ Δ∈Γ x∈π val) = {!!}
+ε-sim' (inj₂ y) (inj₁ ()) If
+ε-sim' {lᴬ} {τ₁ = τ₁} {S₁ = []} (inj₂ y) (inj₂ Bool) If with isSecret? lᴬ τ₁
+ε-sim' {S₁ = []} (inj₂ (Macᴸ l⊑lᴬ)) (inj₂ Bool) If | inj₁ (Macᴴ h⋤lᴬ) = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' {lᴬ} {τ₁ = τ₁} {S₁ = []} (inj₂ y₁) (inj₂ Bool) If | inj₂ y with isSecret? lᴬ τ₁
+ε-sim' {S₁ = []} (inj₂ y₁) (inj₂ Bool) If | inj₂ (Macᴸ l⊑lᴬ) | inj₁ (Macᴴ h⋤lᴬ) = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' {S₁ = []} (inj₂ y₂) (inj₂ Bool) (If {t₂ = t₂} {t₃ = t₃}) | inj₂ y₁ | inj₂ y
+  rewrite εᴸ-≡ y₂ y t₂ | εᴸ-≡ y₂ y t₃ = If
+ε-sim' {lᴬ} {S₁ = _∷_ {τ₁ = τ₁} {τ₂ = τ₂} c S₁} (inj₂ y) (inj₂ Bool) If with isSecret? lᴬ τ₁
+ε-sim' {S₁ = c ∷ S₁} (inj₂ (Macᴸ l⊑lᴬ)) (inj₂ Bool) If | inj₁ (Macᴴ h⋤lᴬ) = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+ε-sim' {lᴬ} {S₁ = _∷_ {τ₂ = τ₂} c S₁} (inj₂ y₁) (inj₂ Bool) If | inj₂ y with isSecret? lᴬ τ₂
+ε-sim' {S₁ = c ∷ S₁} (inj₂ y₁) (inj₂ Bool) If | inj₂ y | inj₁ (Macᴴ h⋤lᴬ) = {!!}
+... | inj₂ y' = {!!}
+ε-sim' {S₁ = ∙} (inj₂ y) (inj₂ Bool) If = {!If!}
+-- with isSecret? lᴬ τ₁
+-- ε-sim' {lᴬ} {l} {τ₁} {.Bool} {.τ₁} {n₁} {.n₁} {Γ} {.Γ} {π₁} {.π₁} {._} {t₂} {[]} (inj₂ y) (inj₂ Bool) If | inj₁ x = {!!}
+-- ε-sim' {lᴬ} {l} {τ₁} {.Bool} {τ₃} {n₁} {.n₁} {Γ} {.Γ} {π₁} {.π₁} {._} {t₂} {x₁ ∷ S₁} (inj₂ y) (inj₂ Bool) If | inj₁ x = {!!}
+-- ε-sim' {lᴬ} {l} {τ₁} {.Bool} {τ₃} {n₁} {.n₁} {Γ} {.Γ} {π₁} {.π₁} {._} {t₂} {∙} (inj₂ y) (inj₂ Bool) If | inj₁ x = {!!}
+-- ε-sim' (inj₂ y₁) (inj₂ Bool) If | inj₂ y = {!If!}
+ε-sim' (inj₂ y) y₁ IfTrue = {!!}
+ε-sim' (inj₂ y) y₁ IfFalse = {!!}
+ε-sim' (inj₂ y) y₁ Return = {!!}
+ε-sim' (inj₂ y) y₁ Bind₁ = {!!}
+ε-sim' (inj₂ y) y₁ Bind₂ = {!!}
+ε-sim' (inj₂ y) y₁ (Label' p) = {!!}
+ε-sim' (inj₂ y) y₁ (Unlabel₁ p) = {!!}
+ε-sim' (inj₂ y) y₁ (Unlabel₂ p) = {!!}
+ε-sim' (inj₂ y) y₁ UnId₁ = {!!}
+ε-sim' (inj₂ y) y₁ UnId₂ = {!!}
+ε-sim' (inj₂ y) y₁ (Fork p) = {!!}
+ε-sim' (inj₂ y) y₁ Hole = {!!}
 
 -- Simulation Property
 ε-sim : ∀ {lᴬ l τ} {s₁ s₂ : State l τ} -> s₁ ⇝ s₂ -> ε lᴬ s₁ ⇝ ε lᴬ s₂
