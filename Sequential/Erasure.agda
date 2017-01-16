@@ -47,78 +47,59 @@ isSecret? (Id τ) = inj₂ Id
 
 open import Data.Product
 
-level : Ty -> Set
-level （） = ⊤
-level Bool = ⊤
-level (τ => τ₁) = level τ × level τ₁
-level (Mac l τ) = (Dec (l ⊑ A)) × (level τ)
-level (Res l τ) = (Dec (l ⊑ A)) × (level τ)
-level (Id τ) = level τ
+-- level : Ty -> Set
+-- level （） = ⊤
+-- level Bool = ⊤
+-- level (τ => τ₁) = level τ × level τ₁
+-- level (Mac l τ) = (Dec (l ⊑ A)) × (level τ)
+-- level (Res l τ) = (Dec (l ⊑ A)) × (level τ)
+-- level (Id τ) = level τ
 
-level[_] : (τ : Ty) -> level τ
-level[ （） ] = tt
-level[ Bool ] = tt
-level[ τ => τ₁ ] = level[ τ ] , level[ τ₁ ]
-level[ Mac l τ ] = (l ⊑? A) , level[ τ ]
-level[ Res l τ ] = (l ⊑? A) , level[ τ ]
-level[ Id τ ] = level[ τ ]
+-- level[_] : (τ : Ty) -> level τ
+-- level[ （） ] = tt
+-- level[ Bool ] = tt
+-- level[ τ => τ₁ ] = level[ τ ] , level[ τ₁ ]
+-- level[ Mac l τ ] = (l ⊑? A) , level[ τ ]
+-- level[ Res l τ ] = (l ⊑? A) , level[ τ ]
+-- level[ Id τ ] = level[ τ ]
 
-εᵗ : ∀ {τ n } {π : Context n} -> level τ -> Term π τ -> Term π τ
+εᵗ : ∀ {τ n } {π : Context n} -> Level τ -> Term π τ -> Term π τ
 εᵗ x （） = （）
 εᵗ x True = True
 εᵗ x False = False
-εᵗ x (Id t) = Id (εᵗ x t)
-εᵗ {（）} x (unId t) = unId (εᵗ x t)
-εᵗ {Bool} x (unId t) = unId (εᵗ x t)
-εᵗ {τ => τ₁} x (unId t) = unId (εᵗ x t)
-εᵗ {Mac l τ} (yes p , proj₂) (unId t) = unId (εᵗ (yes p , proj₂) t)
-εᵗ {Mac l τ} (no ¬p , proj₂) (unId t) = ∙
-εᵗ {Res l τ} x (unId t) = unId (εᵗ x t)
-εᵗ {Id τ} x (unId t) = unId (εᵗ x t)
-εᵗ x (Var x∈π) = Var x∈π
-εᵗ (proj₁ , proj₂) (Abs x t) = Abs x (εᵗ proj₂ t)
-εᵗ {（）} x (App {α} t t₁) = App (εᵗ (level[ α ] , tt) t) (εᵗ level[ α ] t₁)
-εᵗ {Bool} x (App {α} t t₁) = App (εᵗ (level[ α ] , tt) t) (εᵗ level[ α ] t₁)
-εᵗ {τ => τ₁} x (App {α} t t₁) = App (εᵗ (level[ α ] , x) t) (εᵗ level[ α ] t₁)
-εᵗ {Mac l τ} (yes p , proj₂) (App {α} t t₁) = App (εᵗ (level[ α ] , yes p , proj₂) t) (εᵗ level[ α ] t₁)
-εᵗ {Mac l τ} (no ¬p , proj₂) (App t t₁) = ∙
-εᵗ {Res l τ} x (App {α} t t₁) = App (εᵗ (level[ α ] , x) t) (εᵗ level[ α ] t₁)
-εᵗ {Id τ} x (App {α} t t₁) = App (εᵗ (level[ α ] , x) t) (εᵗ level[ α ] t₁)
-εᵗ {（）} x (If t Then t₁ Else t₂) = If (εᵗ tt t) Then (εᵗ tt t₁) Else (εᵗ tt t₂)
-εᵗ {Bool} x (If t Then t₁ Else t₂) = If (εᵗ tt t) Then (εᵗ tt t₁) Else (εᵗ tt t₂)
-εᵗ {τ => τ₁} x (If t Then t₁ Else t₂) = If (εᵗ tt t) Then (εᵗ x t₁) Else (εᵗ x t₂)
-εᵗ {Mac l τ} (yes p , proj₂) (If t Then t₁ Else t₂) = If (εᵗ tt t) Then (εᵗ (yes p , proj₂) t₁) Else (εᵗ (yes p , proj₂) t₂)
-εᵗ {Mac l τ} (no ¬p , proj₂) (If t Then t₁ Else t₂) = ∙
-εᵗ {Res l τ} x (If t Then t₁ Else t₂) = If (εᵗ tt t) Then (εᵗ x t₁) Else (εᵗ x t₂)
-εᵗ {Id τ} x (If t Then t₁ Else t₂) = If (εᵗ tt t) Then (εᵗ x t₁) Else (εᵗ x t₂)
-εᵗ (yes p , proj₂) (Return l t) = Return l (εᵗ proj₂ t)
-εᵗ (no ¬p , proj₂) (Return l t) = ∙
-εᵗ (yes p , proj₂) (_>>=_ {α = α} t t₁) = (εᵗ ((yes p) , level[ α ]) t) >>= (εᵗ (level[ α ] , (yes p , proj₂)) t₁)
-εᵗ (no ¬p , proj₂) (t >>= t₁) = ∙
-εᵗ (yes p , proj₂) (Mac l t) = Mac l (εᵗ proj₂ t)
-εᵗ (no ¬p , proj₂) (Mac l t) = ∙
-εᵗ (yes p , proj₂) (Res l t) = Res l (εᵗ proj₂ t)
-εᵗ (no ¬p , proj₂) (Res l t) = Res l ∙
-εᵗ (yes A⊑L , yes p , α₁) (label L⊑H t) = label L⊑H (εᵗ α₁ t)
-εᵗ (yes A⊑L , no ¬p , α₁) (label L⊑H t) = label∙ L⊑H (εᵗ α₁ t)
-εᵗ (no ¬A⊑L , x , α₁) (label l⊑h t) = ∙
-εᵗ (yes A⊑L , x , α₁) (label∙ L⊑H t) = label∙ L⊑H (εᵗ α₁ t)
-εᵗ (no ¬A⊑L , x , α₁) (label∙ l⊑h t) = ∙
-εᵗ (yes p , proj₂) (unlabel l⊑h t) = unlabel l⊑h (εᵗ ((yes (trans-⊑ l⊑h p)) , proj₂) t)
-εᵗ (no ¬p , proj₂) (unlabel l⊑h t) = ∙
-εᵗ (yes p , proj₂) (fork l⊑h t) = fork l⊑h (εᵗ level[ (Mac _ （）) ] t)
-εᵗ (no ¬p , proj₂) (fork l⊑h t) = ∙
-εᵗ {（）} x (deepDup x₁) = deepDup x₁
-εᵗ {Bool} x (deepDup x₁) = deepDup x₁
-εᵗ {τ => τ₁} x (deepDup x₁) = deepDup x₁
-εᵗ {Mac l τ} (yes p , proj₂) (deepDup x₁) = deepDup x₁
-εᵗ {Mac l τ} (no ¬p , proj₂) (deepDup x₁) = ∙
-εᵗ {Res l τ} x (deepDup x₁) = deepDup x₁
-εᵗ {Id τ} x (deepDup x₁) = deepDup x₁
+εᵗ x (Id t) = Id (εᵗ (isSecret? _) t)
+εᵗ (inj₁ x) (unId t) = ∙
+εᵗ (inj₂ y) (unId t) = unId (εᵗ (inj₂ Id) t)
+εᵗ x (Var x∈π) = Var x∈π  -- Can we kill variables as well?
+εᵗ _ (Abs x t) = Abs x (εᵗ (isSecret? _) t)
+εᵗ (inj₁ x) (App t t₁) = ∙
+εᵗ (inj₂ y) (App t t₁) = App (εᵗ (inj₂ Fun) t) (εᵗ (isSecret? _) t₁)
+εᵗ (inj₁ x) (If t Then t₁ Else t₂) = ∙
+εᵗ (inj₂ y) (If t Then t₁ Else t₂) = If (εᵗ (inj₂ Bool) t) Then (εᵗ (inj₂ y) t₁) Else (εᵗ (inj₂ y) t₂)
+εᵗ (inj₁ x) (Return l t) = ∙
+εᵗ (inj₂ y) (Return l t) = Return l (εᵗ (isSecret? _) t)
+εᵗ (inj₁ x) (t >>= t₁) = ∙
+εᵗ (inj₂ (Macᴸ l⊑lᴬ)) (t >>= t₁) = εᵗ (inj₂ (Macᴸ l⊑lᴬ)) t >>= (εᵗ (inj₂ Fun) t₁)
+εᵗ (inj₁ x) (Mac l t) = ∙
+εᵗ (inj₂ y) (Mac l t) = Mac l (εᵗ (isSecret? _) t)
+εᵗ (inj₁ ()) (Res l t)
+εᵗ (inj₂ (Res (yes p))) (Res l t) = Res l (εᵗ (isSecret? _) t)
+εᵗ (inj₂ (Res (no ¬p))) (Res l t) = Res l ∙
+εᵗ (inj₁ x) (label L⊑H t) = ∙
+εᵗ (inj₂ (Macᴸ l⊑lᴬ)) (label {h = H} L⊑H t) with H ⊑? A
+εᵗ (inj₂ (Macᴸ l⊑lᴬ)) (label L⊑H t) | yes p = label L⊑H (εᵗ (isSecret? _) t)
+εᵗ (inj₂ (Macᴸ l⊑lᴬ)) (label L⊑H t) | no ¬p = label∙ L⊑H (εᵗ (isSecret? _) t)
+εᵗ (inj₁ x) (label∙ L⊑H t) = ∙
+εᵗ (inj₂ y) (label∙ L⊑H t) = label∙ L⊑H (εᵗ (isSecret? _) t)
+εᵗ (inj₁ x) (unlabel l⊑h t) = ∙
+εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel L⊑H t) = unlabel L⊑H (εᵗ (isSecret? _)  t) -- This should be only inj₂ due to transitivity
+εᵗ (inj₁ x) (fork l⊑h t) = ∙
+εᵗ (inj₂ y) (fork l⊑h t) = fork l⊑h (εᵗ (isSecret? _) t)
+εᵗ x (deepDup x₁) = deepDup x₁ -- Must be consistent with Var
 εᵗ x ∙ = ∙
 
 εᵀ : ∀ {τ n } {π : Context n} -> Term π τ -> Term π τ
-εᵀ {τ} t = εᵗ level[ τ ] t
+εᵀ {τ} t = εᵗ (isSecret? _) t
 
 --------------------------------------------------------------------------------
 
@@ -169,26 +150,20 @@ open import Function
 -- 4) The label of the stack corresponds to the security level of the term under evaluation
 --    How can we enforce that ?
 
-εˢ : ∀ {τ₁ τ₂ l} -> Level τ₁ -> Level τ₂ -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
-εˢ a b ∙ = ∙
-εˢ (inj₁ x) b [] = ∙
-εˢ (inj₂ y) b [] = []
-εˢ (inj₁ x) b (x₁ ∷ S) = ∙
-εˢ (inj₂ y) (inj₁ x) (x₁ ∷ S) = ∙
-εˢ (inj₂ y) (inj₂ y₁) (x ∷ S) with εˢ (isSecret? _) (isSecret? _) S
-εˢ (inj₂ y) (inj₂ y₁) (x ∷ S) | ∙ = ∙
-εˢ (inj₂ y) (inj₂ y₁) (x ∷ S) | S' = (εᶜ x) ∷ S'
+-- Fully homomorphic erasure on stack
+εˢ : ∀ {τ₁ τ₂ l} -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
+εˢ [] = []
+εˢ (c ∷ S) = (εᶜ c) ∷ εˢ S
+εˢ ∙ = ∙
 
-εᴷ : ∀ {τ₁ τ₂ l} -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
-εᴷ S = εˢ (isSecret? _) (isSecret? _) S
+-- εᴷ : ∀ {τ₁ τ₂ l} -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
+-- εᴷ S = εˢ (isSecret? _) (isSecret? _) S
 
 --------------------------------------------------------------------------------
 
-ε : ∀ {l τ} -> State l τ -> State l τ
-ε ⟨ Γ , t , S ⟩ with εᴷ S
-ε {τ = τ} (⟨_,_,_⟩ {π = π} Γ t S) | ∙ = ⟨ (εʰ Γ) , ∙ {π = π} , ∙ {τ₁ = τ}⟩
-ε ⟨ Γ , t , S ⟩ | S' = ⟨ (εʰ Γ) , (εᵀ t) , S' ⟩
-
+ε : ∀ {l τ} -> Level (Mac l τ) ->  State l (Mac l τ) -> State l (Mac l τ)
+ε {l} {τ} (inj₁ ¬p) (⟨_,_,_⟩ {π = π} Γ t S) = ⟨ (εʰ Γ) , ∙ {π = π} {{Mac l τ}} , ∙ ⟩
+ε (inj₂ p) ⟨ Γ , t , S ⟩ = ⟨ (εʰ Γ) , εᵀ t , εˢ S ⟩
 
 --------------------------------------------------------------------------------
 
@@ -210,28 +185,103 @@ Bind₂:
 
 -- ε-sim' : ∀ {l n n' τ₁ τ₂}{π : Context n} {π' : Context n'} {S : Stack l τ₁ τ₂} {t₁ : Term π τ₁} {t₂ : Term π' τ₁'} ->
 
+-- This is the proof that it is impossible to turn a high computation into a low one
+-- We need this lemma to discharge those cases in which the Stack produce a Mac L
+-- computation but the current term under evaluation has type Mac H.
+lemma : ∀ {l h τ₁ τ₂} -> A ⊑ l -> A ⋤ h -> Stack l (Mac h τ₁) (Mac l τ₂) -> ⊥
+lemma A⊑L A⋤H [] = ⊥-elim (A⋤H A⊑L)
+lemma A⊑L A⋤H (# x∈π ∷ S) = lemma A⊑L A⋤H S
+lemma A⊑L A⋤H (Bind x ∷ S) = lemma A⊑L A⋤H S
+lemma {L} {H} A⊑L A⋤H ∙ with L ⊑? H
+lemma A⊑L A⋤H ∙ | yes L⊑H = trans-⋢ A⊑L A⋤H L⊑H
+lemma A⊑L A⋤H ∙ | no L⋤H = {!trans-⋢!} -- Is it the case that H ⋤ L -> L ⊑ H ?
 
+
+lemma' : ∀ {l h τ₁ τ₂} -> Secret (Mac h τ₁) -> Public (Mac l τ₂) -> Stack l (Mac h τ₁) (Mac l τ₂) -> ⊥
+lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) [] = ⊥-elim (h⋤lᴬ l⊑lᴬ)
+lemma' x y (# x∈π ∷ S) = lemma' x y S
+lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) (Bind x₁ ∷ S) = lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) S
+lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) ∙ = {!!} -- Is it the case that H ⋤ L -> L ⊑ H ?
 
 -- Simulation Property
-ε-sim : ∀ {l τ} (s₁ s₂ : State l τ) -> s₁ ⇝ s₂ -> ε s₁ ⇝ ε s₂
-ε-sim ⟨ Γ , t , S ⟩ s₂ step with εᴷ S
-ε-sim ⟨ Γ , t , S ⟩ s₂ step | [] = {!!}
-ε-sim ⟨ Γ , t , S ⟩ s₂ step | x ∷ r = {!!}
-ε-sim ⟨ Γ , ._ , S ⟩ ._ (App₁ Δ∈Γ) | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , ._ ⟩ ._ (App₂ y∈π x∈π) | ∙ = {!!}
-ε-sim ⟨ Γ , .(Var x∈π) , S ⟩ ._ (Var₁ Δ∈Γ x∈π t∈Δ ¬val) | ∙ = {!!}
-ε-sim ⟨ Γ , .(Var x∈π) , S ⟩ ._ (Var₁' Δ∈Γ x∈π v∈Δ val) | ∙ = {!!}
-ε-sim ⟨ Γ , t , ._ ⟩ ._ (Var₂ Δ∈Γ x∈π val) | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , S ⟩ ._ If | ∙ = {!!}
-ε-sim ⟨ Γ , .True , ._ ⟩ ._ IfTrue | ∙ = {!!}
-ε-sim ⟨ Γ , .False , ._ ⟩ ._ IfFalse | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , S ⟩ ._ Return | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , S ⟩ ._ Bind₁ | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , ._ ⟩ ._ Bind₂ | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , S ⟩ ._ (Label' p) | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , S ⟩ ._ (Unlabel₁ p) | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , ._ ⟩ ._ (Unlabel₂ p) | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , S ⟩ ._ UnId₁ | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , ._ ⟩ ._ UnId₂ | ∙ = {!!}
-ε-sim ⟨ Γ , ._ , S ⟩ ._ (Fork p) | ∙ = {!!}
-ε-sim ⟨ Γ , .∙ , .∙ ⟩ .(⟨ Γ , ∙ , ∙ ⟩) Hole | ∙ = Hole
+-- Note that I fixed the type of the whole configuration to be Mac l τ, in order
+-- to tie the security level of the computation to that of the stack.
+-- It is also with the fact that all of these computations will be threads
+-- in the concurrent semantics.
+-- Since the actual term under evaluation can have any type the property
+-- is still sufficiently general.
+ε-sim : ∀ {l τ} (s₁ s₂ : State l (Mac l τ)) (x : Level (Mac l τ)) -> s₁ ⇝ s₂ -> ε x s₁ ⇝ ε x s₂
+-- Here we need to reason about where variables are pushed
+ε-sim ⟨ x , ._ , x₂ ⟩ ⟨ ._ , x₄ , .(Var here ∷ x₂) ⟩ (inj₁ _) (App₁ Δ∈Γ) = {!!}
+ε-sim ⟨ Γ , ._ , .(Var x∈π ∷ x₅) ⟩ ⟨ .Γ , ._ , x₅ ⟩ (inj₁ _) (App₂ y∈π x∈π) = Hole
+ε-sim ⟨ Γ , .(Var x∈π) , x₂ ⟩ ⟨ ._ , x₄ , .(# x∈π ∷ x₂) ⟩ (inj₁ _) (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = {!!}
+ε-sim ⟨ Γ , .(Var x∈π) , x₂ ⟩ ⟨ .Γ , x₄ , .x₂ ⟩ (inj₁ _) (Var₁' Δ∈Γ x∈π v∈Δ val) = Hole
+ε-sim ⟨ Γ , x₁ , .(# x∈π ∷ x₅) ⟩ ⟨ ._ , .x₁ , x₅ ⟩ (inj₁ _) (Var₂ Δ∈Γ x∈π val) = {!!}
+ε-sim ⟨ x , ._ , x₂ ⟩ ⟨ .x , x₄ , ._ ⟩ (inj₁ _) If = Hole
+ε-sim ⟨ x , .True , ._ ⟩ ⟨ .x , x₄ , x₅ ⟩ (inj₁ _) IfTrue = Hole
+ε-sim ⟨ x , .False , ._ ⟩ ⟨ .x , x₄ , x₅ ⟩ (inj₁ _) IfFalse = Hole
+ε-sim ⟨ x , ._ , x₂ ⟩ ⟨ .x , ._ , .x₂ ⟩ (inj₁ _) Return = Hole
+ε-sim ⟨ x , ._ , x₂ ⟩ ⟨ .x , x₄ , ._ ⟩ (inj₁ _) Bind₁ = Hole
+ε-sim ⟨ x , ._ , ._ ⟩ ⟨ .x , ._ , x₅ ⟩ (inj₁ _) Bind₂ = Hole
+ε-sim ⟨ Γ , ._ , x₂ ⟩ ⟨ .Γ , ._ , .x₂ ⟩ (inj₁ _) (Label' p) = Hole
+ε-sim ⟨ Γ , .(unlabel p x₄) , x₂ ⟩ ⟨ .Γ , x₄ , .(unlabel p ∷ x₂) ⟩ (inj₁ _) (Unlabel₁ p) = Hole
+ε-sim ⟨ Γ , ._ , .(unlabel p ∷ x₅) ⟩ ⟨ .Γ , ._ , x₅ ⟩ (inj₁ _) (Unlabel₂ p) = Hole
+ε-sim ⟨ x , .(unId x₄) , x₂ ⟩ ⟨ .x , x₄ , .(unId ∷ x₂) ⟩ (inj₁ _) UnId₁ = Hole
+ε-sim ⟨ x , .(Id x₄) , .(unId ∷ x₅) ⟩ ⟨ .x , x₄ , x₅ ⟩ (inj₁ _) UnId₂ = Hole
+ε-sim ⟨ Γ , ._ , x₂ ⟩ ⟨ .Γ , ._ , .x₂ ⟩ (inj₁ _) (Fork p) = Hole
+ε-sim ⟨ x , .∙ , .∙ ⟩ ⟨ .x , .∙ , .∙ ⟩ (inj₁ _) Hole = Hole
+--
+ε-sim ._ ._ (inj₂ p) (App₁ Δ∈Γ) = {!!}
+ε-sim ._ ._ (inj₂ p) (App₂ y∈π x∈π) = {!!}
+ε-sim ._ ._ (inj₂ p) (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = {!!}
+ε-sim ._ ._ (inj₂ p) (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
+ε-sim ._ ._ (inj₂ p) (Var₂ Δ∈Γ x∈π val) = {!!}
+ε-sim ⟨ _ , ._ , S ⟩ ._ (inj₂ y) (If {τ = τ}) with isSecret? τ
+ε-sim ⟨ x , ._ , S ⟩ ._ (inj₂ y) If | inj₁ (Macᴴ h⋤lᴬ) = ⊥-elim (lemma' (Macᴴ h⋤lᴬ) y S)
+ε-sim ⟨ _ , ._ , S ⟩ _ (inj₂ y) If | inj₂ _ = If
+ε-sim ._ ._ (inj₂ p) IfTrue = IfTrue
+ε-sim ._ ._ (inj₂ p) IfFalse = IfFalse
+ε-sim ._ ⟨ _ , Mac {α = τ} l t , S ⟩ (inj₂ y) Return with isSecret? (Mac l τ)
+ε-sim .(⟨ Γ , Return l t , S ⟩) ⟨ Γ , Mac l t , S ⟩ (inj₂ (Macᴸ l⊑h)) Return | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑h))
+ε-sim .(⟨ x , Return l t , S ⟩) ⟨ x , Mac l t , S ⟩ (inj₂ y) Return | inj₂ y' = Return
+ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑lᴬ)) Bind₁ with isSecret? (Mac l τ)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) Bind₁ | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑lᴬ))
+ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑lᴬ₁)) Bind₁ | inj₂ (Macᴸ l⊑lᴬ) with l ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ₁)) Bind₁ | inj₂ (Macᴸ l⊑lᴬ) | yes p = Bind₁
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ₁)) Bind₁ | inj₂ (Macᴸ l⊑lᴬ) | no ¬p = ⊥-elim (¬p l⊑lᴬ₁)
+ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑lᴬ)) Bind₂ with isSecret? (Mac l τ)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) Bind₂ | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑lᴬ))
+ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑lᴬ)) Bind₂ | inj₂ y with l ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) Bind₂ | inj₂ y | yes p = Bind₂
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) Bind₂ | inj₂ y | no ¬p = ⊥-elim (¬p l⊑lᴬ)
+ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Label' p₁) with isSecret? (Mac l τ)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑A))
+ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Label' p₁) | inj₂ y with l ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' {h = h} p₁) | inj₂ y | yes p with h ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₂) | inj₂ y | yes p₁ | yes p = Label' p₂
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₁) | inj₂ y | yes p | no ¬p = {!!} -- Label∙
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
+ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑lᴬ)) (Unlabel₁ p₁) with isSecret? (Mac l τ)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₁ p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑lᴬ))
+ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑lᴬ)) (Unlabel₁ p₁) | inj₂ y with l ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₁ p₁) | inj₂ y | yes p = Unlabel₁ p₁
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₁ p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑lᴬ)
+ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑lᴬ)) (Unlabel₂ p₁) with isSecret? (Mac l τ)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑lᴬ))
+ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑lᴬ)) (Unlabel₂ p₁) | inj₂ y with l ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ {l' = l'} p₁) | inj₂ y | yes p with l' ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ {τ = τ} p₂) | inj₂ y | yes p₁ | yes p with isSecret? τ
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₂) | inj₂ y | yes p₁ | yes p | inj₁ (Macᴴ h⋤lᴬ) = {!!} -- Unlabel∙
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₂) | inj₂ y₁ | yes p₁ | yes p | inj₂ y = Unlabel₂ p₂
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₁) | inj₂ y | yes p | no ¬p = ⊥-elim (¬p (trans-⊑ p₁ l⊑lᴬ))
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑lᴬ)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (UnId₁ {τ = τ}) with isSecret? τ
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (UnId₁ {S = S}) | inj₁ (Macᴴ h⋤lᴬ) = ⊥-elim (lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) S)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) UnId₁ | inj₂ y = UnId₁
+ε-sim ._ ._ (inj₂ p) UnId₂ = UnId₂
+ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑lᴬ)) (Fork p₁) with isSecret? (Mac l τ)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Fork p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑lᴬ))
+ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑lᴬ)) (Fork p₁) | inj₂ y with l ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Fork p₁) | inj₂ y | yes p = Fork p₁
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Fork p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑lᴬ)
+ε-sim ._ ._ (inj₂ p) Hole = Hole
