@@ -10,7 +10,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 open import Data.Nat using (ℕ ; zero ; suc ; _+_) public
 open import Data.Nat renaming ( _≟_ to  _≟ᴺ_ )
 
-open import Data.Maybe
+open import Data.Maybe hiding (All)
 open import Data.Product
 open import Function
 
@@ -168,46 +168,66 @@ data Stack (l : Label) : Ty -> Ty -> Set where
 
 --------------------------------------------------------------------------------
 
-RawEnv : {n : ℕ} -> (π : Context n) -> Set
-RawEnv π = (n : ℕ) -> ∃ (λ τ -> Maybe (Term π τ))
 
-updateᴿ  : ∀ {τ n} {π : Context n} -> RawEnv π -> ℕ -> Maybe (Term π τ) -> RawEnv π
-updateᴿ  M n₁ mt n₂ with n₁ ≟ᴺ n₂
-updateᴿ  M n₁ mt .n₁ | yes refl = _ , mt
-updateᴿ  M n₁ mt n₂ | no ¬p = M n₂
+-- Note: at the moment in Env l π, π contains only variables labeled with l.
+-- however in Term π, context π may contain variables with different labels.
+-- I think this is still fine, because those variables are not mapped in
+-- this environment (⟨ n , τ, l ⟩ ↦ nothing), but in their own.
+data Env (l : Label) : ∀ {n} -> Context n -> Set where
+  [] : Env l []
+  _∷_ : ∀ {n τ} {π : Context n} -> (nt : (ℕ × Maybe (Term π τ))) -> Env l π -> Env l (⟪ (proj₁ nt) , τ , l ⟫ ∷ π)
+  ∙ : ∀ {n} -> {π : Context n} -> Env l π
 
-data Env {n : ℕ} (l : Label) (π : Context n) : Set where
-  RE : RawEnv π -> Env l π
+data Updateᴱ {l n} {π : Context n} (x : Variable) (mt : Maybe (Term π (ty x))) : ∀ {n'} {π' : Context n'} -> Env l π' -> Env l π' -> Set where
+  here : ∀ {E : Env l π} {mt' : Maybe (Term _ (ty x))} -> Updateᴱ x mt (((num x) , mt') ∷ E) ((num x , mt) ∷ E)
+  there : ∀ {n' n'' τ'} {π' : Context n'} {E E' : Env l π'} {mt' : Maybe (Term _ τ')} -> Updateᴱ x mt E E' -> Updateᴱ x mt ((n'' , mt') ∷ E) ((n'' , mt') ∷ E')
+  ∙ : ∀ {n} -> {π' : Context n} -> Updateᴱ x mt (∙ {π = π'}) ∙
 
-_[_↦_] : ∀ {τ l n} {π : Context n} -> Env l π -> ℕ -> Term π τ -> Env l π
-_[_↦_] (RE M) n t = RE (updateᴿ M n (just t))
+_≔_[_↦_]ᴱ : ∀ {n l} {π π' : Context n} -> Env l π' -> Env l π' -> (x : Variable) -> Term π (ty x) -> Set
+E' ≔ E [ x ↦ t ]ᴱ = Updateᴱ x (just t) E E'
 
--- Syntatic sugar for remove without unsolved metas about τ
-_[_↛_] : ∀ {τ l n} {π : Context n} -> Env l π -> ℕ -> (Term π τ) -> Env l π
-_[_↛_] {τ} (RE M) n _ = RE (updateᴿ {τ} M n nothing)
+-- Syntatic sugar for removing a term from the environment.
+-- The term is used only to fix its context π and avoid unsolved metas.
+_≔_[_↛_]ᴱ : ∀ {n l} {π π' : Context n} -> Env l π' -> Env l π' -> (x : Variable) -> Term π (ty x) -> Set
+_≔_[_↛_]ᴱ {π = π} E' E x t = Updateᴱ {π = π} x nothing E E'
 
+data Memberᴱ {l n} {π : Context n} (x : Variable) (mt : Maybe (Term π (ty x))) : ∀ {n'} -> {π' : Context n'} -> Env l π' -> Set where
+  here : ∀ {E : Env l π} -> Memberᴱ x mt (((num x) , mt) ∷ E)
+  there : ∀ {n' n'' τ'} {π' : Context n'} {E : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ x mt E -> Memberᴱ x mt ((n'' , mt') ∷ E)
+  -- TODO add x ↦ just ∙ ∈ ∙
 
-_↦_∈_ : ∀ {τ l n} {π : Context n} -> ℕ -> Term π τ -> Env l π -> Set
-_↦_∈_ {τ} n t (RE M) = M n ≡ (τ , just t)
+_↦_∈ᴱ_ : ∀ {n n' l} {π : Context n} {π' : Context n'} -> (x : Variable) -> Maybe (Term π (ty x)) -> Env l π' -> Set
+x ↦ mt ∈ᴱ E = Memberᴱ x mt E
 
 --------------------------------------------------------------------------------
 
--- Exists Context, (hides index n)
-∃ᶜ : (P : ∀ {n} -> Context n -> Set) -> Set
-∃ᶜ P = ∃ (λ n -> Σ (Context n) P)
+open import Data.List.All
+open import Data.List
 
-Heap : Set
-Heap = (l : Label) -> ∃ᶜ (λ π -> Env l π)
+Unique : Label -> List Label -> Set
+Unique l₁ ls = All (λ l₂ → ¬ (l₁ ≡ l₂)) ls
 
--- Update
-_[_↦_]ᴴ : ∀ {n} {π : Context n} -> Heap -> (l : Label) -> Env l π -> Heap
-_[_↦_]ᴴ Γ l₁ M l₂ with l₁ ≟ᴸ l₂
-_[_↦_]ᴴ Γ l₁ M .l₁ | yes refl = _ , _ , M
-_[_↦_]ᴴ Γ l₁ M l₂ | no ¬p = Γ l₂
+∈-not-unique : ∀ {l ls} -> l ∈ᴸ ls -> Unique l ls -> ⊥
+∈-not-unique here (px ∷ q) = ⊥-elim (px refl)
+∈-not-unique (there p) (px ∷ q) = ∈-not-unique p q
 
+data Heap : List Label -> Set where
+  [] : Heap []
+  _∷_ : ∀ {l ls n} {π : Context n} {{u : Unique l ls}} -> Env l π -> Heap ls -> Heap (l ∷ ls)
 
-_↦_∈ᴴ_ : ∀ {n} {π : Context n} -> (l : Label) -> Env l π -> Heap -> Set -- {τ l n} {π : Context n} -> ℕ -> Term π τ -> Env l π -> Set
-_↦_∈ᴴ_ {n} {π} l M Γ = (Γ l) ≡ (n , (π , M))
+data Member {l n} {π : Context n} (E : Env l π) : ∀ {ls} -> Heap ls -> Set where
+  here : ∀ {ls} {u : Unique l ls} {Γ : Heap ls} -> Member E (E ∷ Γ)
+  there : ∀ {ls n' l'} {π' : Context n'} {u : Unique l' ls} {Γ : Heap ls} {E' : Env l' π'} -> Member E Γ -> Member E (E' ∷ Γ)
+
+_↦_∈ᴴ_ : ∀ {n ls} {π : Context n} -> (l : Label) -> Env l π -> Heap ls -> Set
+l ↦ E ∈ᴴ Γ = Member E Γ
+
+data Update {l} {n} {π : Context n} (E : Env l π) : ∀ {ls} -> Heap ls -> Heap ls -> Set where
+  here : ∀ {ls n'} {π' : Context n'} {u : Unique l ls} {Γ : Heap ls} {E' : Env l π'} -> Update E (E' ∷ Γ) (E ∷ Γ)
+  there : ∀ {ls l' n'} {π' : Context n'} {u : Unique l' ls} {Γ Γ' : Heap ls} {E' : Env l' π'} -> Update E Γ Γ' -> Update E (E' ∷ Γ) (E' ∷ Γ')
+
+_≔_[_↦_]ᴴ : ∀ {n ls} {π : Context n} -> Heap ls -> Heap ls -> (l : Label) -> Env l π -> Set
+Γ' ≔ Γ [ l ↦ E ]ᴴ = Update E Γ Γ'
 
 --------------------------------------------------------------------------------
 
@@ -215,7 +235,7 @@ _↦_∈ᴴ_ {n} {π} l M Γ = (Γ l) ≡ (n , (π , M))
 -- The state is labeled to keep track of the security level of the
 -- term (thread) executed.
 
-data State (l : Label) : Ty -> Set where
-  ⟨_,_,_⟩ : ∀ {τ₁ τ₂ n} {π : Context n} -> Heap -> Term π τ₁ -> Stack l τ₁ τ₂ -> State l τ₂
+data State (ls : List Label) (l : Label) : Ty -> Set where
+  ⟨_,_,_⟩ : ∀ {τ₁ τ₂ n} {π : Context n} -> Heap ls -> Term π τ₁ -> Stack l τ₁ τ₂ -> State ls l τ₂
 
 --------------------------------------------------------------------------------

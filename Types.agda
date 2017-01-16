@@ -36,10 +36,11 @@ Labeled l τ = Res l (Id τ)
 -- MVar : Label -> Ty -> Ty
 -- MVar l τ = Res l Nat
 
--- -- Reference to a variable, bound during some abstraction.
--- data _∈_ {A : Set} : A -> List A -> Set where
---  Here : ∀ {π τ} -> τ ∈ (τ ∷ π)
---  There : ∀ {π α β} -> α ∈ π -> α ∈ (β ∷ π)
+open import Data.List hiding (drop)
+
+data _∈ᴸ_ {A : Set} : A -> List A -> Set where
+ here : ∀ {π τ} -> τ ∈ᴸ (τ ∷ π)
+ there : ∀ {π α β} -> α ∈ᴸ π -> α ∈ᴸ (β ∷ π)
 
 -- A list is a prefix of another
 -- data _⊆_ {A : Set} : List A -> List A -> Set where
