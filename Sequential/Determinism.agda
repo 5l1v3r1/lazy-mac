@@ -26,12 +26,14 @@ determinism (Var₂ Δ∈Γ x∈π ()) (App₁ Δ∈Γ₁)
 determinism (Var₂ Δ∈Γ x∈π ()) (Var₁ Δ∈Γ₁ x∈π₁ t∈Δ ¬val)
 determinism (Var₂ Δ∈Γ x∈π ()) (Var₁' Δ∈Γ₁ x∈π₁ v∈Δ val₁)
 determinism (Var₂ refl x∈π val) (Var₂ refl .x∈π val₁) = refl
-determinism (Var₂ Δ∈Γ x∈π ()) If 
-determinism (Var₂ Δ∈Γ x∈π ()) Return 
-determinism (Var₂ Δ∈Γ x∈π ()) Bind₁ 
-determinism (Var₂ Δ∈Γ x∈π ()) (Label' p) 
+determinism (Var₂ Δ∈Γ x∈π ()) If
+determinism (Var₂ Δ∈Γ x∈π ()) Return
+determinism (Var₂ Δ∈Γ x∈π ()) Bind₁
+determinism (Var₂ Δ∈Γ x∈π ()) (Label' p)
+determinism (Var₂ Δ∈Γ x∈π ()) (Label'∙ p)
 determinism (Var₂ Δ∈Γ x∈π ()) (Unlabel₁ p)
-determinism (Var₂ Δ∈Γ x∈π ()) UnId₁ 
+determinism (Var₂ Δ∈Γ x∈π ()) (Unlabel∙₁ p)
+determinism (Var₂ Δ∈Γ x∈π ()) UnId₁
 determinism (Var₂ Δ∈Γ x∈π ()) (Fork p)
 determinism If (Var₂ Δ∈Γ x∈π ())
 determinism If If = refl
@@ -44,9 +46,14 @@ determinism Bind₁ Bind₁ = refl
 determinism Bind₂ Bind₂ = refl
 determinism (Label' p) (Var₂ Δ∈Γ x∈π ())
 determinism (Label' p) (Label' .p) = refl
+determinism (Label'∙ p) (Var₂ Δ∈Γ x∈π ())
+determinism (Label'∙ p) (Label'∙ .p) = refl
 determinism (Unlabel₁ p) (Var₂ Δ∈Γ x∈π ())
 determinism (Unlabel₁ p) (Unlabel₁ .p) = refl
 determinism (Unlabel₂ p) (Unlabel₂ .p) = refl
+determinism (Unlabel∙₁ p) (Var₂ _ _ ())
+determinism (Unlabel∙₁ p) (Unlabel∙₁ .p) = refl
+determinism (Unlabel∙₂ p) (Unlabel∙₂ .p) = refl
 determinism UnId₁ (Var₂ Δ∈Γ x∈π ())
 determinism UnId₁ UnId₁ = refl
 determinism UnId₂ UnId₂ = refl
