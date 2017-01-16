@@ -92,7 +92,11 @@ open import Data.Product
 εᵗ (inj₁ x) (label∙ L⊑H t) = ∙
 εᵗ (inj₂ y) (label∙ L⊑H t) = label∙ L⊑H (εᵗ (isSecret? _) t)
 εᵗ (inj₁ x) (unlabel l⊑h t) = ∙
-εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel L⊑H t) = unlabel L⊑H (εᵗ (isSecret? _)  t) -- This should be only inj₂ due to transitivity
+εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel {α = τ} L⊑H t) with isSecret? τ
+εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel L⊑H t) | inj₁ x = unlabel∙ L⊑H (εᵗ (isSecret? _) t)
+εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel L⊑H t) | inj₂ y = unlabel L⊑H (εᵗ (isSecret? _) t) -- This should be only inj₂ due to transitivity
+εᵗ (inj₁ _) (unlabel∙ L⊑H t) = ∙
+εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel∙ L⊑H t) = unlabel∙ L⊑H (εᵗ (isSecret? _) t)
 εᵗ (inj₁ x) (fork l⊑h t) = ∙
 εᵗ (inj₂ y) (fork l⊑h t) = fork l⊑h (εᵗ (isSecret? _) t)
 εᵗ x (deepDup x₁) = deepDup x₁ -- Must be consistent with Var
@@ -132,7 +136,10 @@ open import Function
 εᶜ (# x∈π) = # x∈π
 εᶜ {τ₂ = τ₂} (Then t₁ Else t₂) = Then (εᵀ t₁) Else εᵀ t₂
 εᶜ {τ₁ = Mac .l α} {τ₂ = Mac l β} (Bind t) = Bind (εᵀ t)
-εᶜ (unlabel p) = unlabel p
+εᶜ (unlabel {τ = τ} p) with isSecret? τ
+εᶜ (unlabel p) | inj₁ x = unlabel∙ p
+εᶜ (unlabel p) | inj₂ y = unlabel p
+εᶜ (unlabel∙ p) = unlabel∙ p
 εᶜ unId = unId
 
 -- This definition is inconvinient because we inspect the result of calling εˢ,
@@ -224,8 +231,11 @@ lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) ∙ = {!!} -- Is it the case that H �
 ε-sim ⟨ x , ._ , x₂ ⟩ ⟨ .x , x₄ , ._ ⟩ (inj₁ _) Bind₁ = Hole
 ε-sim ⟨ x , ._ , ._ ⟩ ⟨ .x , ._ , x₅ ⟩ (inj₁ _) Bind₂ = Hole
 ε-sim ⟨ Γ , ._ , x₂ ⟩ ⟨ .Γ , ._ , .x₂ ⟩ (inj₁ _) (Label' p) = Hole
+ε-sim ._ ._ (inj₁ _) (Label'∙ p₁) = {!!}
 ε-sim ⟨ Γ , .(unlabel p x₄) , x₂ ⟩ ⟨ .Γ , x₄ , .(unlabel p ∷ x₂) ⟩ (inj₁ _) (Unlabel₁ p) = Hole
 ε-sim ⟨ Γ , ._ , .(unlabel p ∷ x₅) ⟩ ⟨ .Γ , ._ , x₅ ⟩ (inj₁ _) (Unlabel₂ p) = Hole
+ε-sim ⟨ Γ , ._ , ._ ⟩ ⟨ .Γ , ._ , ._ ⟩ (inj₁ _) (Unlabel∙₁ p) = Hole
+ε-sim ⟨ Γ , ._ , .(unlabel∙ p ∷ x₅) ⟩ ⟨ .Γ , ._ , x₅ ⟩ (inj₁ _) (Unlabel∙₂ p) = Hole
 ε-sim ⟨ x , .(unId x₄) , x₂ ⟩ ⟨ .x , x₄ , .(unId ∷ x₂) ⟩ (inj₁ _) UnId₁ = Hole
 ε-sim ⟨ x , .(Id x₄) , .(unId ∷ x₅) ⟩ ⟨ .x , x₄ , x₅ ⟩ (inj₁ _) UnId₂ = Hole
 ε-sim ⟨ Γ , ._ , x₂ ⟩ ⟨ .Γ , ._ , .x₂ ⟩ (inj₁ _) (Fork p) = Hole
@@ -259,22 +269,43 @@ lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) ∙ = {!!} -- Is it the case that H �
 ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Label' p₁) | inj₂ y with l ⊑? A
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' {h = h} p₁) | inj₂ y | yes p with h ⊑? A
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₂) | inj₂ y | yes p₁ | yes p = Label' p₂
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₁) | inj₂ y | yes p | no ¬p = {!!} -- Label∙
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₁) | inj₂ y | yes p | no ¬p = Label'∙ p₁
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
+ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Label'∙ p₁) with isSecret? (Mac l τ)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label'∙ p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑A))
+ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Label'∙ p₁) | inj₂ y with l ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label'∙ {h = h} p₁) | inj₂ y | yes p with h ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label'∙ p₂) | inj₂ y | yes p₁ | yes p = Label'∙ p₂
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label'∙ p₁) | inj₂ y | yes p | no ¬p = Label'∙ p₁
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label'∙ p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
 ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑lᴬ)) (Unlabel₁ p₁) with isSecret? (Mac l τ)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₁ p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑lᴬ))
 ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑lᴬ)) (Unlabel₁ p₁) | inj₂ y with l ⊑? A
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₁ p₁) | inj₂ y | yes p = Unlabel₁ p₁
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₁ {τ = τ₁} p₁) | inj₂ y | yes p with isSecret? τ₁
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₁ p₁) | inj₂ y | yes p | inj₁ x = Unlabel∙₁ p₁
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₁ p₁) | inj₂ y₁ | yes p | inj₂ y = Unlabel₁ p₁
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₁ p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑lᴬ)
 ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑lᴬ)) (Unlabel₂ p₁) with isSecret? (Mac l τ)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑lᴬ))
 ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑lᴬ)) (Unlabel₂ p₁) | inj₂ y with l ⊑? A
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ {l' = l'} p₁) | inj₂ y | yes p with l' ⊑? A
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ {τ = τ} p₂) | inj₂ y | yes p₁ | yes p with isSecret? τ
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₂) | inj₂ y | yes p₁ | yes p | inj₁ (Macᴴ h⋤lᴬ) = {!!} -- Unlabel∙
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₂) | inj₂ y | yes p₁ | yes p | inj₁ (Macᴴ h⋤lᴬ) = Unlabel∙₂ p₂
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₂) | inj₂ y₁ | yes p₁ | yes p | inj₂ y = Unlabel₂ p₂
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₁) | inj₂ y | yes p | no ¬p = ⊥-elim (¬p (trans-⊑ p₁ l⊑lᴬ))
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel₂ p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑lᴬ)
+ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑lᴬ)) (Unlabel∙₁ p) with isSecret? (Mac l τ)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel∙₁ p) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑lᴬ))
+ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑lᴬ)) (Unlabel∙₁ p) | inj₂ y with l ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel∙₁ p₁) | inj₂ y | yes p = Unlabel∙₁ p₁
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel∙₁ p) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑lᴬ)
+ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑lᴬ)) (Unlabel∙₂ p) with isSecret? (Mac l τ)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel∙₂ p) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑lᴬ))
+ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑lᴬ)) (Unlabel∙₂ p) | inj₂ y with l ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel∙₂ {l' = l'}  p₁) | inj₂ y | yes p with l' ⊑? A
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel∙₂ p₂) | inj₂ y | yes p₁ | yes p = Unlabel∙₂ p₂
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel∙₂ p₁) | inj₂ y | yes p | no ¬p = Unlabel∙₂ p₁
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (Unlabel∙₂ p) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑lᴬ)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (UnId₁ {τ = τ}) with isSecret? τ
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) (UnId₁ {S = S}) | inj₁ (Macᴴ h⋤lᴬ) = ⊥-elim (lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) S)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑lᴬ)) UnId₁ | inj₂ y = UnId₁
