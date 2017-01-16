@@ -194,8 +194,8 @@ data Memberᴱ {l} {π} (x : Variable) (mt : Maybe (Term π (ty x))) : ∀ {π'}
   there : ∀ {π' n' τ'} {E : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ x mt E -> Memberᴱ x mt ((n' , mt') ∷ E)
   -- TODO add x ↦ just ∙ ∈ ∙
 
-_↦_∈ᴱ_ : ∀ {l} {π π' : Context} -> (x : Variable) -> Maybe (Term π (ty x)) -> Env l π' -> Set
-x ↦ mt ∈ᴱ E = Memberᴱ x mt E
+_↦_∈ᴱ_ : ∀ {l} {π π' : Context} -> (x : Variable) -> Term π (ty x) -> Env l π' -> Set
+x ↦ t ∈ᴱ E = Memberᴱ x (just t) E
 
 --------------------------------------------------------------------------------
 
