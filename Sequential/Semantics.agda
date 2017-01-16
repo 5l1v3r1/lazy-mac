@@ -70,20 +70,20 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
  IfFalse : ∀ {Γ n τ τ'} {π : Context n} {S : Stack l τ τ'} {t₂ t₃ : Term π l τ} ->
              ⟨ Γ , False {π = π}, (Then t₂ Else t₃) ∷ S ⟩ ⇝ ⟨ Γ , t₂ , S ⟩
 
- Return : ∀ {Γ n τ τ'} {π : Context n} {S : Stack l _ τ'} {t : Term π l τ} ->
+ Return : ∀ {Γ n τ τ' l'} {π : Context n} {S : Stack l _ τ'} {t : Term π l' τ} ->
             ⟨ Γ , Return t , S ⟩ ⇝ ⟨ Γ , Mac t , S ⟩
 
  Bind₁ : ∀ {Γ n α β τ'} {π : Context n} {S : Stack l _ τ'} {t₁ : Term π l (Mac l α)} {t₂ : Term π l (α => Mac l β)} ->
            ⟨ Γ , t₁ >>= t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (Bind t₂ ∷ S ) ⟩
 
- Bind₂ : ∀ {Γ n α β τ'} {π : Context n} {S : Stack l _ τ'} {t₁ : Term π l α} {t₂ : Term π l (α => (Mac l β))} ->
+ Bind₂ : ∀ {Γ n α β l' τ'} {π : Context n} {S : Stack l _ τ'} {t₁ : Term π l' α} {t₂ : Term π l (α => (Mac l β))} ->
            ⟨ Γ , Mac t₁ , Bind t₂ ∷ S ⟩ ⇝ ⟨ Γ , App t₂ t₁ , S ⟩
 
  Label' : ∀ {Γ n h τ τ'} {π : Context n} {S : Stack l _ τ'} {t : Term π h τ} -> (p : l ⊑ h) ->
             ⟨ Γ , label p t , S ⟩ ⇝ ⟨ Γ , (Return (Res (Id t))) , S ⟩
 
- Unlabel₁ : ∀ {Γ n τ τ' l'} {π : Context n} {S : Stack l _ τ'} {t : Term π l (Labeled l' τ)} -> (p : l' ⊑ l) ->
-              ⟨ Γ , unlabel p {!!} , S ⟩ ⇝ ⟨ Γ , {!!} , unlabel p ∷ S ⟩
+ Unlabel₁ : ∀ {Γ n τ τ' l'} {π : Context n} {S : Stack l _ τ'} {t : Term π l' (Labeled l' τ)} -> (p : l' ⊑ l) ->
+              ⟨ Γ , unlabel p t , S ⟩ ⇝ ⟨ Γ , {!t!} , unlabel p ∷ S ⟩
 
  Unlabel₂ : ∀ {Γ n τ τ' l'} {π : Context n} {S : Stack l (Mac l τ) τ'} {t : Term π l' (Id τ)} -> (p : l' ⊑ l) ->
               ⟨ Γ , Res {!!} , {!!} ∷ S ⟩ ⇝ ⟨ Γ , Return (unId t) , S ⟩ -- Why does it want l instead of l'
