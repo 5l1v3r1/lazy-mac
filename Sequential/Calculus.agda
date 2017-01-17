@@ -196,8 +196,8 @@ data Memberᴱ {l n} {π : Context n} (x : Variable) (mt : Maybe (Term π (ty x)
   there : ∀ {n' n'' τ'} {π' : Context n'} {E : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ x mt E -> Memberᴱ x mt ((n'' , mt') ∷ E)
   -- TODO add x ↦ just ∙ ∈ ∙
 
-_↦_∈ᴱ_ : ∀ {n n' l} {π : Context n} {π' : Context n'} -> (x : Variable) -> Maybe (Term π (ty x)) -> Env l π' -> Set
-x ↦ mt ∈ᴱ E = Memberᴱ x mt E
+_↦_∈ᴱ_ : ∀ {n n' l} {π : Context n} {π' : Context n'} -> (x : Variable) -> Term π (ty x) -> Env l π' -> Set
+x ↦ t ∈ᴱ E = Memberᴱ x (just t) E
 
 --------------------------------------------------------------------------------
 

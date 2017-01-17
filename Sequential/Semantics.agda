@@ -14,7 +14,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 -- DeepDup helper functions and data types
 
 open import Data.Bool using (not)
-open import Data.List using (filter ; length)
+open import Data.List using (List ; filter ; length)
 open import Relation.Nullary.Decidable using (⌊_⌋)
 
 --------------------------------------------------------------------------------
@@ -25,11 +25,14 @@ open import Relation.Nullary.Decidable using (⌊_⌋)
 -- however they could be after α-conversion (we simply don't want to deal with that,
 -- and assume they have already been α-converted).
 -- Note that stuck terms will be dealt with in the concurrent semantics.
-data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
+data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls l τ -> Set where
 
- App₁ : ∀ {τ₁ τ₂ τ₃ Γ n} {π : Context n} {Δ : Env l π} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
-          (Δ∈Γ : l ↦ Δ ∈ᴴ Γ) ->
-          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ [ l ↦ Δ [ suc n ↦ t₂ ] ]ᴴ , t₁ , (Var {π = ⟪ suc n , τ₁ , l ⟫ ∷ π} here) ∷ S ⟩
+ App₁ : ∀ {τ₁ τ₂ τ₃ n Γ Γ'} {π : Context n} {Δ Δ' : Env l π} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
+          let x = ⟪ n , τ₁ , l ⟫ in
+             (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)  -- Do we need this?
+          -> (uᴱ : Δ' ≔ Δ [ x ↦ t₂ ]ᴱ)
+          -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ) ->
+          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ' , t₁ , (Var {π = x ∷ π} here) ∷ S ⟩
 
  App₂ : ∀ {Γ n n₁ n₂ β l' α τ'} {π : Context n} {S : Stack l β τ'} ->
           let x = ⟪ n₁ , α , l' ⟫
@@ -38,28 +41,32 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
             -> (x∈π : x ∈ π) ->
           ⟨ Γ , Abs y t , Var x∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var x∈π) t , S ⟩
 
- Var₁ : ∀ {Γ n τ τ'} {n'} {π : Context n'} {Δ : Env l π}  {S : Stack l τ τ'} ->
-          let x = ⟪ n , τ , l ⟫ in {t : Term π τ}
-        -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
+ Var₁ : ∀ {Γ Γ' n' n τ τ'} {π : Context n'} {Δ Δ' : Env l π}  {S : Stack l τ τ'} {t : Term π τ} ->
+          let x = ⟪ n , τ , l ⟫ in
+           (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
         -> (x∈π : x ∈ π)
-        -> (t∈Δ : n ↦ t ∈ Δ)
+        -> (t∈Δ : x ↦ t ∈ᴱ Δ)
         -> (¬val :  ¬ (Value t))
-        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨  Γ [ l ↦ Δ [ n ↛ t ] ]ᴴ  , t , (# x∈π) ∷ S ⟩ -- Here we should prove that l == l'
+        -> (rᴱ : Δ' ≔ Δ [ x ↛ t ]ᴱ)
+        -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ)
+        -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨  Γ'  , t , (# x∈π) ∷ S ⟩
 
- Var₁' : ∀ {Γ l' τ n τ'} {n'} {π : Context n'} {Δ : Env l' π} {S : Stack l τ τ'} ->
+ Var₁' : ∀ {Γ l' τ n' n τ'} {π : Context n'} {Δ : Env l' π} {S : Stack l τ τ'} ->
            let x = ⟪ n , τ , l' ⟫ in {v : Term π τ}
          -> (Δ∈Γ : l' ↦ Δ ∈ᴴ Γ)
          -> (x∈π : x ∈ π)
-         -> (v∈Δ : n ↦ v ∈ Δ)
+         -> (v∈Δ : x ↦ v ∈ᴱ Δ)
          -> (val : Value v)
          -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ , v , S ⟩
 
- Var₂ : ∀ {Γ n τ τ'} {n'} {π : Context n'} {Δ : Env l π} {S : Stack l τ τ'} {v : Term π τ} ->
+ Var₂ : ∀ {Γ Γ' n' n τ τ'} {π : Context n'} {Δ Δ' : Env l π} {S : Stack l τ τ'} {v : Term π τ} ->
           let  x = ⟪ n , τ , l ⟫ in
            (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
         -> (x∈π : x ∈ π)
         -> (val : Value v)
-        -> ⟨ Γ , v , (# x∈π) ∷ S ⟩ ⇝ ⟨  Γ [ l ↦ Δ [ n ↦ v ] ]ᴴ , v , S ⟩  -- Here we should prove that l == l'
+        -> (uᴱ : Δ' ≔ Δ [ x ↦ v ]ᴱ)
+        -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ)
+        -> ⟨ Γ , v , (# x∈π) ∷ S ⟩ ⇝ ⟨  Γ' , v , S ⟩
 
  If : ∀ {Γ n τ τ'} {π : Context n} {S : Stack l τ τ'} {t₁ : Term π Bool} {t₂ t₃ : Term π τ} ->
         ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩
