@@ -27,11 +27,10 @@ open import Relation.Nullary.Decidable using (⌊_⌋)
 -- Note that stuck terms will be dealt with in the concurrent semantics.
 data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls l τ -> Set where
 
- App₁ : ∀ {τ₁ τ₂ τ₃ n Γ Γ'} {π : Context n} {Δ Δ' : Env l π} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
+ App₁ : ∀ {τ₁ τ₂ τ₃ n Γ Γ'} {π : Context n} {Δ : Env l π} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
           let x = ⟪ n , τ₁ , l ⟫ in
-             (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)  -- Do we need this?
-          -> (uᴱ : Δ' ≔ Δ [ x ↦ t₂ ]ᴱ)
-          -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ) ->
+             (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
+          -> (uᴴ : Γ' ≔ Γ [ l ↦ insert t₂ Δ ]ᴴ) ->
           ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ' , t₁ , (Var {π = x ∷ π} here) ∷ S ⟩
 
  App₂ : ∀ {Γ n n₁ n₂ β l' α τ'} {π : Context n} {S : Stack l β τ'} ->

@@ -179,17 +179,23 @@ data Env (l : Label) : ∀ {n} -> Context n -> Set where
   ∙ : ∀ {n} -> {π : Context n} -> Env l π
 
 data Updateᴱ {l n τ} {π : Context n} (mt : Maybe (Term π τ)) : ∀ {n'} {π' : Context n'} -> Variable -> Env l π' -> Env l π' -> Set where
-  here : ∀ {E : Env l π} {mt' : Maybe (Term _ τ)} -> Updateᴱ mt ⟪ n , τ , l ⟫ (mt' ∷ E) (mt ∷ E)
-  there : ∀ {n' τ'} {π' : Context n'} {E E' : Env l π'} {mt' : Maybe (Term _ τ')} -> Updateᴱ mt ⟪ n' , τ , l ⟫ E E' -> Updateᴱ mt ⟪ (suc n') , τ , l ⟫ (mt' ∷ E) (mt' ∷ E')
+  here : ∀ {Δ : Env l π} {mt' : Maybe (Term _ τ)} -> Updateᴱ mt ⟪ n , τ , l ⟫ (mt' ∷ Δ) (mt ∷ Δ)
+  there : ∀ {n' τ'} {π' : Context n'} {Δ Δ' : Env l π'} {mt' : Maybe (Term _ τ')}
+         -> Updateᴱ mt ⟪ n' , τ , l ⟫ Δ Δ' -> Updateᴱ mt ⟪ (suc n') , τ , l ⟫ (mt' ∷ Δ) (mt' ∷ Δ')
   ∙ : ∀ {x n} -> {π' : Context n} -> Updateᴱ mt x (∙ {π = π'}) ∙
 
-_≔_[_↦_]ᴱ : ∀ {n l τ} {π π' : Context n} -> Env l π' -> Env l π' -> (x : Variable) -> Term π τ -> Set
+_≔_[_↦_]ᴱ : ∀ {n n' l τ} {π : Context n} {π' : Context n'} -> Env l π' -> Env l π' -> (x : Variable) -> Term π τ -> Set
 E' ≔ E [ x ↦ t ]ᴱ = Updateᴱ (just t) x E E'
 
 -- Syntatic sugar for removing a term from the environment.
 -- The term is used only to fix its context π and avoid unsolved metas.
 _≔_[_↛_]ᴱ : ∀ {n l τ} {π π' : Context n} -> Env l π' -> Env l π' -> (x : Variable) -> Term π τ -> Set
 _≔_[_↛_]ᴱ {τ = τ} {π = π}  E' E x t = Updateᴱ {τ = τ} {π = π} nothing x E E'
+
+-- Extends the environment with a new binding
+insert : ∀ {n l τ} {π : Context n} -> Term π τ -> Env l π -> Env l (⟪ n , τ , l ⟫ ∷ π)
+insert t ∙ = ∙
+insert t Δ = just t ∷ Δ
 
 data Memberᴱ {l n τ} {π : Context n} (mt : Maybe (Term π τ)) : ∀ {n'} -> {π' : Context n'} -> (x : Variable) -> Env l π' -> Set where
   here : ∀ {E : Env l π} -> Memberᴱ mt ⟪ n , τ , l ⟫ (mt ∷ E)

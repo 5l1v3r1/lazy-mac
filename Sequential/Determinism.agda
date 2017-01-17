@@ -1,5 +1,6 @@
 module Sequential.Determinism where
 
+
 open import Sequential.Calculus
 open import Sequential.Semantics
 open import Data.Product
@@ -43,9 +44,9 @@ updateᴴ-≡ (there {u = u} a) here = ⊥-elim (∈-not-unique (update-∈ a) u
 updateᴴ-≡ (there a) (there b) rewrite updateᴴ-≡ a b = refl
 
 determinism : ∀ {ls l τ} {s₁ s₂ s₃ : State ls l τ} -> s₁ ⇝ s₂ -> s₁ ⇝ s₃ -> s₂ ≡ s₃
-determinism (App₁ Δ∈Γ uᴱ uᴴ) (App₁ Δ∈Γ₁ uᴱ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
-... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
-determinism (App₁ Δ∈Γ uᴱ uᴴ) (Var₂ Δ∈Γ₁ x∈π () uᴱ₁ uᴴ₁)
+determinism (App₁ Δ∈Γ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
+determinism (App₁ Δ∈Γ uᴴ) (Var₂ Δ∈Γ₁ x∈π () uᴱ₁ uᴴ₁)
 determinism (App₂ y∈π x∈π) (App₂ y∈π₁ .x∈π) = refl
 determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁ Δ∈Γ₁ .x∈π t∈Δ₁ ¬val₁ rᴱ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite memberᴱ-≡ t∈Δ t∈Δ₁ | updateᴱ-≡ rᴱ rᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
@@ -57,7 +58,7 @@ determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁ Δ∈Γ₁ .x∈π t∈�
 determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁' Δ∈Γ₁ .x∈π v∈Δ₁ val₁)  with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite memberᴱ-≡ v∈Δ v∈Δ₁ = refl
 determinism (Var₁' Δ∈Γ x∈π v∈Δ v) (Var₂ Δ∈Γ₁ x∈π₁ () uᴱ uᴴ)
-determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (App₁ Δ∈Γ₁ uᴱ₁ uᴴ₁)
+determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Var₁ Δ∈Γ₁ x∈π₁ t∈Δ ¬val rᴱ uᴴ₁)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Var₁' Δ∈Γ₁ x∈π₁ v∈Δ val₁)
 determinism (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) (Var₂ Δ∈Γ₁ .x∈π val₁ uᴱ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
@@ -97,4 +98,4 @@ determinism (Fork p) (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
 determinism (Fork p) (Fork .p) = refl
 -- Morally they are the same, however the context π is chosen non deterministically
 -- I wonder if this can be made to work using π = ∙ or if it is pushing it too much.
-determinism Hole Hole = {!refl!} -- π₁ ≠ π₂
+determinism Hole Hole = {!!} -- π₁ ≠ π₂
