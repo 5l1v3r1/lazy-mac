@@ -111,24 +111,17 @@ open import Data.Product as P
 open import Data.Maybe as M
 open import Function
 
--- Point-wise erasure of a RawEnv
-εᴿ : ∀ {n} {π : Context n} -> RawEnv π -> RawEnv π
-εᴿ M n with M n
-εᴿ M n₁ | τ , mt = τ , M.map εᵀ mt
-
--- Constant mapping to ∙ (it can be modified and this is a problem)
--- We need the old environment for the type
-∙ᴿ : ∀ {n} {π : Context n} -> RawEnv π -> RawEnv π
-∙ᴿ M n = proj₁ (M n) , just ∙
-
 εᴱ : ∀ {l n} {π : Context n} -> Dec (l ⊑ A) ->  Env l π -> Env l π
-εᴱ {_} {lᴬ} (yes p) (RE x) = RE (εᴿ x)
-εᴱ (no ¬p) (RE x) = RE (∙ᴿ x)  -- Here I should have a different Env that is not updateable
+εᴱ (yes p) [] = []
+εᴱ (yes p) (mt ∷ Δ) = (M.map (εᵗ (isSecret? _)) mt) ∷ (εᴱ (yes p) Δ)
+εᴱ (yes p) ∙ = ∙
+εᴱ (no ¬p) Δ = ∙
 
 -- Heap Erasure Function
-εʰ : Heap -> Heap
-εʰ Γ l with Γ l
-εʰ Γ l | n , π , Δ = n , π , εᴱ (l ⊑? A) Δ
+εᴴ : ∀ {ls} -> Heap ls -> Heap ls
+εᴴ [] = []
+εᴴ (Δ ∷ Γ) = (εᴱ ( _ ⊑? A) Δ) ∷ εᴴ Γ
+
 --------------------------------------------------------------------------------
 
 εᶜ : ∀ {τ₁ τ₂ l} -> Cont l τ₁ τ₂ -> Cont l τ₁ τ₂
@@ -168,9 +161,9 @@ open import Function
 
 --------------------------------------------------------------------------------
 
-ε : ∀ {l τ} -> Level (Mac l τ) ->  State l (Mac l τ) -> State l (Mac l τ)
-ε {l} {τ} (inj₁ ¬p) (⟨_,_,_⟩ {π = π} Γ t S) = ⟨ (εʰ Γ) , ∙ {π = π} {{Mac l τ}} , ∙ ⟩
-ε (inj₂ p) ⟨ Γ , t , S ⟩ = ⟨ (εʰ Γ) , εᵀ t , εˢ S ⟩
+ε : ∀ {l τ ls} -> Level (Mac l τ) ->  State ls l (Mac l τ) -> State ls l (Mac l τ)
+ε {l} {τ} (inj₁ ¬p) (⟨_,_,_⟩ {π = π} Γ t S) = ⟨ (εᴴ Γ) , ∙ {π = π} {{Mac l τ}} , ∙ ⟩
+ε (inj₂ p) ⟨ Γ , t , S ⟩ = ⟨ εᴴ Γ , εᵀ t , εˢ S ⟩
 
 --------------------------------------------------------------------------------
 
@@ -210,6 +203,26 @@ lemma' x y (# x∈π ∷ S) = lemma' x y S
 lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) (Bind x₁ ∷ S) = lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) S
 lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) ∙ = {!!} -- Is it the case that H ⋤ L -> L ⊑ H ?
 
+open import Relation.Binary.PropositionalEquality
+
+updateᴱ∙ : ∀ {l n τ} {π : Context n} {Δ Δ' : Env l π} {t : Term π τ} -> (l⋤A : l ⋤ A) -> Δ' ≔ Δ [ ⟪ n , τ , l ⟫ ↦ t ]ᴱ -> εᴱ (no l⋤A) Δ' ≡ εᴱ (no l⋤A) Δ
+updateᴱ∙ l⋤A x = refl
+
+updateᴴ∙ : ∀ {l ls n} {π : Context n} {Δ : Env l π} {Γ Γ' : Heap ls} -> l ⋤ A -> Γ' ≔ Γ [ l ↦ Δ ]ᴴ -> εᴴ Γ' ≡ εᴴ Γ
+updateᴴ∙ {l} l⋤A here with l ⊑? A
+updateᴴ∙ l⋤A here | yes p = ⊥-elim (l⋤A p)
+updateᴴ∙ l⋤A here | no ¬p = {!refl!} -- No because of type-level n
+updateᴴ∙ l⋤A (there x) rewrite updateᴴ∙ l⋤A x = refl
+
+lemma'' : ∀ {l ls τ n} {π : Context n} {Δ Δ' : Env l π} {Γ Γ' : Heap ls} {t : Term π τ} ->
+          l ⋤ A -> l ↦ Δ ∈ᴴ Γ -> Δ' ≔ Δ [ ⟪ n , τ , l ⟫ ↦ t ]ᴱ -> Γ' ≔ Γ [ l ↦ Δ' ]ᴴ -> εᴴ Γ' ≡ εᴴ Γ
+lemma'' {l} ¬p here uᴱ here with l ⊑? A
+lemma'' ¬p here uᴱ here | yes p = ⊥-elim (¬p p)
+lemma'' ¬p₁ here uᴱ here | no ¬p = {!!}
+lemma'' ¬p here uᴱ (there {u = u} uᴴ) = ⊥-elim (∈-not-unique {!member-∈ Δ∈Γ!} u)
+lemma'' ¬p (there {u = u} Δ∈Γ) uᴱ here = ⊥-elim (∈-not-unique {!member-∈ Δ∈Γ!} u)
+lemma'' ¬p (there Δ∈Γ) uᴱ (there uᴴ) rewrite lemma'' ¬p Δ∈Γ uᴱ uᴴ = refl
+
 -- Simulation Property
 -- Note that I fixed the type of the whole configuration to be Mac l τ, in order
 -- to tie the security level of the computation to that of the stack.
@@ -217,13 +230,14 @@ lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) ∙ = {!!} -- Is it the case that H �
 -- in the concurrent semantics.
 -- Since the actual term under evaluation can have any type the property
 -- is still sufficiently general.
-ε-sim : ∀ {l τ} (s₁ s₂ : State l (Mac l τ)) (x : Level (Mac l τ)) -> s₁ ⇝ s₂ -> ε x s₁ ⇝ ε x s₂
--- Here we need to reason about where variables are pushed
-ε-sim ⟨ x , ._ , x₂ ⟩ ⟨ ._ , x₄ , .(Var here ∷ x₂) ⟩ (inj₁ _) (App₁ Δ∈Γ) = {!!}
-ε-sim ⟨ Γ , ._ , .(Var x∈π ∷ x₅) ⟩ ⟨ .Γ , ._ , x₅ ⟩ (inj₁ _) (App₂ y∈π x∈π) = Hole
-ε-sim ⟨ Γ , .(Var x∈π) , x₂ ⟩ ⟨ ._ , x₄ , .(# x∈π ∷ x₂) ⟩ (inj₁ _) (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = {!!}
-ε-sim ⟨ Γ , .(Var x∈π) , x₂ ⟩ ⟨ .Γ , x₄ , .x₂ ⟩ (inj₁ _) (Var₁' Δ∈Γ x∈π v∈Δ val) = Hole
-ε-sim ⟨ Γ , x₁ , .(# x∈π ∷ x₅) ⟩ ⟨ ._ , .x₁ , x₅ ⟩ (inj₁ _) (Var₂ Δ∈Γ x∈π val) = {!!}
+ε-sim : ∀ {l τ ls} (s₁ s₂ : State ls l (Mac l τ)) (x : Level (Mac l τ)) -> s₁ ⇝ s₂ -> ε x s₁ ⇝ ε x s₂
+ε-sim ._ ._ (inj₁ (Macᴴ h⋤lᴬ)) (App₁ Δ∈Γ uᴱ uᴴ)
+  rewrite lemma'' h⋤lᴬ Δ∈Γ uᴱ uᴴ = Hole
+--  rewrite updateᴴ∙ h⋤lᴬ uᴴ = Hole
+ε-sim ._ ._ (inj₁ x) (App₂ y∈π x∈π) = Hole
+ε-sim ._ ._ (inj₁ x) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = {!!}
+ε-sim ._ ._ (inj₁ x) (Var₁' Δ∈Γ x∈π v∈Δ val) = Hole
+ε-sim ._ ._ (inj₁ x) (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) = {!!}
 ε-sim ⟨ x , ._ , x₂ ⟩ ⟨ .x , x₄ , ._ ⟩ (inj₁ _) If = Hole
 ε-sim ⟨ x , .True , ._ ⟩ ⟨ .x , x₄ , x₅ ⟩ (inj₁ _) IfTrue = Hole
 ε-sim ⟨ x , .False , ._ ⟩ ⟨ .x , x₄ , x₅ ⟩ (inj₁ _) IfFalse = Hole
@@ -240,12 +254,12 @@ lemma' (Macᴴ h⋤lᴬ) (Macᴸ l⊑lᴬ) ∙ = {!!} -- Is it the case that H �
 ε-sim ⟨ x , .(Id x₄) , .(unId ∷ x₅) ⟩ ⟨ .x , x₄ , x₅ ⟩ (inj₁ _) UnId₂ = Hole
 ε-sim ⟨ Γ , ._ , x₂ ⟩ ⟨ .Γ , ._ , .x₂ ⟩ (inj₁ _) (Fork p) = Hole
 ε-sim ⟨ x , .∙ , .∙ ⟩ ⟨ .x , .∙ , .∙ ⟩ (inj₁ _) Hole = Hole
---
-ε-sim ._ ._ (inj₂ p) (App₁ Δ∈Γ) = {!!}
-ε-sim ._ ._ (inj₂ p) (App₂ y∈π x∈π) = {!!}
-ε-sim ._ ._ (inj₂ p) (Var₁ Δ∈Γ x∈π t∈Δ ¬val) = {!!}
-ε-sim ._ ._ (inj₂ p) (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
-ε-sim ._ ._ (inj₂ p) (Var₂ Δ∈Γ x∈π val) = {!!}
+
+ε-sim ._ ._ (inj₂ y) (App₁ Δ∈Γ uᴱ uᴴ) = {!!}
+ε-sim ._ ._ (inj₂ y) (App₂ y∈π x∈π) = {!!}
+ε-sim ._ ._ (inj₂ y) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = {!!}
+ε-sim ._ ._ (inj₂ y) (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
+ε-sim ._ ._ (inj₂ y) (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) = {!!}
 ε-sim ⟨ _ , ._ , S ⟩ ._ (inj₂ y) (If {τ = τ}) with isSecret? τ
 ε-sim ⟨ x , ._ , S ⟩ ._ (inj₂ y) If | inj₁ (Macᴴ h⋤lᴬ) = ⊥-elim (lemma' (Macᴴ h⋤lᴬ) y S)
 ε-sim ⟨ _ , ._ , S ⟩ _ (inj₂ y) If | inj₂ _ = If
