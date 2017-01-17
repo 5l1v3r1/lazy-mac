@@ -113,6 +113,12 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  Fork : ∀ {Γ n τ h} {π : Context n} {S : Stack l _ τ} {t : Term π (Mac h _)} -> (p : l ⊑ h) ->
           ⟨ Γ , (fork p t) , S ⟩ ⇝ ⟨ Γ , Return {π = π} l （） , S ⟩
 
+ -- I think that in this rule we should use
+ -- Γ ≌ Γ', where we allow ∙ Environments to have different π:
+ -- 1) [] ≌ []
+ -- 2) Γ₁ ≌ Γ₂ => (∙ {π₁}) ∷ Γ₁ ≌ (∙ {π₂}) ∷ Γ₂
+ -- 3) Γ₁ ≌ Γ₂ => Δ ∷ Γ₁ ≌ Δ ∷ Γ₂
+
  Hole : ∀ {Γ n₁ n₂ τ₁ τ₂ τ₃} {π₁ : Context n₁} {π₂ : Context n₂} ->
           ⟨ Γ , ∙ {π = π₁}, ∙ {l} {τ₁} {τ₃} ⟩ ⇝ ⟨ Γ , ∙ {π = π₂} , ∙ {l} {τ₂} {τ₃} ⟩
 
