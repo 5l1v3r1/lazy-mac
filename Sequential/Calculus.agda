@@ -191,12 +191,6 @@ E' ≔ E [ x ↦ t ]ᴱ = Updateᴱ (just t) x E E'
 _≔_[_↛_]ᴱ : ∀ {n l τ} {π π' : Context n} -> Env l π' -> Env l π' -> (x : Variable) -> Term π τ -> Set
 _≔_[_↛_]ᴱ {τ = τ} {π = π}  E' E x t = Updateᴱ {τ = τ} {π = π} nothing x E E'
 
-lemma' : ∀ {n n' τ l} {π : Context n} {π' : Context n'} {mt : Maybe (Term π τ)} {x : Variable} {Δ Δ₁ Δ₂ : Env l π'}
-           -> Updateᴱ mt x Δ Δ₁ -> Updateᴱ mt x Δ Δ₂ -> Δ₁ ≡ Δ₂
-lemma' here here = refl
-lemma' (there a) (there b) rewrite lemma' a b = refl
-lemma' ∙ ∙ = refl
-
 data Memberᴱ {l n τ} {π : Context n} (mt : Maybe (Term π τ)) : ∀ {n'} -> {π' : Context n'} -> (x : Variable) -> Env l π' -> Set where
   here : ∀ {E : Env l π} -> Memberᴱ mt ⟪ n , τ , l ⟫ (mt ∷ E)
   there : ∀ {n' τ'} {π' : Context n'} {E : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ mt ⟪ n' , τ , l ⟫ E -> Memberᴱ mt ⟪ (suc n') , τ , l ⟫ (mt' ∷ E)
@@ -204,10 +198,6 @@ data Memberᴱ {l n τ} {π : Context n} (mt : Maybe (Term π τ)) : ∀ {n'} ->
 
 _↦_∈ᴱ_ : ∀ {n n' l} {π : Context n} {π' : Context n'} -> (x : Variable) -> Term π (ty x) -> Env l π' -> Set
 x ↦ t ∈ᴱ E = Memberᴱ (just t) x E
-
-lemma : ∀ {x l n n'} {π : Context n} {π' : Context n'} {Δ : Env l π} {t₁ t₂ : Term π' (ty x)} -> x ↦ t₁ ∈ᴱ Δ -> x ↦ t₂ ∈ᴱ Δ -> t₁ ≡ t₂
-lemma here here = refl
-lemma (there a) (there b) rewrite lemma a b =  refl
 
 --------------------------------------------------------------------------------
 
