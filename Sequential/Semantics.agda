@@ -45,8 +45,8 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
         -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ)
         -> ⟨ Γ , Var τ∈π , S ⟩ ⇝ ⟨  Γ'  , t , (# τ∈π) ∷ S ⟩
 
- Var₁' : ∀ {Γ l' τ τ'} {π : Context} {Δ : Env l' π} {S : Stack l τ τ'} {v : Term π τ}
-         -> (Δ∈Γ : l' ↦ Δ ∈ᴴ Γ)
+ Var₁' : ∀ {Γ τ τ'} {π : Context} {Δ : Env l π} {S : Stack l τ τ'} {v : Term π τ}
+         -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
          -> (τ∈π : τ ∈ π)
          -> (v∈Δ : τ∈π ↦ v ∈ᴱ Δ)
          -> (val : Value v)
