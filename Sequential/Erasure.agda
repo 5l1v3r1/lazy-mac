@@ -64,7 +64,7 @@ open import Data.Product
 -- level[ Res l τ ] = (l ⊑? A) , level[ τ ]
 -- level[ Id τ ] = level[ τ ]
 
-εᵗ : ∀ {τ n } {π : Context n} -> Level τ -> Term π τ -> Term π τ
+εᵗ : ∀ {τ π}  -> Level τ -> Term π τ -> Term π τ
 εᵗ x （） = （）
 εᵗ x True = True
 εᵗ x False = False
@@ -72,7 +72,7 @@ open import Data.Product
 εᵗ (inj₁ x) (unId t) = ∙
 εᵗ (inj₂ y) (unId t) = unId (εᵗ (inj₂ Id) t)
 εᵗ x (Var x∈π) = Var x∈π  -- Can we kill variables as well?
-εᵗ _ (Abs x t) = Abs x (εᵗ (isSecret? _) t)
+εᵗ _ (Abs t) = Abs (εᵗ (isSecret? _) t)
 εᵗ (inj₁ x) (App t t₁) = ∙
 εᵗ (inj₂ y) (App t t₁) = App (εᵗ (inj₂ Fun) t) (εᵗ (isSecret? _) t₁)
 εᵗ (inj₁ x) (If t Then t₁ Else t₂) = ∙
@@ -103,10 +103,10 @@ open import Data.Product
 εᵗ x (deepDup x₁) = deepDup x₁ -- Must be consistent with Var
 εᵗ x ∙ = ∙
 
-εᵀ : ∀ {τ n } {π : Context n} -> Term π τ -> Term π τ
+εᵀ : ∀ {τ π} -> Term π τ -> Term π τ
 εᵀ {τ} t = εᵗ (isSecret? _) t
 
-εᵗ-ext : ∀ {n τ} {π : Context n} -> (x y : Level τ) (t : Term π τ) -> εᵗ x t ≡ εᵗ y t
+εᵗ-ext : ∀ {τ π} -> (x y : Level τ) (t : Term π τ) -> εᵗ x t ≡ εᵗ y t
 εᵗ-ext x y （） = refl
 εᵗ-ext x y True = refl
 εᵗ-ext x y False = refl
@@ -116,7 +116,7 @@ open import Data.Product
 εᵗ-ext (inj₂ y) (inj₁ x) (unId t) = ⊥-elim (secretNotPublic x y)
 εᵗ-ext (inj₂ y) (inj₂ y₁) (unId t) = refl
 εᵗ-ext x y (Var x∈π) = refl
-εᵗ-ext x₁ y (Abs x t) = refl
+εᵗ-ext x₁ y (Abs t) = refl
 εᵗ-ext (inj₁ x) (inj₁ x₁) (App t t₁) = refl
 εᵗ-ext (inj₁ x) (inj₂ y) (App t t₁) = ⊥-elim (secretNotPublic x y)
 εᵗ-ext (inj₂ y) (inj₁ x) (App t t₁) = ⊥-elim (secretNotPublic x y)
@@ -175,14 +175,14 @@ open import Data.Product as P
 open import Data.Maybe as M
 open import Function
 
-εᴱ : ∀ {l n} {π : Context n} -> Dec (l ⊑ A) ->  Env l π -> Env l π
+εᴱ : ∀ {l π} -> Dec (l ⊑ A) ->  Env l π -> Env l π
 εᴱ (yes p) [] = []
 εᴱ (yes p) (mt ∷ Δ) = (M.map (εᵗ (isSecret? _)) mt) ∷ (εᴱ (yes p) Δ)
 εᴱ (yes p) ∙ = ∙
 εᴱ (no ¬p) Δ = ∙
 
 -- Proof irrelevance for εᴱ
-εᴱ-ext : ∀ {l n} {π : Context n} -> (x y : Dec (l ⊑ A)) (Δ : Env l π) -> εᴱ x Δ ≡ εᴱ y Δ
+εᴱ-ext : ∀ {l π} -> (x y : Dec (l ⊑ A)) (Δ : Env l π) -> εᴱ x Δ ≡ εᴱ y Δ
 εᴱ-ext (yes p) (yes p₁) [] = refl
 εᴱ-ext (yes p) (yes p₁) (t ∷ Δ) rewrite εᴱ-ext (yes p) (yes p₁) Δ = refl
 εᴱ-ext (yes p) (yes p₁) ∙ = refl
@@ -240,7 +240,7 @@ open import Function
 
 --------------------------------------------------------------------------------
 
-ε-wken : ∀ {τ n₁ n₂} {π₁ : Context n₁} {π₂ : Context n₂} -> (x : Level τ) -> (t : Term π₁ τ) (p : π₁ ⊆ˡ π₂) -> εᵗ x (wken t p) ≡ wken (εᵗ x t) p
+ε-wken : ∀ {τ π₁ π₂} -> (x : Level τ) -> (t : Term π₁ τ) (p : π₁ ⊆ˡ π₂) -> εᵗ x (wken t p) ≡ wken (εᵗ x t) p
 ε-wken x （） p = refl
 ε-wken x True p = refl
 ε-wken x False p = refl
@@ -248,7 +248,7 @@ open import Function
 ε-wken (inj₁ x) (unId t) p = refl
 ε-wken (inj₂ y) (unId t) p rewrite ε-wken (inj₂ Id) t p = refl
 ε-wken x (Var x∈π) p = refl
-ε-wken x₁ (Abs x t) p rewrite ε-wken (isSecret? _) t (cons p) = refl
+ε-wken x₁ (Abs t) p rewrite ε-wken (isSecret? _) t (cons p) = refl
 ε-wken (inj₁ x) (App t t₁) p = refl
 ε-wken (inj₂ y) (App t t₁) p rewrite ε-wken (inj₂ Fun) t p | ε-wken (isSecret? _) t₁ p = refl
 ε-wken (inj₁ x) (If t Then t₁ Else t₂) p = refl
@@ -284,21 +284,21 @@ open import Function
 ε-wken x (deepDup x₁) p = refl
 ε-wken x ∙ p = refl
 
-ε-subst : ∀ {τ n} {π : Context n} {x : Variable} (t₁ : Term π (ty x)) (t₂ : Term (x ∷ π) τ) (x : Level τ) ->
+ε-subst : ∀ {τ τ' π} (t₁ : Term π τ') (t₂ : Term (τ' ∷ π) τ) (x : Level τ) ->
                  εᵗ x (subst t₁ t₂) ≡ subst (εᵀ t₁) (εᵗ x t₂)
 ε-subst {π = π} = ε-tm-subst [] π
   where
 
-        ε-var-subst   :  ∀ {n₁ n₂} {x y : Variable} (π₁ : Context n₁) (π₂ : Context n₂) (t₁ : Term π₂ (ty x)) (x∈π : y ∈ π₁ ++ [ x ] ++ π₂)
-                           (p : Level (ty y))
-                      ->  εᵗ p (var-subst π₁ π₂ t₁ x∈π) ≡ var-subst π₁ π₂ (εᵗ (isSecret? _) t₁) x∈π
+        ε-var-subst   :  ∀ {α β} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ α) (β∈π : β ∈ (π₁ ++ [ α ] ++ π₂))
+                           (p : Level β)
+                      ->  εᵗ p (var-subst π₁ π₂ t₁ β∈π) ≡ var-subst π₁ π₂ (εᵗ (isSecret? _) t₁) β∈π
         ε-var-subst [] π₂ t₁ here p rewrite εᵗ-ext p (isSecret? _) t₁ = refl
         ε-var-subst [] π₂ t₁ (there x∈π) p = refl
         ε-var-subst (._ ∷ π₁) π₂ t₁ here p = refl
         ε-var-subst (x₁ ∷ π₁) π₂ t₁ (there x∈π) p
           rewrite ε-wken p (var-subst π₁ π₂ t₁ x∈π) (drop {x₁} refl-⊆ˡ) | ε-var-subst π₁ π₂ t₁ x∈π p = refl
 
-        ε-tm-subst : ∀ {τ n₁ n₂} {x : Variable} (π₁ : Context n₁) (π₂ : Context n₂) (t₁ : Term π₂ (ty x)) (t₂ : Term (π₁ ++ [ x ] ++ π₂) τ) (x : Level τ)
+        ε-tm-subst : ∀ {τ τ'} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ τ') (t₂ : Term (π₁ ++ [ τ' ] ++ π₂) τ) (x : Level τ)
                    ->  εᵗ x (tm-subst π₁ π₂ t₁ t₂) ≡ tm-subst π₁ π₂ (εᵗ (isSecret? _) t₁) (εᵗ x t₂)
         ε-tm-subst π₁ π₂ t₁ （） p = refl
         ε-tm-subst π₁ π₂ t₁ True p = refl
@@ -306,8 +306,8 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ (Id t₂) p rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
         ε-tm-subst π₁ π₂ t₁ (unId t₂) (inj₁ x₁) = refl
         ε-tm-subst π₁ π₂ t₁ (unId t₂) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (Var {n} {l} {τ} x∈π) p rewrite ε-var-subst π₁ π₂ t₁ x∈π p = refl
-        ε-tm-subst π₁ π₂ t₁ (Abs x t₂) p rewrite  ε-tm-subst (x ∷ π₁) _ t₁ t₂ (isSecret? _) = refl
+        ε-tm-subst π₁ π₂ t₁ (Var τ∈π) p rewrite ε-var-subst π₁ π₂ t₁ τ∈π p = refl
+        ε-tm-subst π₁ π₂ t₁ (Abs t₂) p rewrite  ε-tm-subst (_ ∷ π₁) _ t₁ t₂ (isSecret? _) = refl
         ε-tm-subst π₁ π₂ t₁ (App t₂ t₃) (inj₁ x₁) = refl
         ε-tm-subst π₁ π₂ t₁ (App t₂ t₃) (inj₂ y)
           rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) | ε-tm-subst π₁ π₂ t₁ t₃ (isSecret? _) = refl
@@ -354,37 +354,33 @@ open import Function
 --------------------------------------------------------------------------------
 -- Env lemmas
 
--- TODO remove?
-updateᴱ∙ : ∀ {l n τ} {π : Context n} {Δ Δ' : Env l π} {t : Term π τ} -> (l⋤A : l ⋤ A) -> Δ' ≔ Δ [ ⟪ n , τ , l ⟫ ↦ t ]ᴱ -> εᴱ (no l⋤A) Δ' ≡ εᴱ (no l⋤A) Δ
-updateᴱ∙ l⋤A x = refl
-
-memberᴱ : ∀ {l n n' τ} {π : Context n} {Δ : Env l π} {t : Term π τ} ->
-          (l⊑A : l ⊑ A) -> ⟪ n' , τ , l ⟫ ↦ t ∈ᴱ Δ -> ⟪ n' , τ , l ⟫ ↦ (εᵀ t) ∈ᴱ (εᴱ (yes l⊑A) Δ)
+memberᴱ : ∀ {l π π' τ} {Δ : Env l π} {t : Term π' τ} {τ∈π : τ ∈ π} ->
+          (l⊑A : l ⊑ A) -> τ∈π ↦ t ∈ᴱ Δ -> τ∈π ↦ (εᵀ t) ∈ᴱ (εᴱ (yes l⊑A) Δ)
 memberᴱ l⊑A t∈Δ = {!t∈Δ!}
 
 --------------------------------------------------------------------------------
 -- Heap Lemmas
 
-updateᴴ∙ : ∀ {l ls n} {π : Context n} {Δ : Env l π} {Γ Γ' : Heap ls} -> l ⋤ A -> Γ' ≔ Γ [ l ↦ Δ ]ᴴ -> εᴴ Γ' ≡ εᴴ Γ
+updateᴴ∙ : ∀ {l ls π} {Δ : Env l π} {Γ Γ' : Heap ls} -> l ⋤ A -> Γ' ≔ Γ [ l ↦ Δ ]ᴴ -> εᴴ Γ' ≡ εᴴ Γ
 updateᴴ∙ {l} l⋤A here with l ⊑? A
 updateᴴ∙ l⋤A here | yes p = ⊥-elim (l⋤A p)
-updateᴴ∙ l⋤A here | no ¬p = {!refl!} -- No because of type-level π and n
+updateᴴ∙ l⋤A here | no ¬p = {!refl!} -- No because of type-level π
 updateᴴ∙ l⋤A (there x) rewrite updateᴴ∙ l⋤A x = refl
 
-insertᴴ∙ : ∀ {l ls τ n} {π : Context n} {Δ : Env l π} {Γ Γ' : Heap ls} {t : Term π τ} ->
+insertᴴ∙ : ∀ {l ls τ π} {Δ : Env l π} {Γ Γ' : Heap ls} {t : Term π τ} ->
           l ⋤ A -> Γ' ≔ Γ [ l ↦ insert t Δ ]ᴴ -> εᴴ Γ' ≡ εᴴ Γ
 insertᴴ∙ {l} ¬p here with l ⊑? A
 insertᴴ∙ ¬p here | yes p = ⊥-elim (¬p p)
-insertᴴ∙ ¬p₁ here | no ¬p = {!!} -- No because of type-level π and n
+insertᴴ∙ ¬p₁ here | no ¬p = {!refl!} -- No because of type-level π
 insertᴴ∙ ¬p (there x) rewrite insertᴴ∙ ¬p x = refl
 
-memberᴴ : ∀ {l ls n} {Γ : Heap ls} {π : Context n} {Δ : Env l π} -> (l⊑A : l ⊑ A) -> l ↦ Δ ∈ᴴ Γ -> l ↦ (εᴱ (yes l⊑A) Δ) ∈ᴴ (εᴴ Γ)
+memberᴴ : ∀ {l ls π} {Γ : Heap ls} {Δ : Env l π} -> (l⊑A : l ⊑ A) -> l ↦ Δ ∈ᴴ Γ -> l ↦ (εᴱ (yes l⊑A) Δ) ∈ᴴ (εᴴ Γ)
 memberᴴ {l} p here with l ⊑? A
 memberᴴ {Δ = Δ} p₁ here | yes p rewrite εᴱ-ext (yes p) (yes p₁) Δ = here
 memberᴴ p here | no ¬p = ⊥-elim (¬p p)
 memberᴴ p (there x) = there (memberᴴ p x)
 
-insertᴴ : ∀ {l n τ ls} {Γ Γ' : Heap ls} {π : Context n} {Δ : Env l π} {t : Term π τ} (l⊑A : l ⊑ A) ->
+insertᴴ : ∀ {l π τ ls} {Γ Γ' : Heap ls} {Δ : Env l π} {t : Term π τ} (l⊑A : l ⊑ A) ->
             Γ' ≔ Γ [ l ↦ insert t Δ ]ᴴ -> εᴴ Γ' ≔ (εᴴ Γ) [ l ↦ insert (εᵗ (isSecret? τ) t) (εᴱ (yes l⊑A) Δ) ]ᴴ
 insertᴴ {l} l⊑A here with l ⊑? A
 insertᴴ {l} {Δ = []} l⊑A here | yes p = here
@@ -429,7 +425,7 @@ insertᴴ l⊑A (there x) = there (insertᴴ l⊑A x)
 ε-sim ._ ._ (inj₂ y) (App₁ {τ₂ = τ₂} Δ∈Γ uᴴ) with isSecret? τ₂
 ε-sim ._ ._ (inj₂ y) (App₁ {S = S} Δ∈Γ uᴴ) | inj₁ (Macᴴ h⋤A) = ⊥-elim (¬secureStack (Macᴴ h⋤A) y S)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (App₁ Δ∈Γ uᴴ) | inj₂ y = App₁ (memberᴴ l⊑A Δ∈Γ) (insertᴴ l⊑A uᴴ)
-ε-sim ⟨ Γ , Abs y t , ._ ∷ S ⟩ ._ (inj₂ y') (App₂ {β = β} y∈π x∈π) rewrite ε-subst (Var x∈π) t (isSecret? _) = App₂ y∈π x∈π
+ε-sim ⟨ Γ , Abs t , ._ ∷ S ⟩ ._ (inj₂ y') (App₂ {β = β} y∈π x∈π) rewrite ε-subst (Var x∈π) t (isSecret? _) = App₂ y∈π x∈π
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = Var₁ (memberᴴ l⊑A Δ∈Γ) x∈π (memberᴱ l⊑A t∈Δ) {!!} {!!} {!!}
 ε-sim ._ ._ (inj₂ y) (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
 ε-sim ._ ._ (inj₂ y) (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) = {!!}
