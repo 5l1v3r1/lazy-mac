@@ -158,7 +158,6 @@ data Cont (l : Label) : Ty -> Ty -> Set where
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
 -- by an input type and an output type.
 -- It transforms the former in the latter according to the continuations.
--- TODO can we remove the label if we State is already labeled?
 data Stack (l : Label) : Ty -> Ty -> Set where
  [] : ∀ {τ} -> Stack l τ τ
  _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont l τ₁ τ₂ -> Stack l τ₂ τ₃ -> Stack l τ₁ τ₃
@@ -195,6 +194,11 @@ data Memberᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈ π' -> 
 
 _↦_∈ᴱ_ : ∀ {l τ} {π π' : Context} -> τ ∈ π' -> Term π τ -> Env l π' -> Set
 x ↦ t ∈ᴱ Δ = Memberᴱ (just t) x Δ
+
+-- Extends the environment with a new binding
+insert : ∀ {l τ π} -> Term π τ -> Env l π -> Env l (τ ∷ π)
+insert t ∙ = ∙
+insert t Δ = just t ∷ Δ
 
 --------------------------------------------------------------------------------
 
