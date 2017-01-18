@@ -159,7 +159,6 @@ data Cont (l : Label) : Ty -> Ty -> Set where
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
 -- by an input type and an output type.
 -- It transforms the former in the latter according to the continuations.
--- TODO can we remove the label if we State is already labeled?
 data Stack (l : Label) : Ty -> Ty -> Set where
  [] : ∀ {τ} -> Stack l τ τ
  _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont l τ₁ τ₂ -> Stack l τ₂ τ₃ -> Stack l τ₁ τ₃
@@ -179,17 +178,17 @@ data Env (l : Label) : ∀ {n} -> Context n -> Set where
 
 data Updateᴱ {l n τ} {π : Context n} (mt : Maybe (Term π τ)) : ∀ {n'} {π' : Context n'} -> Variable -> Env l π' -> Env l π' -> Set where
   here : ∀ {Δ : Env l π} {mt' : Maybe (Term _ τ)} -> Updateᴱ mt ⟪ n , τ , l ⟫ (mt' ∷ Δ) (mt ∷ Δ)
-  there : ∀ {n' τ'} {π' : Context n'} {Δ Δ' : Env l π'} {mt' : Maybe (Term _ τ')}
-         -> Updateᴱ mt ⟪ n , τ , l ⟫ Δ Δ' -> Updateᴱ mt ⟪ n , τ , l ⟫ (mt' ∷ Δ) (mt' ∷ Δ')
+  there : ∀ {n' τ' x} {π' : Context n'} {Δ Δ' : Env l π'} {mt' : Maybe (Term _ τ')}
+         -> Updateᴱ mt x Δ Δ' -> Updateᴱ mt x (mt' ∷ Δ) (mt' ∷ Δ')
   ∙ : ∀ {x n} -> {π' : Context n} -> Updateᴱ mt x (∙ {π = π'}) ∙
 
 _≔_[_↦_]ᴱ : ∀ {n n' l τ} {π : Context n} {π' : Context n'} -> Env l π' -> Env l π' -> (x : Variable) -> Term π τ -> Set
-E' ≔ E [ x ↦ t ]ᴱ = Updateᴱ (just t) x E E'
+Δ' ≔ Δ [ x ↦ t ]ᴱ = Updateᴱ (just t) x Δ Δ'
 
 -- Syntatic sugar for removing a term from the environment.
 -- The term is used only to fix its context π and avoid unsolved metas.
 _≔_[_↛_]ᴱ : ∀ {n l τ} {π π' : Context n} -> Env l π' -> Env l π' -> (x : Variable) -> Term π τ -> Set
-_≔_[_↛_]ᴱ {τ = τ} {π = π}  E' E x t = Updateᴱ {τ = τ} {π = π} nothing x E E'
+_≔_[_↛_]ᴱ {τ = τ} {π = π}  Δ' Δ x t = Updateᴱ {τ = τ} {π = π} nothing x Δ Δ'
 
 -- Extends the environment with a new binding
 insert : ∀ {n l τ} {π : Context n} -> Term π τ -> Env l π -> Env l (⟪ n , τ , l ⟫ ∷ π)
@@ -197,12 +196,12 @@ insert t ∙ = ∙
 insert t Δ = just t ∷ Δ
 
 data Memberᴱ {l n τ} {π : Context n} (mt : Maybe (Term π τ)) : ∀ {n'} -> {π' : Context n'} -> (x : Variable) -> Env l π' -> Set where
-  here : ∀ {E : Env l π} -> Memberᴱ mt ⟪ n , τ , l ⟫ (mt ∷ E)
-  there : ∀ {n' τ'} {π' : Context n'} {E : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ mt ⟪ n , τ , l ⟫ E -> Memberᴱ mt ⟪ n , τ , l ⟫ (mt' ∷ E)
+  here : ∀ {Δ : Env l π} -> Memberᴱ mt ⟪ n , τ , l ⟫ (mt ∷ Δ)
+  there : ∀ {x n' τ'} {π' : Context n'} {Δ : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ mt x Δ -> Memberᴱ mt x (mt' ∷ Δ)
   -- TODO add x ↦ just ∙ ∈ ∙
 
 _↦_∈ᴱ_ : ∀ {n n' l} {π : Context n} {π' : Context n'} -> (x : Variable) -> Term π (ty x) -> Env l π' -> Set
-x ↦ t ∈ᴱ E = Memberᴱ (just t) x E
+x ↦ t ∈ᴱ Δ = Memberᴱ (just t) x Δ
 
 --------------------------------------------------------------------------------
 
