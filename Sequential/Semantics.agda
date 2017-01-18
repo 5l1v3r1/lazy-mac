@@ -40,8 +40,9 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
             -> (x∈π : x ∈ π) ->
           ⟨ Γ , Abs y t , Var x∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var x∈π) t , S ⟩
 
- Var₁ : ∀ {Γ Γ' n' n τ τ'} {π : Context n'} {Δ Δ' : Env l π}  {S : Stack l τ τ'} {t : Term π τ} ->
-          let x = ⟪ n , τ , l ⟫ in
+ -- π need to be different for this step to make sense
+ Var₁ : ∀ {Γ Γ' n n' τ τ'} {π : Context n} {π' : Context n'} {Δ Δ' : Env l π}  {S : Stack l τ τ'} {t : Term π' τ} ->
+          let x = ⟪ n' , τ , l ⟫ in
            (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
         -> (x∈π : x ∈ π)
         -> (t∈Δ : x ↦ t ∈ᴱ Δ)
@@ -58,8 +59,8 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
          -> (val : Value v)
          -> ⟨ Γ , Var x∈π , S ⟩ ⇝ ⟨ Γ , v , S ⟩
 
- Var₂ : ∀ {Γ Γ' n' n τ τ'} {π : Context n'} {Δ Δ' : Env l π} {S : Stack l τ τ'} {v : Term π τ} ->
-          let  x = ⟪ n , τ , l ⟫ in
+ Var₂ : ∀ {Γ Γ' n' n τ τ'} {π : Context n} {π' : Context n'} {Δ Δ' : Env l π} {S : Stack l τ τ'} {v : Term π' τ} ->
+          let  x = ⟪ n' , τ , l ⟫ in
            (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
         -> (x∈π : x ∈ π)
         -> (val : Value v)
