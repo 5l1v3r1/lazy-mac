@@ -71,18 +71,8 @@ data _∈_ {A : Set} : A -> List A -> Set where
 
 --------------------------------------------------------------------------------
 
-open import Data.Nat
-
-record Variable : Set where
-  constructor ⟪_,_,_⟫
-  field num : ℕ
-        ty : Ty
-        lbl : Label
-
-open Variable public
-
 Context : Set
-Context = List Variable
+Context = List Ty
 
 -- Subset relation
 data _⊆ˡ_ : Context -> Context -> Set where
