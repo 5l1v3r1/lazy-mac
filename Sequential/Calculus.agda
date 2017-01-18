@@ -180,7 +180,7 @@ data Env (l : Label) : ∀ {n} -> Context n -> Set where
 data Updateᴱ {l n τ} {π : Context n} (mt : Maybe (Term π τ)) : ∀ {n'} {π' : Context n'} -> Variable -> Env l π' -> Env l π' -> Set where
   here : ∀ {Δ : Env l π} {mt' : Maybe (Term _ τ)} -> Updateᴱ mt ⟪ n , τ , l ⟫ (mt' ∷ Δ) (mt ∷ Δ)
   there : ∀ {n' τ'} {π' : Context n'} {Δ Δ' : Env l π'} {mt' : Maybe (Term _ τ')}
-         -> Updateᴱ mt ⟪ n' , τ , l ⟫ Δ Δ' -> Updateᴱ mt ⟪ (suc n') , τ , l ⟫ (mt' ∷ Δ) (mt' ∷ Δ')
+         -> Updateᴱ mt ⟪ n , τ , l ⟫ Δ Δ' -> Updateᴱ mt ⟪ n , τ , l ⟫ (mt' ∷ Δ) (mt' ∷ Δ')
   ∙ : ∀ {x n} -> {π' : Context n} -> Updateᴱ mt x (∙ {π = π'}) ∙
 
 _≔_[_↦_]ᴱ : ∀ {n n' l τ} {π : Context n} {π' : Context n'} -> Env l π' -> Env l π' -> (x : Variable) -> Term π τ -> Set
@@ -198,7 +198,7 @@ insert t Δ = just t ∷ Δ
 
 data Memberᴱ {l n τ} {π : Context n} (mt : Maybe (Term π τ)) : ∀ {n'} -> {π' : Context n'} -> (x : Variable) -> Env l π' -> Set where
   here : ∀ {E : Env l π} -> Memberᴱ mt ⟪ n , τ , l ⟫ (mt ∷ E)
-  there : ∀ {n' τ'} {π' : Context n'} {E : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ mt ⟪ n' , τ , l ⟫ E -> Memberᴱ mt ⟪ (suc n') , τ , l ⟫ (mt' ∷ E)
+  there : ∀ {n' τ'} {π' : Context n'} {E : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ mt ⟪ n , τ , l ⟫ E -> Memberᴱ mt ⟪ n , τ , l ⟫ (mt' ∷ E)
   -- TODO add x ↦ just ∙ ∈ ∙
 
 _↦_∈ᴱ_ : ∀ {n n' l} {π : Context n} {π' : Context n'} -> (x : Variable) -> Term π (ty x) -> Env l π' -> Set
