@@ -379,6 +379,12 @@ memberᴱ : ∀ {l π π' τ} {Δ : Env l π} {t : Term π' τ} {τ∈π : τ �
 memberᴱ l⊑A here = here
 memberᴱ l⊑A (there t∈Δ) = there (memberᴱ l⊑A t∈Δ)
 
+updateᴱ : ∀ {l π π' τ} {Δ Δ' : Env l π} {mt : Maybe (Term π' τ)} {τ∈π : τ ∈ π}
+          (l⊑A : l ⊑ A) -> Updateᴱ mt τ∈π Δ Δ' -> Updateᴱ (M.map εᵀ mt) τ∈π (εᴱ (yes l⊑A) Δ) (εᴱ (yes l⊑A) Δ')
+updateᴱ l⊑A here = here
+updateᴱ l⊑A (there x) = there (updateᴱ l⊑A x)
+updateᴱ l⊑A ∙ = ∙
+
 --------------------------------------------------------------------------------
 -- Heap Lemmas
 
@@ -409,6 +415,10 @@ insertᴴ {l} {Δ = t ∷ Δ} l⊑A here | yes p  rewrite εᴱ-ext (yes p) (yes
 insertᴴ {l} {Δ = ∙} l⊑A here | yes p = here
 insertᴴ l⊑A here | no ¬p = ⊥-elim (¬p l⊑A)
 insertᴴ l⊑A (there x) = there (insertᴴ l⊑A x)
+
+updateᴴ : ∀ {l ls π} {Δ : Env l π} {Γ Γ' : Heap ls} -> (l⊑A : l ⊑ A) -> Γ' ≔ Γ [ l ↦ Δ ]ᴴ -> (εᴴ Γ') ≔ (εᴴ Γ) [ l ↦ (εᴱ (yes l⊑A ) Δ) ]ᴴ
+updateᴴ {l} {Δ = Δ} l⊑A here rewrite εᴱ-ext (yes l⊑A) (l ⊑? A) Δ = here
+updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 
 -- Simulation Property
 -- Note that I fixed the type of the whole configuration to be Mac l τ, in order
@@ -447,7 +457,7 @@ insertᴴ l⊑A (there x) = there (insertᴴ l⊑A x)
 ε-sim ._ ._ (inj₂ y) (App₁ {S = S} Δ∈Γ uᴴ) | inj₁ (Macᴴ h⋤A) = ⊥-elim (¬secureStack (Macᴴ h⋤A) y S)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (App₁ Δ∈Γ uᴴ) | inj₂ y = App₁ (memberᴴ l⊑A Δ∈Γ) (insertᴴ l⊑A uᴴ)
 ε-sim ⟨ Γ , Abs t , ._ ∷ S ⟩ ._ (inj₂ y') (App₂ {β = β} y∈π x∈π) rewrite ε-subst (Var x∈π) t (isSecret? _) = App₂ y∈π x∈π
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = Var₁ (memberᴴ l⊑A Δ∈Γ) x∈π (memberᴱ l⊑A t∈Δ) (εᵀ¬Val ¬val) {!!} {!!}
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = Var₁ (memberᴴ l⊑A Δ∈Γ) x∈π (memberᴱ l⊑A t∈Δ) (εᵀ¬Val ¬val) (updateᴱ l⊑A rᴱ) (updateᴴ l⊑A uᴴ)
 ε-sim ._ ._ (inj₂ y) (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
 ε-sim ._ ._ (inj₂ y) (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) = {!!}
 ε-sim ⟨ _ , ._ , S ⟩ ._ (inj₂ y) (If {τ = τ}) with isSecret? τ
