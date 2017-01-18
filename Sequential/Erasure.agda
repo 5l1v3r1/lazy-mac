@@ -107,8 +107,69 @@ open import Data.Product
 εᵀ {τ} t = εᵗ (isSecret? _) t
 
 εᵗ-ext : ∀ {n τ} {π : Context n} -> (x y : Level τ) (t : Term π τ) -> εᵗ x t ≡ εᵗ y t
-εᵗ-ext = {!!}
---------------------------------------------------------------------------------
+εᵗ-ext x y （） = refl
+εᵗ-ext x y True = refl
+εᵗ-ext x y False = refl
+εᵗ-ext x y (Id t) = refl
+εᵗ-ext (inj₁ _) (inj₁ _) (unId t) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (unId t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (unId t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₂ y₁) (unId t) = refl
+εᵗ-ext x y (Var x∈π) = refl
+εᵗ-ext x₁ y (Abs x t) = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (App t t₁) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (App t t₁) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (App t t₁) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₂ y₁) (App t t₁) = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (If t Then t₁ Else t₂) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (If t Then t₁ Else t₂) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (If t Then t₁ Else t₂) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₂ y₁) (If t Then t₁ Else t₂)
+  rewrite εᵗ-ext (inj₂ y) (inj₂ y₁) t₁ |  εᵗ-ext (inj₂ y) (inj₂ y₁) t₂ = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (Return l t) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (Return l t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (Return l t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₂ y₁) (Return l t) = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (t >>= t₁) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (t >>= t₁) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (t >>= t₁) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ (Macᴸ l⊑A)) (inj₂ (Macᴸ l⊑A₁)) (t >>= t₁)
+  rewrite εᵗ-ext (inj₂ (Macᴸ l⊑A)) (inj₂ (Macᴸ l⊑A₁)) t = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (Mac l t) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (Mac l t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (Mac l t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₂ y₁) (Mac l t) = refl
+εᵗ-ext (inj₁ ()) (inj₁ x₁) (Res l t)
+εᵗ-ext (inj₁ ()) (inj₂ y) (Res l t)
+εᵗ-ext (inj₂ y) (inj₁ ()) (Res l t)
+εᵗ-ext (inj₂ (Res (yes p))) (inj₂ (Res (yes p₁))) (Res l t) = refl
+εᵗ-ext (inj₂ (Res (yes p))) (inj₂ (Res (no ¬p))) (Res l t) = ⊥-elim (¬p p)
+εᵗ-ext (inj₂ (Res (no ¬p))) (inj₂ (Res (yes p))) (Res l t) = ⊥-elim (¬p p)
+εᵗ-ext (inj₂ (Res (no ¬p))) (inj₂ (Res (no ¬p₁))) (Res l t) = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (label l⊑h t) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (label l⊑h t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (label l⊑h t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ (Macᴸ l⊑A)) (inj₂ (Macᴸ l⊑A₁)) (label l⊑h t) = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (label∙ l⊑h t) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (label∙ l⊑h t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (label∙ l⊑h t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₂ y₁) (label∙ l⊑h t) = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (unlabel l⊑h t) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (unlabel l⊑h t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (unlabel l⊑h t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ (Macᴸ l⊑A)) (inj₂ (Macᴸ l⊑A₁)) (unlabel l⊑h t) = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (unlabel∙ l⊑h t) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (unlabel∙ l⊑h t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (unlabel∙ l⊑h t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ (Macᴸ l⊑A)) (inj₂ (Macᴸ l⊑A₁)) (unlabel∙ l⊑h t) = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (fork l⊑h t) = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (fork l⊑h t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (fork l⊑h t) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₂ y₁) (fork l⊑h t) = refl
+εᵗ-ext x y (deepDup x₁) = refl
+εᵗ-ext x y ∙ = refl
+
+
 
 open import Data.Product as P
 open import Data.Maybe as M
