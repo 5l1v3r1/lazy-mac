@@ -106,6 +106,8 @@ open import Data.Product
 εᵀ : ∀ {τ n } {π : Context n} -> Term π τ -> Term π τ
 εᵀ {τ} t = εᵗ (isSecret? _) t
 
+εᵗ-ext : ∀ {n τ} {π : Context n} -> (x y : Level τ) (t : Term π τ) -> εᵗ x t ≡ εᵗ y t
+εᵗ-ext = {!!}
 --------------------------------------------------------------------------------
 
 open import Data.Product as P
@@ -178,12 +180,63 @@ open import Function
 --------------------------------------------------------------------------------
 
 ε-wken : ∀ {τ n₁ n₂} {π₁ : Context n₁} {π₂ : Context n₂} -> (x : Level τ) -> (t : Term π₁ τ) (p : π₁ ⊆ˡ π₂) -> εᵗ x (wken t p) ≡ wken (εᵗ x t) p
-ε-wken = {!!}
+ε-wken x （） p = refl
+ε-wken x True p = refl
+ε-wken x False p = refl
+ε-wken x (Id t) p rewrite ε-wken (isSecret? _) t p = refl
+ε-wken (inj₁ x) (unId t) p = refl
+ε-wken (inj₂ y) (unId t) p rewrite ε-wken (inj₂ Id) t p = refl
+ε-wken x (Var x∈π) p = refl
+ε-wken x₁ (Abs x t) p rewrite ε-wken (isSecret? _) t (cons p) = refl
+ε-wken (inj₁ x) (App t t₁) p = refl
+ε-wken (inj₂ y) (App t t₁) p rewrite ε-wken (inj₂ Fun) t p | ε-wken (isSecret? _) t₁ p = refl
+ε-wken (inj₁ x) (If t Then t₁ Else t₂) p = refl
+ε-wken (inj₂ y) (If t Then t₁ Else t₂) p
+  rewrite ε-wken (inj₂ Bool) t p | ε-wken (inj₂ y) t₁ p | ε-wken (inj₂ y) t₂ p = refl
+ε-wken (inj₁ x) (Return l t) p = refl
+ε-wken (inj₂ y) (Return l t) p
+  rewrite ε-wken (isSecret? _) t p = refl
+ε-wken (inj₁ x) (t >>= t₁) p = refl
+ε-wken (inj₂ (Macᴸ y)) (t >>= t₁) p
+  rewrite ε-wken (inj₂ (Macᴸ y)) t p | ε-wken (inj₂ Fun)  t₁ p = refl
+ε-wken (inj₁ x) (Mac l t) p = refl
+ε-wken (inj₂ y) (Mac l t) p
+  rewrite ε-wken (isSecret? _) t p = refl
+ε-wken (inj₁ ()) (Res l t) p
+ε-wken (inj₂ (Res (yes p))) (Res l t) p₁
+  rewrite ε-wken (isSecret? _) t p₁ = refl
+ε-wken (inj₂ (Res (no ¬p))) (Res l t) p = refl
+ε-wken (inj₁ x) (label l⊑h t) p = refl
+ε-wken (inj₂ (Macᴸ l⊑A)) (label {h = H} l⊑h t) p with H ⊑? A
+ε-wken (inj₂ (Macᴸ l⊑A)) (label l⊑h t) p₁ | yes p rewrite ε-wken (isSecret? _) t p₁ = refl
+ε-wken (inj₂ (Macᴸ l⊑A)) (label l⊑h t) p | no ¬p rewrite ε-wken (isSecret? _) t p = refl
+ε-wken (inj₁ x) (label∙ l⊑h t) p = refl
+ε-wken (inj₂ y) (label∙ l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
+ε-wken (inj₁ x) (unlabel l⊑h t) p = refl
+ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel {α = τ} l⊑h t) p with isSecret? τ
+ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel l⊑h t) p | inj₁ x rewrite ε-wken (isSecret? _) t p = refl
+ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel l⊑h t) p | inj₂ y rewrite ε-wken (isSecret? _) t p = refl
+ε-wken (inj₁ x) (unlabel∙ l⊑h t) p = refl
+ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel∙ l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
+ε-wken (inj₁ x) (fork l⊑h t) p = refl
+ε-wken (inj₂ y) (fork {h = H} l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
+ε-wken x (deepDup x₁) p = refl
+ε-wken x ∙ p = refl
 
 ε-subst : ∀ {τ n} {π : Context n} {x : Variable} (t₁ : Term π (ty x)) (t₂ : Term (x ∷ π) τ) (x : Level τ) ->
                  εᵗ x (subst t₁ t₂) ≡ subst (εᵀ t₁) (εᵗ x t₂)
-ε-subst {π = π} = ε-tm-subst [] π -- t₁ t₂ p --  ε-tm-subst [] _ x t
+ε-subst {π = π} = ε-tm-subst [] π
   where
+
+        ε-var-subst   :  ∀ {n₁ n₂} {x y : Variable} (π₁ : Context n₁) (π₂ : Context n₂) (t₁ : Term π₂ (ty x)) (x∈π : y ∈ π₁ ++ [ x ] ++ π₂)
+                           (p : Level (ty y))
+                      ->  εᵗ p (var-subst π₁ π₂ t₁ x∈π) ≡ var-subst π₁ π₂ (εᵗ (isSecret? _) t₁) x∈π
+        ε-var-subst [] π₂ t₁ here p rewrite εᵗ-ext p (isSecret? _) t₁ = refl
+        ε-var-subst [] π₂ t₁ (there x∈π) p = refl
+        ε-var-subst (._ ∷ π₁) π₂ t₁ here p = refl
+        ε-var-subst (x₁ ∷ π₁) π₂ t₁ (there x∈π) p
+          rewrite ε-wken p (var-subst π₁ π₂ t₁ x∈π) (drop {x₁} refl-⊆ˡ) | ε-var-subst π₁ π₂ t₁ x∈π p = refl
+
         ε-tm-subst : ∀ {τ n₁ n₂} {x : Variable} (π₁ : Context n₁) (π₂ : Context n₂) (t₁ : Term π₂ (ty x)) (t₂ : Term (π₁ ++ [ x ] ++ π₂) τ) (x : Level τ)
                    ->  εᵗ x (tm-subst π₁ π₂ t₁ t₂) ≡ tm-subst π₁ π₂ (εᵗ (isSecret? _) t₁) (εᵗ x t₂)
         ε-tm-subst π₁ π₂ t₁ （） p = refl
@@ -192,7 +245,7 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ (Id t₂) p rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
         ε-tm-subst π₁ π₂ t₁ (unId t₂) (inj₁ x₁) = refl
         ε-tm-subst π₁ π₂ t₁ (unId t₂) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (Var x∈π) p = {!!}
+        ε-tm-subst π₁ π₂ t₁ (Var {n} {l} {τ} x∈π) p rewrite ε-var-subst π₁ π₂ t₁ x∈π p = refl
         ε-tm-subst π₁ π₂ t₁ (Abs x t₂) p rewrite  ε-tm-subst (x ∷ π₁) _ t₁ t₂ (isSecret? _) = refl
         ε-tm-subst π₁ π₂ t₁ (App t₂ t₃) (inj₁ x₁) = refl
         ε-tm-subst π₁ π₂ t₁ (App t₂ t₃) (inj₂ y)
@@ -231,20 +284,11 @@ open import Function
 -- This is the proof that it is impossible to turn a high computation into a low one
 -- We need this lemma to discharge those cases in which the Stack produce a Mac L
 -- computation but the current term under evaluation has type Mac H.
-lemma : ∀ {l h τ₁ τ₂} -> A ⊑ l -> A ⋤ h -> Stack l (Mac h τ₁) (Mac l τ₂) -> ⊥
-lemma A⊑L A⋤H [] = ⊥-elim (A⋤H A⊑L)
-lemma A⊑L A⋤H (# x∈π ∷ S) = lemma A⊑L A⋤H S
-lemma A⊑L A⋤H (Bind x ∷ S) = lemma A⊑L A⋤H S
-lemma {L} {H} A⊑L A⋤H ∙ with L ⊑? H
-lemma A⊑L A⋤H ∙ | yes L⊑H = trans-⋢ A⊑L A⋤H L⊑H
-lemma A⊑L A⋤H ∙ | no L⋤H = {!trans-⋢!} -- Is it the case that H ⋤ L -> L ⊑ H ?
-
-
-lemma' : ∀ {l h τ₁ τ₂} -> Secret (Mac h τ₁) -> Public (Mac l τ₂) -> Stack l (Mac h τ₁) (Mac l τ₂) -> ⊥
-lemma' (Macᴴ h⋤A) (Macᴸ l⊑A) [] = ⊥-elim (h⋤A l⊑A)
-lemma' x y (# x∈π ∷ S) = lemma' x y S
-lemma' (Macᴴ h⋤A) (Macᴸ l⊑A) (Bind x₁ ∷ S) = lemma' (Macᴴ h⋤A) (Macᴸ l⊑A) S
-lemma' (Macᴴ h⋤A) (Macᴸ l⊑A) ∙ = {!!} -- Is it the case that H ⋤ L -> L ⊑ H ?
+¬secureStack : ∀ {l h τ₁ τ₂} -> Secret (Mac h τ₁) -> Public (Mac l τ₂) -> Stack l (Mac h τ₁) (Mac l τ₂) -> ⊥
+¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) [] = ⊥-elim (h⋤A l⊑A)
+¬secureStack x y (# x∈π ∷ S) = ¬secureStack x y S
+¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) (Bind x₁ ∷ S) = ¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) S
+¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) ∙ = {!!} -- No because ∙ can freely choose types also the insecure ones
 
 
 updateᴱ∙ : ∀ {l n τ} {π : Context n} {Δ Δ' : Env l π} {t : Term π τ} -> (l⋤A : l ⋤ A) -> Δ' ≔ Δ [ ⟪ n , τ , l ⟫ ↦ t ]ᴱ -> εᴱ (no l⋤A) Δ' ≡ εᴱ (no l⋤A) Δ
@@ -312,14 +356,14 @@ insertᴴ l⊑A (there x) = there (insertᴴ l⊑A x)
 ε-sim ⟨ x , .∙ , .∙ ⟩ ⟨ .x , .∙ , .∙ ⟩ (inj₁ _) Hole = Hole
 
 ε-sim ._ ._ (inj₂ y) (App₁ {τ₂ = τ₂} Δ∈Γ uᴴ) with isSecret? τ₂
-ε-sim ._ ._ (inj₂ y) (App₁ {S = S} Δ∈Γ uᴴ) | inj₁ (Macᴴ h⋤A) = ⊥-elim (lemma' (Macᴴ h⋤A) y S)
+ε-sim ._ ._ (inj₂ y) (App₁ {S = S} Δ∈Γ uᴴ) | inj₁ (Macᴴ h⋤A) = ⊥-elim (¬secureStack (Macᴴ h⋤A) y S)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (App₁ Δ∈Γ uᴴ) | inj₂ y = App₁ (memberᴴ l⊑A Δ∈Γ) (insertᴴ l⊑A uᴴ)
 ε-sim ⟨ Γ , Abs y t , ._ ∷ S ⟩ ._ (inj₂ y') (App₂ {β = β} y∈π x∈π) rewrite ε-subst (Var x∈π) t (isSecret? _) = App₂ y∈π x∈π
 ε-sim ._ ._ (inj₂ y) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = {!!}
 ε-sim ._ ._ (inj₂ y) (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
 ε-sim ._ ._ (inj₂ y) (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) = {!!}
 ε-sim ⟨ _ , ._ , S ⟩ ._ (inj₂ y) (If {τ = τ}) with isSecret? τ
-ε-sim ⟨ x , ._ , S ⟩ ._ (inj₂ y) If | inj₁ (Macᴴ h⋤A) = ⊥-elim (lemma' (Macᴴ h⋤A) y S)
+ε-sim ⟨ x , ._ , S ⟩ ._ (inj₂ y) If | inj₁ (Macᴴ h⋤A) = ⊥-elim (¬secureStack (Macᴴ h⋤A) y S)
 ε-sim ⟨ _ , ._ , S ⟩ _ (inj₂ y) If | inj₂ _ = If
 ε-sim ._ ._ (inj₂ p) IfTrue = IfTrue
 ε-sim ._ ._ (inj₂ p) IfFalse = IfFalse
@@ -379,7 +423,7 @@ insertᴴ l⊑A (there x) = there (insertᴴ l⊑A x)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel∙₂ p₁) | inj₂ y | yes p | no ¬p = Unlabel∙₂ p₁
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel∙₂ p) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (UnId₁ {τ = τ}) with isSecret? τ
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (UnId₁ {S = S}) | inj₁ (Macᴴ h⋤A) = ⊥-elim (lemma' (Macᴴ h⋤A) (Macᴸ l⊑A) S)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (UnId₁ {S = S}) | inj₁ (Macᴴ h⋤A) = ⊥-elim (¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) S)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) UnId₁ | inj₂ y = UnId₁
 ε-sim ._ ._ (inj₂ p) UnId₂ = UnId₂
 ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Fork p₁) with isSecret? (Mac l τ)

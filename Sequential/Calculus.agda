@@ -27,7 +27,6 @@ data Term {n : ℕ} (π : Context n) : Ty -> Set where
   Id : ∀ {τ} -> Term π τ -> Term π (Id τ)
   unId : ∀ {τ} -> Term π (Id τ) -> Term π τ
 
-  -- TODO: This unifies only when ty x is universally quantified, existentially quantify the type of the var.
   Var : ∀ {n l τ} -> (x∈π : ⟪ n , τ , l ⟫ ∈ π) -> Term π τ
   Abs : ∀ {β} -> (x : Variable) -> Term (x ∷ π) β -> Term π (ty x => β)
   App : ∀ {α β} -> Term π (α => β) -> Term π α -> Term π β
