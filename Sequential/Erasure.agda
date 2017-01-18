@@ -351,9 +351,19 @@ open import Function
 ¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) (Bind x₁ ∷ S) = ¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) S
 ¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) ∙ = {!!} -- No because ∙ can freely choose types also the insecure ones
 
+--------------------------------------------------------------------------------
+-- Env lemmas
 
+-- TODO remove?
 updateᴱ∙ : ∀ {l n τ} {π : Context n} {Δ Δ' : Env l π} {t : Term π τ} -> (l⋤A : l ⋤ A) -> Δ' ≔ Δ [ ⟪ n , τ , l ⟫ ↦ t ]ᴱ -> εᴱ (no l⋤A) Δ' ≡ εᴱ (no l⋤A) Δ
 updateᴱ∙ l⋤A x = refl
+
+memberᴱ : ∀ {l n n' τ} {π : Context n} {Δ : Env l π} {t : Term π τ} ->
+          (l⊑A : l ⊑ A) -> ⟪ n' , τ , l ⟫ ↦ t ∈ᴱ Δ -> ⟪ n' , τ , l ⟫ ↦ (εᵀ t) ∈ᴱ (εᴱ (yes l⊑A) Δ)
+memberᴱ l⊑A t∈Δ = {!t∈Δ!}
+
+--------------------------------------------------------------------------------
+-- Heap Lemmas
 
 updateᴴ∙ : ∀ {l ls n} {π : Context n} {Δ : Env l π} {Γ Γ' : Heap ls} -> l ⋤ A -> Γ' ≔ Γ [ l ↦ Δ ]ᴴ -> εᴴ Γ' ≡ εᴴ Γ
 updateᴴ∙ {l} l⋤A here with l ⊑? A
@@ -420,7 +430,7 @@ insertᴴ l⊑A (there x) = there (insertᴴ l⊑A x)
 ε-sim ._ ._ (inj₂ y) (App₁ {S = S} Δ∈Γ uᴴ) | inj₁ (Macᴴ h⋤A) = ⊥-elim (¬secureStack (Macᴴ h⋤A) y S)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (App₁ Δ∈Γ uᴴ) | inj₂ y = App₁ (memberᴴ l⊑A Δ∈Γ) (insertᴴ l⊑A uᴴ)
 ε-sim ⟨ Γ , Abs y t , ._ ∷ S ⟩ ._ (inj₂ y') (App₂ {β = β} y∈π x∈π) rewrite ε-subst (Var x∈π) t (isSecret? _) = App₂ y∈π x∈π
-ε-sim ._ ._ (inj₂ y) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = {!!}
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = Var₁ (memberᴴ l⊑A Δ∈Γ) x∈π (memberᴱ l⊑A t∈Δ) {!!} {!!} {!!}
 ε-sim ._ ._ (inj₂ y) (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
 ε-sim ._ ._ (inj₂ y) (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) = {!!}
 ε-sim ⟨ _ , ._ , S ⟩ ._ (inj₂ y) (If {τ = τ}) with isSecret? τ
