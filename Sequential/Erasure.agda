@@ -128,6 +128,20 @@ open import Data.Product
         ε¬Val (deepDup x) x₁ ¬val val-ε = ¬val val-ε
         ε¬Val ∙ x ¬val ()
 
+εᵀ-Val : ∀ {τ π} {v : Term π τ} -> Public τ -> Value v -> Value (εᵀ v)
+εᵀ-Val p （） = （）
+εᵀ-Val p True = True
+εᵀ-Val p False = False
+εᵀ-Val p (Abs t) = Abs (εᵗ (isSecret? _) t)
+εᵀ-Val p (Id t) = Id (εᵗ (isSecret? _) t)
+εᵀ-Val {Mac l τ} p (Mac t) with isSecret? (Mac l τ)
+εᵀ-Val {Mac l τ} p (Mac t) | inj₁ x = ⊥-elim (secretNotPublic x p)
+εᵀ-Val {Mac l τ} p (Mac t) | inj₂ y = Mac (εᵗ (isSecret? τ) t)
+εᵀ-Val {Res l τ} p (Res t) with isSecret? (Res l τ)
+εᵀ-Val {Res l τ} p (Res t) | inj₁ ()
+εᵀ-Val {Res l τ} p₁ (Res t) | inj₂ (Res (yes p)) = Res (εᵗ (isSecret? τ) t)
+εᵀ-Val {Res l τ} p (Res t) | inj₂ (Res (no ¬p)) = Res ∙
+
 εᵗ-ext : ∀ {τ π} -> (x y : Level τ) (t : Term π τ) -> εᵗ x t ≡ εᵗ y t
 εᵗ-ext x y （） = refl
 εᵗ-ext x y True = refl
@@ -458,8 +472,14 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (App₁ Δ∈Γ uᴴ) | inj₂ y = App₁ (memberᴴ l⊑A Δ∈Γ) (insertᴴ l⊑A uᴴ)
 ε-sim ⟨ Γ , Abs t , ._ ∷ S ⟩ ._ (inj₂ y') (App₂ {β = β} y∈π x∈π) rewrite ε-subst (Var x∈π) t (isSecret? _) = App₂ y∈π x∈π
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = Var₁ (memberᴴ l⊑A Δ∈Γ) x∈π (memberᴱ l⊑A t∈Δ) (εᵀ¬Val ¬val) (updateᴱ l⊑A rᴱ) (updateᴴ l⊑A uᴴ)
-ε-sim ._ ._ (inj₂ y) (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
-ε-sim ._ ._ (inj₂ y) (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) = {!!}
+ε-sim ⟨ _ , _ , S ⟩ ._ (inj₂ y) (Var₁' {τ = τ} Δ∈Γ τ∈π v∈Δ val) with isSecret? τ
+ε-sim ⟨ _ , _ , S ⟩ ._ (inj₂ (Macᴸ y)) (Var₁' Δ∈Γ τ∈π v∈Δ val) | inj₁ (Macᴴ x) = ⊥-elim (¬secureStack (Macᴴ x) (Macᴸ y) S)
+ε-sim ⟨ _ , _ , S ⟩ ._ (inj₂ (Macᴸ l⊑A)) (Var₁' {v = v} Δ∈Γ τ∈π v∈Δ val) | inj₂ y
+  rewrite εᵗ-ext (inj₂ y) (isSecret? _) v = Var₁' (memberᴴ l⊑A Δ∈Γ) τ∈π (memberᴱ l⊑A v∈Δ) (εᵀ-Val y val)
+ε-sim ._ ._ (inj₂ y) (Var₂ {τ = τ} Δ∈Γ τ∈π val uᴱ uᴴ) with isSecret? τ
+ε-sim ._ ._ (inj₂ (Macᴸ y)) (Var₂ {S = S} Δ∈Γ τ∈π val uᴱ uᴴ) | inj₁ (Macᴴ x) = ⊥-elim (¬secureStack (Macᴴ x) (Macᴸ y) S)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Var₂ {v = v} Δ∈Γ τ∈π val uᴱ uᴴ) | inj₂ y
+  rewrite εᵗ-ext (inj₂ y) (isSecret? _) v = Var₂ (memberᴴ l⊑A Δ∈Γ) τ∈π (εᵀ-Val y val) (updateᴱ l⊑A uᴱ) (updateᴴ l⊑A uᴴ)
 ε-sim ⟨ _ , ._ , S ⟩ ._ (inj₂ y) (If {τ = τ}) with isSecret? τ
 ε-sim ⟨ x , ._ , S ⟩ ._ (inj₂ y) If | inj₁ (Macᴴ h⋤A) = ⊥-elim (¬secureStack (Macᴴ h⋤A) y S)
 ε-sim ⟨ _ , ._ , S ⟩ _ (inj₂ y) If | inj₂ _ = If
