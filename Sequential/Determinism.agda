@@ -1,43 +1,45 @@
 module Sequential.Determinism where
 
-
 open import Sequential.Calculus
 open import Sequential.Semantics
 open import Data.Product
 open import Data.Maybe
 open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.HeterogeneousEquality
 
 open import Types
 
-updateᴱ-≡ : ∀ {n n' τ l} {π : Context n} {π' : Context n'} {mt : Maybe (Term π τ)} {x : Variable} {Δ Δ₁ Δ₂ : Env l π'}
-           -> Updateᴱ mt x Δ Δ₁ -> Updateᴱ mt x Δ Δ₂ -> Δ₁ ≡ Δ₂
+updateᴱ-≡ : ∀ {π π' τ l} {mt : Maybe (Term π' τ)} {Δ Δ₁ Δ₂ : Env l π} {τ∈π : τ ∈ π}
+           -> Updateᴱ mt τ∈π Δ Δ₁ -> Updateᴱ mt τ∈π Δ Δ₂ -> Δ₁ ≡ Δ₂
 updateᴱ-≡ here here = refl
 updateᴱ-≡ (there a) (there b) rewrite updateᴱ-≡ a b = refl
 updateᴱ-≡ ∙ ∙ = refl
 
-memberᴱ-≡ : ∀ {x l n n'} {π : Context n} {π' : Context n'} {Δ : Env l π} {t₁ t₂ : Term π' (ty x)} -> x ↦ t₁ ∈ᴱ Δ -> x ↦ t₂ ∈ᴱ Δ -> t₁ ≡ t₂
-memberᴱ-≡ here here = refl
-memberᴱ-≡ (there a) (there b) rewrite memberᴱ-≡ a b =  refl
+-- My own heterogeneous equality for terms to ease unification
+data _≅ᵀ_ {π τ} (t : Term π τ) : ∀ {π'} -> Term π' τ -> Set where
+  refl : t ≅ᵀ t
 
-open import Relation.Binary.HeterogeneousEquality
+memberᴱ-≅ᵀ : ∀ {τ l π π₁ π₂} {Δ : Env l π} {t₁ : Term π₁ τ} {t₂ : Term π₂ τ} {τ∈π : τ ∈ π} -> τ∈π ↦ t₁ ∈ᴱ Δ -> τ∈π ↦ t₂ ∈ᴱ Δ -> t₁ ≅ᵀ t₂
+memberᴱ-≅ᵀ here here = refl
+memberᴱ-≅ᵀ (there a) (there b) with memberᴱ-≅ᵀ a b
+memberᴱ-≅ᵀ (there a) (there b) | refl = refl
 
-member-∈ : ∀ {l ls n} {π : Context n} {Δ : Env l π} {Γ : Heap ls} -> l ↦ Δ ∈ᴴ Γ -> l ∈ᴸ ls
+member-∈ : ∀ {l ls π} {Δ : Env l π} {Γ : Heap ls} -> l ↦ Δ ∈ᴴ Γ -> l ∈ ls
 member-∈ here = here
 member-∈ (there x) = there (member-∈ x)
 
-update-∈ : ∀ {l ls n} {π : Context n} {Δ : Env l π} {Γ Γ' : Heap ls} -> Γ' ≔ Γ [ l ↦ Δ ]ᴴ -> l ∈ᴸ ls
+update-∈ : ∀ {l ls π} {Δ : Env l π} {Γ Γ' : Heap ls} -> Γ' ≔ Γ [ l ↦ Δ ]ᴴ -> l ∈ ls
 update-∈ here = here
 update-∈ (there x) = there (update-∈ x)
 
-
-memberᴴ-≡ : ∀ {l n₁ n₂ ls} {Γ : Heap ls} {π₁ : Context n₁} {π₂ : Context n₂} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} ->
+memberᴴ-≡ : ∀ {l π₁ π₂ ls} {Γ : Heap ls} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} ->
             l ↦ Δ₁ ∈ᴴ Γ -> l ↦ Δ₂ ∈ᴴ Γ -> Δ₁ ≅ Δ₂
 memberᴴ-≡ here here = refl
 memberᴴ-≡ here (there {u = u} b) = ⊥-elim (∈-not-unique (member-∈ b) u)
 memberᴴ-≡ (there {u = u} a) here = ⊥-elim (∈-not-unique (member-∈ a) u)
 memberᴴ-≡ (there a) (there b) = memberᴴ-≡ a b
 
-updateᴴ-≡ : ∀ {l ls n} {π : Context n} {Γ Γ₁ Γ₂ : Heap ls} {Δ : Env l π} -> Γ₁ ≔ Γ [ l ↦ Δ ]ᴴ -> Γ₂ ≔ Γ [ l ↦ Δ ]ᴴ -> Γ₁ ≡ Γ₂
+updateᴴ-≡ : ∀ {l ls π} {Γ Γ₁ Γ₂ : Heap ls} {Δ : Env l π} -> Γ₁ ≔ Γ [ l ↦ Δ ]ᴴ -> Γ₂ ≔ Γ [ l ↦ Δ ]ᴴ -> Γ₁ ≡ Γ₂
 updateᴴ-≡ here here = refl
 updateᴴ-≡ here (there {u = u} b) = ⊥-elim (∈-not-unique (update-∈ b) u)
 updateᴴ-≡ (there {u = u} a) here = ⊥-elim (∈-not-unique (update-∈ a) u)
@@ -49,14 +51,18 @@ determinism (App₁ Δ∈Γ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≡
 determinism (App₁ Δ∈Γ uᴴ) (Var₂ Δ∈Γ₁ x∈π () uᴱ₁ uᴴ₁)
 determinism (App₂ y∈π x∈π) (App₂ y∈π₁ .x∈π) = refl
 determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁ Δ∈Γ₁ .x∈π t∈Δ₁ ¬val₁ rᴱ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
-... | refl rewrite memberᴱ-≡ t∈Δ t∈Δ₁ | updateᴱ-≡ rᴱ rᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
+... | refl with memberᴱ-≅ᵀ t∈Δ t∈Δ₁
+... | refl rewrite updateᴱ-≡ rᴱ rᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
 determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁' Δ∈Γ₁ .x∈π v∈Δ val) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
-... | refl rewrite memberᴱ-≡ t∈Δ v∈Δ = ⊥-elim (¬val val)
+... | refl with memberᴱ-≅ᵀ t∈Δ v∈Δ
+... | refl = ⊥-elim (¬val val)
 determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₂ Δ∈Γ₁ x∈π₁ () uᴱ uᴴ₁)
 determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁ Δ∈Γ₁ .x∈π t∈Δ ¬val rᴱ uᴴ) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
-... | refl rewrite memberᴱ-≡ t∈Δ v∈Δ = ⊥-elim (¬val val)
-determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁' Δ∈Γ₁ .x∈π v∈Δ₁ val₁)  with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
-... | refl rewrite memberᴱ-≡ v∈Δ v∈Δ₁ = refl
+... | refl with memberᴱ-≅ᵀ t∈Δ v∈Δ
+... | refl = ⊥-elim (¬val val)
+determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁' Δ∈Γ₁ .x∈π v∈Δ₁ val₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+... | refl with memberᴱ-≅ᵀ v∈Δ v∈Δ₁
+... | refl = refl
 determinism (Var₁' Δ∈Γ x∈π v∈Δ v) (Var₂ Δ∈Γ₁ x∈π₁ () uᴱ uᴴ)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Var₁ Δ∈Γ₁ x∈π₁ t∈Δ ¬val rᴱ uᴴ₁)
