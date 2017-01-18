@@ -48,22 +48,6 @@ isSecret? (Id τ) = inj₂ Id
 
 open import Data.Product
 
--- level : Ty -> Set
--- level （） = ⊤
--- level Bool = ⊤
--- level (τ => τ₁) = level τ × level τ₁
--- level (Mac l τ) = (Dec (l ⊑ A)) × (level τ)
--- level (Res l τ) = (Dec (l ⊑ A)) × (level τ)
--- level (Id τ) = level τ
-
--- level[_] : (τ : Ty) -> level τ
--- level[ （） ] = tt
--- level[ Bool ] = tt
--- level[ τ => τ₁ ] = level[ τ ] , level[ τ₁ ]
--- level[ Mac l τ ] = (l ⊑? A) , level[ τ ]
--- level[ Res l τ ] = (l ⊑? A) , level[ τ ]
--- level[ Id τ ] = level[ τ ]
-
 εᵗ : ∀ {τ π}  -> Level τ -> Term π τ -> Term π τ
 εᵗ x （） = （）
 εᵗ x True = True
@@ -105,6 +89,44 @@ open import Data.Product
 
 εᵀ : ∀ {τ π} -> Term π τ -> Term π τ
 εᵀ {τ} t = εᵗ (isSecret? _) t
+
+εᵀ¬Val : ∀ {π τ} {t : Term π τ} -> ¬ Value t -> ¬ (Value (εᵀ t))
+εᵀ¬Val = ε¬Val _ (isSecret? _)
+  where ε¬Val : ∀ {π τ} -> (t : Term π τ) (x : Level τ) -> ¬ (Value t) -> ¬ (Value (εᵗ x t))
+        ε¬Val （） x ¬val val-ε = ¬val val-ε
+        ε¬Val True x ¬val val-ε = ¬val val-ε
+        ε¬Val False x ¬val val-ε = ¬val val-ε
+        ε¬Val (Id t₁) x ¬val val-ε = ¬val (Id t₁)
+        ε¬Val (unId t₁) (inj₁ x) ¬val ()
+        ε¬Val (unId t₁) (inj₂ y) ¬val ()
+        ε¬Val (Var τ∈π) x ¬val val-ε = ¬val val-ε
+        ε¬Val (Abs t₁) x ¬val val-ε = ¬val (Abs t₁)
+        ε¬Val (App t₁ t₂) (inj₁ x) ¬val ()
+        ε¬Val (App t₁ t₂) (inj₂ y) ¬val ()
+        ε¬Val (If t₁ Then t₂ Else t₃) (inj₁ x) ¬val ()
+        ε¬Val (If t₁ Then t₂ Else t₃) (inj₂ y) ¬val ()
+        ε¬Val (Return l t₁) (inj₁ x) ¬val ()
+        ε¬Val (Return l t₁) (inj₂ y) ¬val ()
+        ε¬Val (t₁ >>= t₂) (inj₁ x) ¬val ()
+        ε¬Val (t₁ >>= t₂) (inj₂ (Macᴸ l⊑A)) ¬val ()
+        ε¬Val (Mac l t₁) x ¬val val-ε = ¬val (Mac t₁)
+        ε¬Val (Res l t₁) x ¬val val-ε = ¬val (Res t₁)
+        ε¬Val (label l⊑h t₁) (inj₁ x) ¬val ()
+        ε¬Val (label {h = H} l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬val val-ε with H ⊑? A
+        ε¬Val (label l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬val () | yes p
+        ε¬Val (label l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬val () | no ¬p
+        ε¬Val (label∙ l⊑h t₁) (inj₁ x) ¬val ()
+        ε¬Val (label∙ l⊑h t₁) (inj₂ y) ¬val ()
+        ε¬Val (unlabel l⊑h t₁) (inj₁ x) ¬val ()
+        ε¬Val (unlabel {α = τ} l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬val val-ε with isSecret? τ
+        ε¬Val (unlabel l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬val () | inj₁ x
+        ε¬Val (unlabel l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬val () | inj₂ y
+        ε¬Val (unlabel∙ l⊑h t₁) (inj₁ x) ¬val ()
+        ε¬Val (unlabel∙ l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬val ()
+        ε¬Val (fork l⊑h t₁) (inj₁ x) ¬val ()
+        ε¬Val (fork l⊑h t₁) (inj₂ y) ¬val ()
+        ε¬Val (deepDup x) x₁ ¬val val-ε = ¬val val-ε
+        ε¬Val ∙ x ¬val ()
 
 εᵗ-ext : ∀ {τ π} -> (x y : Level τ) (t : Term π τ) -> εᵗ x t ≡ εᵗ y t
 εᵗ-ext x y （） = refl
@@ -168,8 +190,6 @@ open import Data.Product
 εᵗ-ext (inj₂ y) (inj₂ y₁) (fork l⊑h t) = refl
 εᵗ-ext x y (deepDup x₁) = refl
 εᵗ-ext x y ∙ = refl
-
-
 
 open import Data.Product as P
 open import Data.Maybe as M
@@ -356,7 +376,8 @@ open import Function
 
 memberᴱ : ∀ {l π π' τ} {Δ : Env l π} {t : Term π' τ} {τ∈π : τ ∈ π} ->
           (l⊑A : l ⊑ A) -> τ∈π ↦ t ∈ᴱ Δ -> τ∈π ↦ (εᵀ t) ∈ᴱ (εᴱ (yes l⊑A) Δ)
-memberᴱ l⊑A t∈Δ = {!t∈Δ!}
+memberᴱ l⊑A here = here
+memberᴱ l⊑A (there t∈Δ) = there (memberᴱ l⊑A t∈Δ)
 
 --------------------------------------------------------------------------------
 -- Heap Lemmas
@@ -426,7 +447,7 @@ insertᴴ l⊑A (there x) = there (insertᴴ l⊑A x)
 ε-sim ._ ._ (inj₂ y) (App₁ {S = S} Δ∈Γ uᴴ) | inj₁ (Macᴴ h⋤A) = ⊥-elim (¬secureStack (Macᴴ h⋤A) y S)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (App₁ Δ∈Γ uᴴ) | inj₂ y = App₁ (memberᴴ l⊑A Δ∈Γ) (insertᴴ l⊑A uᴴ)
 ε-sim ⟨ Γ , Abs t , ._ ∷ S ⟩ ._ (inj₂ y') (App₂ {β = β} y∈π x∈π) rewrite ε-subst (Var x∈π) t (isSecret? _) = App₂ y∈π x∈π
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = Var₁ (memberᴴ l⊑A Δ∈Γ) x∈π (memberᴱ l⊑A t∈Δ) {!!} {!!} {!!}
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) = Var₁ (memberᴴ l⊑A Δ∈Γ) x∈π (memberᴱ l⊑A t∈Δ) (εᵀ¬Val ¬val) {!!} {!!}
 ε-sim ._ ._ (inj₂ y) (Var₁' Δ∈Γ x∈π v∈Δ val) = {!!}
 ε-sim ._ ._ (inj₂ y) (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) = {!!}
 ε-sim ⟨ _ , ._ , S ⟩ ._ (inj₂ y) (If {τ = τ}) with isSecret? τ
