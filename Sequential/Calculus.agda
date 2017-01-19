@@ -237,6 +237,7 @@ data State (ls : List Label) (l : Label) : Ty -> Set where
   ⟨_,_,_⟩ : ∀ {τ₁ τ₂} {π : Context} -> Heap ls -> Term π τ₁ -> Stack l τ₁ τ₂ -> State ls l τ₂
 
 --------------------------------------------------------------------------------
+-- DeepDup
 
 -- A list of variables bound in context π
 data Vars (π : Context) : Set where
@@ -288,3 +289,66 @@ prefix-⊆ˡ (x ∷ π) = drop (prefix-⊆ˡ π)
 dups : ∀ {π l} -> (vs : Vars π) -> Env l π -> Env l (tys vs ++ π)
 dups [] Δ = Δ
 dups (τ∈π ∷ vs) Δ = (just (deepDup (Var (wken-∈ (prefix-⊆ˡ (tys vs)) τ∈π)))) ∷ (dups vs Δ)
+
+data _∈ⱽ_ {τ π} (x : τ ∈ π) : Vars π -> Set where
+  here : ∀ {vs} -> x ∈ⱽ (x ∷ vs)
+  there : ∀ {τ' vs} {y : τ' ∈ π} -> x ∈ⱽ vs -> x ∈ⱽ (y ∷ vs)
+
+data _≅ⱽ_ {π} {τ : Ty} (v : τ ∈ π) : ∀ {τ'} -> τ' ∈ π -> Set where
+  refl : v ≅ⱽ v
+
+_≟ⱽ_ : ∀ {π τ₁ τ₂} -> (v₁ : τ₁ ∈ π) (v₂ : τ₂ ∈ π) -> Dec (v₁ ≅ⱽ v₂)
+here ≟ⱽ here = yes refl
+here ≟ⱽ there y = no (λ ())
+there x ≟ⱽ here = no (λ ())
+there x ≟ⱽ there y with x ≟ⱽ y
+there x ≟ⱽ there .x | yes refl = yes refl
+there {τ} x ≟ⱽ there y | no ¬p = no (aux ¬p)
+  where aux : ∀ {τ τ' τ'' π} {x : τ ∈ π} {y : τ' ∈ π} -> ¬ x ≅ⱽ y -> ¬ (there {_} {_} {_} {τ''} x ≅ⱽ there y)
+        aux ¬p₁ refl = ¬p₁ refl
+
+memberⱽ : ∀ {τ π} -> (v : τ ∈ π) -> (vs : Vars π) -> Dec (v ∈ⱽ vs)
+memberⱽ v [] = no (λ ())
+memberⱽ v (v' ∷ vs) with v ≟ⱽ v'
+memberⱽ v (.v ∷ vs) | yes refl = yes here
+memberⱽ v (v' ∷ vs) | no ¬p with memberⱽ v vs
+memberⱽ v (v' ∷ vs) | no ¬p | yes p = yes (there p)
+memberⱽ v (v' ∷ vs) | no ¬p₁ | no ¬p = no (aux ¬p ¬p₁)
+  where aux : ∀ {τ τ' π} {vs : Vars π} {x : τ ∈ π} {y : τ' ∈ π} -> ¬ (x ∈ⱽ vs) -> ¬ (x ≅ⱽ y) -> ¬ (x ∈ⱽ (y ∷ vs))
+        aux x∉vs x≠y here = x≠y refl
+        aux x∉vs x≠y (there x∈vs) = x∉vs x∈vs
+
+mapⱽ : ∀ {π π'} -> (∀ {τ} -> τ ∈ π -> τ ∈ π') -> Vars π -> Vars π'
+mapⱽ f [] = []
+mapⱽ f (τ∈π ∷ vs) = (f τ∈π) ∷ (mapⱽ f vs)
+
+-- dup-ufv vs t duplicates free unguarded variables (ufv), i.e.
+-- it puts deepDup x for every free variable x, that is not in the scope of vs.
+-- We keep track of the variables introduced by lambda-abstraction.
+-- We do not duplicate terms that are already inside a deepDup.
+dup-ufv : ∀ {π τ} -> Vars π -> Term π τ -> Term π τ
+dup-ufv vs （） = （）
+dup-ufv vs True = True
+dup-ufv vs False = False
+dup-ufv vs (Id t) = Id (dup-ufv vs t)
+dup-ufv vs (unId t) = unId (dup-ufv vs t)
+dup-ufv vs (Var τ∈π) with memberⱽ τ∈π vs
+dup-ufv vs (Var τ∈π) | yes p = Var τ∈π  -- In scope
+dup-ufv vs (Var τ∈π) | no ¬p = deepDup (Var τ∈π) -- Free
+dup-ufv vs (Abs t) = Abs (dup-ufv (here ∷ mapⱽ there vs) t)
+dup-ufv vs (App t t₁) = App (dup-ufv vs t) (dup-ufv vs t₁)
+dup-ufv vs (If t Then t₁ Else t₂) = If (dup-ufv vs t) Then (dup-ufv vs t₁) Else (dup-ufv vs t₂)
+dup-ufv vs (Return l t) = Return l (dup-ufv vs t)
+dup-ufv vs (t >>= t₁) = (dup-ufv vs t) >>= (dup-ufv vs t₁)
+dup-ufv vs (Mac l t) = Mac l (dup-ufv vs t)
+dup-ufv vs (Res l t) = Res l (dup-ufv vs t)
+dup-ufv vs (label l⊑h t) = label l⊑h (dup-ufv vs t)
+dup-ufv vs (label∙ l⊑h t) = label∙ l⊑h (dup-ufv vs t)
+dup-ufv vs (unlabel l⊑h t) = unlabel l⊑h (dup-ufv vs t)
+dup-ufv vs (unlabel∙ l⊑h t) = unlabel∙ l⊑h (dup-ufv vs t)
+dup-ufv vs (fork l⊑h t) = fork l⊑h (dup-ufv vs t)
+dup-ufv vs (deepDup t) = deepDup t  -- deepDup (deepDup t) is semantically equal to deepDup t
+dup-ufv vs ∙ = ∙
+
+deepDupᵀ : ∀ {τ π} -> Term π τ -> Term π τ
+deepDupᵀ t = dup-ufv [] t
