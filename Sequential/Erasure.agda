@@ -84,7 +84,7 @@ open import Data.Product
 εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel∙ L⊑H t) = unlabel∙ L⊑H (εᵗ (isSecret? _) t)
 εᵗ (inj₁ x) (fork l⊑h t) = ∙
 εᵗ (inj₂ y) (fork l⊑h t) = fork l⊑h (εᵗ (isSecret? _) t)
-εᵗ x (deepDup x₁) = deepDup x₁ -- Must be consistent with Var
+εᵗ x (deepDup t) = deepDup (εᵗ x t)
 εᵗ x ∙ = ∙
 
 εᵀ : ∀ {τ π} -> Term π τ -> Term π τ
@@ -125,7 +125,8 @@ open import Data.Product
         ε¬Val (unlabel∙ l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬val ()
         ε¬Val (fork l⊑h t₁) (inj₁ x) ¬val ()
         ε¬Val (fork l⊑h t₁) (inj₂ y) ¬val ()
-        ε¬Val (deepDup x) x₁ ¬val val-ε = ¬val val-ε
+        ε¬Val (deepDup x) (inj₁ x₁) ¬val ()
+        ε¬Val (deepDup x) (inj₂ y) ¬val ()
         ε¬Val ∙ x ¬val ()
 
 εᵀ-Val : ∀ {τ π} {v : Term π τ} -> Public τ -> Value v -> Value (εᵀ v)
@@ -141,6 +142,48 @@ open import Data.Product
 εᵀ-Val {Res l τ} p (Res t) | inj₁ ()
 εᵀ-Val {Res l τ} p₁ (Res t) | inj₂ (Res (yes p)) = Res (εᵗ (isSecret? τ) t)
 εᵀ-Val {Res l τ} p (Res t) | inj₂ (Res (no ¬p)) = Res ∙
+
+εᵗ¬Var : ∀ {π τ} {t : Term π τ} -> (x : Level τ) -> ¬ IsVar t -> ¬ (IsVar (εᵗ x t))
+εᵗ¬Var {t = t} = ε¬Var t
+  where ε¬Var : ∀ {π τ} -> (t : Term π τ) (x : Level τ) -> ¬ (IsVar t) -> ¬ (IsVar (εᵗ x t))
+        ε¬Var （） x ¬var var-ε = ¬var var-ε
+        ε¬Var True x ¬var var-ε = ¬var var-ε
+        ε¬Var False x ¬var var-ε = ¬var var-ε
+        ε¬Var (Id t₁) x ¬var ()
+        ε¬Var (unId t₁) (inj₁ _) ¬var ()
+        ε¬Var (unId t₁) (inj₂ _) ¬var ()
+        ε¬Var (Var τ∈π) x ¬var _ = ¬var (Var τ∈π)
+        ε¬Var (Abs t₁) x ¬var ()
+        ε¬Var (App t₁ t₂) (inj₁ _) ¬var ()
+        ε¬Var (App t₁ t₂) (inj₂ _) ¬var ()
+        ε¬Var (If t₁ Then t₂ Else t₃) (inj₁ _) ¬var ()
+        ε¬Var (If t₁ Then t₂ Else t₃) (inj₂ _) ¬var ()
+        ε¬Var (Return l t₁) (inj₁ _) ¬var ()
+        ε¬Var (Return l t₁) (inj₂ _) ¬var ()
+        ε¬Var (t₁ >>= t₂) (inj₁ _) ¬var ()
+        ε¬Var (t₁ >>= t₂) (inj₂ (Macᴸ l⊑A)) ¬var ()
+        ε¬Var (Mac l t₁) (inj₁ _) ¬var ()
+        ε¬Var (Mac l t₁) (inj₂ _) ¬var ()
+        ε¬Var (Res l t₁) (inj₁ ()) ¬var _
+        ε¬Var (Res l t₁) (inj₂ (Res (yes p))) ¬var ()
+        ε¬Var (Res l t₁) (inj₂ (Res (no ¬p))) ¬var ()
+        ε¬Var (label {h = H} l⊑h t₁) (inj₁ _) ¬var ()
+        ε¬Var (label {h = H} l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬var var-ε with H ⊑? A
+        ε¬Var (label l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬var () | yes p
+        ε¬Var (label l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬var () | no ¬p
+        ε¬Var (label∙ l⊑h t₁) (inj₁ _) ¬var ()
+        ε¬Var (label∙ l⊑h t₁) (inj₂ _) ¬var ()
+        ε¬Var (unlabel {α = τ} l⊑h t₁) (inj₁ _) ¬var ()
+        ε¬Var (unlabel {α = τ} l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬var var-ε with isSecret? τ
+        ε¬Var (unlabel l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬var () | inj₁ x
+        ε¬Var (unlabel l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬var () | inj₂ y
+        ε¬Var (unlabel∙ l⊑h t₁) (inj₁ _) ¬var ()
+        ε¬Var (unlabel∙ l⊑h t₁) (inj₂ (Macᴸ l⊑A)) ¬var ()
+        ε¬Var (fork l⊑h t₁) (inj₁ _) ¬var ()
+        ε¬Var (fork l⊑h t₁) (inj₂ _) ¬var ()
+        ε¬Var (deepDup t₁) (inj₁ _) ¬var ()
+        ε¬Var (deepDup t₁) (inj₂ _) ¬var ()
+        ε¬Var ∙ x ¬var ()
 
 εᵗ-ext : ∀ {τ π} -> (x y : Level τ) (t : Term π τ) -> εᵗ x t ≡ εᵗ y t
 εᵗ-ext x y （） = refl
@@ -202,7 +245,10 @@ open import Data.Product
 εᵗ-ext (inj₁ x) (inj₂ y) (fork l⊑h t) = ⊥-elim (secretNotPublic x y)
 εᵗ-ext (inj₂ y) (inj₁ x) (fork l⊑h t) = ⊥-elim (secretNotPublic x y)
 εᵗ-ext (inj₂ y) (inj₂ y₁) (fork l⊑h t) = refl
-εᵗ-ext x y (deepDup x₁) = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (deepDup x₂) rewrite εᵗ-ext (inj₁ x) (inj₁ x₁) x₂ = refl
+εᵗ-ext (inj₁ x) (inj₂ y) (deepDup x₁) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₁ x) (deepDup x₁) = ⊥-elim (secretNotPublic x y)
+εᵗ-ext (inj₂ y) (inj₂ y₁) (deepDup x₁) rewrite εᵗ-ext (inj₂ y) (inj₂ y₁) x₁ = refl
 εᵗ-ext x y ∙ = refl
 
 open import Data.Product as P
@@ -263,9 +309,6 @@ open import Function
 εˢ (c ∷ S) = (εᶜ c) ∷ εˢ S
 εˢ ∙ = ∙
 
--- εᴷ : ∀ {τ₁ τ₂ l} -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
--- εᴷ S = εˢ (isSecret? _) (isSecret? _) S
-
 --------------------------------------------------------------------------------
 
 ε : ∀ {l τ ls} -> Level (Mac l τ) ->  State ls l (Mac l τ) -> State ls l (Mac l τ)
@@ -315,7 +358,8 @@ open import Function
 ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel∙ l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
 ε-wken (inj₁ x) (fork l⊑h t) p = refl
 ε-wken (inj₂ y) (fork {h = H} l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
-ε-wken x (deepDup x₁) p = refl
+ε-wken (inj₁ x) (deepDup x₁) p rewrite ε-wken (inj₁ x) x₁ p = refl
+ε-wken (inj₂ y) (deepDup x₁) p rewrite ε-wken (inj₂ y) x₁ p = refl
 ε-wken x ∙ p = refl
 
 ε-subst : ∀ {τ τ' π} (t₁ : Term π τ') (t₂ : Term (τ' ∷ π) τ) (x : Level τ) ->
@@ -373,8 +417,67 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ (unlabel∙ l⊑h t₂) (inj₂ (Macᴸ l⊑A)) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
         ε-tm-subst π₁ π₂ t₁ (fork l⊑h t₂) (inj₁ x₁) = refl
         ε-tm-subst π₁ π₂ t₁ (fork {h = H} l⊑h t₂) (inj₂ (Macᴸ l⊑A)) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (deepDup x) p = refl
+        ε-tm-subst π₁ π₂ t₁ (deepDup x) (inj₁ x₁) rewrite ε-tm-subst π₁ π₂ t₁ x (inj₁ x₁) = refl
+        ε-tm-subst π₁ π₂ t₁ (deepDup x) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ x (inj₂ y) = refl
         ε-tm-subst π₁ π₂ t₁ ∙ p = refl
+
+
+εᵗ-dup-ufv-≡ : ∀ {π τ} -> (x : Level τ) (vs : Vars π) (t : Term π τ) ->  εᵗ x (dup-ufv vs t) ≡ dup-ufv vs (εᵗ x t)
+εᵗ-dup-ufv-≡ x vs （） = refl
+εᵗ-dup-ufv-≡ x vs True = refl
+εᵗ-dup-ufv-≡ x vs False = refl
+εᵗ-dup-ufv-≡ x vs (Id t) rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (unId t) = refl
+εᵗ-dup-ufv-≡ (inj₂ y) vs (unId t) rewrite εᵗ-dup-ufv-≡ (inj₂ Id) vs t = refl
+εᵗ-dup-ufv-≡ x vs (Var τ∈π) with memberⱽ τ∈π vs
+εᵗ-dup-ufv-≡ x vs (Var τ∈π) | yes p = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (Var τ∈π) | no ¬p = refl -- Doh!
+εᵗ-dup-ufv-≡ (inj₂ y) vs (Var τ∈π) | no ¬p = refl
+εᵗ-dup-ufv-≡ x vs (Abs t)
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) (here ∷ (mapⱽ there vs)) t = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (App t t₁) = refl
+εᵗ-dup-ufv-≡ (inj₂ y) vs (App t t₁)
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _ ) vs t | εᵗ-dup-ufv-≡ (isSecret? _ ) vs t₁ = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (If t Then t₁ Else t₂) = refl
+εᵗ-dup-ufv-≡ (inj₂ y) vs (If t Then t₁ Else t₂)
+  rewrite εᵗ-dup-ufv-≡ (inj₂ Bool) vs t | εᵗ-dup-ufv-≡ (inj₂ y) vs t₁ | εᵗ-dup-ufv-≡ (inj₂ y) vs t₂ = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (Return l t) = refl
+εᵗ-dup-ufv-≡ (inj₂ y) vs (Return l t)
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (t >>= t₁) = refl
+εᵗ-dup-ufv-≡ (inj₂ (Macᴸ h⊑A)) vs (t >>= t₁)
+  rewrite εᵗ-dup-ufv-≡ (inj₂ (Macᴸ h⊑A)) vs t | εᵗ-dup-ufv-≡ (isSecret? _) vs t₁ = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (Mac l t) = refl
+εᵗ-dup-ufv-≡ (inj₂ y) vs (Mac l t)
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₁ ()) vs (Res l t)
+εᵗ-dup-ufv-≡ (inj₂ (Res (yes p))) vs (Res l t)
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₂ (Res (no ¬p))) vs (Res l t)
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (label l⊑h t) = refl
+εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (label {h = H} l⊑h t) with H ⊑? A
+εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (label l⊑h t) | yes p
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (label l⊑h t) | no ¬p
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (label∙ l⊑h t) = refl
+εᵗ-dup-ufv-≡ (inj₂ y) vs (label∙ l⊑h t)
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (unlabel l⊑h t) = refl
+εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel {α = τ} l⊑h t) with isSecret? τ
+εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel l⊑h t) | inj₁ x
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel l⊑h t) | inj₂ y
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (unlabel∙ l⊑h t) = refl
+εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel∙ l⊑h t)
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ (inj₁ x) vs (fork l⊑h t) = refl
+εᵗ-dup-ufv-≡ (inj₂ y) vs (fork l⊑h t)
+  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+εᵗ-dup-ufv-≡ x vs (deepDup t) = refl
+εᵗ-dup-ufv-≡ x vs ∙ = refl
 
 -- This is the proof that it is impossible to turn a high computation into a low one
 -- We need this lemma to discharge those cases in which the Stack produce a Mac L
@@ -465,6 +568,10 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim ⟨ x , .(unId x₄) , x₂ ⟩ ⟨ .x , x₄ , .(unId ∷ x₂) ⟩ (inj₁ _) UnId₁ = Hole
 ε-sim ⟨ x , .(Id x₄) , .(unId ∷ x₅) ⟩ ⟨ .x , x₄ , x₅ ⟩ (inj₁ _) UnId₂ = Hole
 ε-sim ⟨ Γ , ._ , x₂ ⟩ ⟨ .Γ , ._ , .x₂ ⟩ (inj₁ _) (Fork p) = Hole
+ε-sim ._ ._ (inj₁ (Macᴴ h⋤A)) (DeepDup Δ∈Γ t∈Δ uᴴ)
+  rewrite insertᴴ∙ h⋤A uᴴ = Hole
+ε-sim ._ ._ (inj₁ (Macᴴ h⋤A)) (DeepDup' ¬var Δ∈Γ uᴴ)
+  rewrite insertᴴ∙ h⋤A uᴴ = Hole
 ε-sim ⟨ x , .∙ , .∙ ⟩ ⟨ .x , .∙ , .∙ ⟩ (inj₁ _) Hole = Hole
 
 ε-sim ._ ._ (inj₂ y) (App₁ {τ₂ = τ₂} Δ∈Γ uᴴ) with isSecret? τ₂
@@ -549,4 +656,12 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Fork p₁) | inj₂ y with l ⊑? A
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Fork p₁) | inj₂ y | yes p = Fork p₁
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Fork p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
+ε-sim ._ ._ (inj₂ p) (DeepDup {τ = τ} Δ∈Γ t∈Δ uᴴ) with isSecret? τ
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (DeepDup {S = S} Δ∈Γ t∈Δ uᴴ) | inj₁ (Macᴴ h⋤A) = ⊥-elim (¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) S)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (DeepDup {t = t} Δ∈Γ t∈Δ uᴴ) | inj₂ y with insertᴴ l⊑A uᴴ
+... | uᴴ' rewrite εᵗ-dup-ufv-≡ (isSecret? _) [] t = DeepDup (memberᴴ l⊑A Δ∈Γ) (memberᴱ l⊑A t∈Δ) uᴴ'
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (DeepDup' {τ = τ} ¬var Δ∈Γ uᴴ) with isSecret? τ
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (DeepDup'{S = S}  ¬var Δ∈Γ uᴴ) | inj₁ (Macᴴ h⋤A) = ⊥-elim (¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) S)
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (DeepDup' {t = t} ¬var Δ∈Γ uᴴ) | inj₂ y
+  rewrite εᵗ-ext (inj₂ y) (isSecret? _) t = DeepDup' (εᵗ¬Var (isSecret? _) ¬var) (memberᴴ l⊑A Δ∈Γ) (insertᴴ l⊑A uᴴ)
 ε-sim ._ ._ (inj₂ p) Hole = Hole
