@@ -114,8 +114,14 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  -- 1) [] ≌ []
  -- 2) Γ₁ ≌ Γ₂ => (∙ {π₁}) ∷ Γ₁ ≌ (∙ {π₂}) ∷ Γ₂
  -- 3) Γ₁ ≌ Γ₂ => Δ ∷ Γ₁ ≌ Δ ∷ Γ₂
- -- DeepDup : ∀ {Γ₁ Γ₂ Γ₃ n' ns' S l' t t'} -> ↦ (l' , t) ∈ Γ₁
+
+ DeepDup : ∀ {Γ Γ' n ns' t π τ τ'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'} {τ∈π : τ ∈ π}
+                 -> l ↦ Δ ∈ᴴ Γ
+                 -> TypedIx τ n π τ∈π
+                 -> τ∈π ↦ t ∈ᴱ Δ
+                 -> Γ' ≔ Γ [ l ↦ {!!} ]ᴴ
+
  --                                -> Substs t (ufv t) ns' t'
  --                                -> Γ₂ ≔ᴰ Γ₁ [ ns' ↦ (l , ufv t) ]
  --                                -> Γ₃ ≔ᴬ Γ₂ [ n' ↦ (l , t') ]
- --                                -> ⟨ Γ₁ , (deepDup n) , S ⟩ ⇝ ⟨ Γ₃ , Var n' , S ⟩
+                                -> ⟨ Γ , deepDup n , S ⟩ ⇝ ⟨ Γ' , {!!} , S ⟩

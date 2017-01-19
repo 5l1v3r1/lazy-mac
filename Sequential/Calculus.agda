@@ -14,9 +14,6 @@ open import Data.Product
 open import Function
 
 -- The basic Term π τ is a term that has type τ in the context π
--- π is extended by lambda abstractions, which add the type and name of their argument to it.
---
--- π can be considered in general as a superset of the unguarded free variables
 data Term (π : Context) : Ty -> Set where
   （） : Term π （）
 
@@ -52,7 +49,15 @@ data Term (π : Context) : Ty -> Set where
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
-  deepDup : ∀ {τ} -> ℕ × Label -> Term π τ  -- This variable is unguarded
+  -- We cannot use τ ∈ π here because it would prevent
+  -- substitution (λ x . deepDup x) t ↛ deepDup t because
+  -- deepDup takes only variables in restricted syntax.
+  -- Therefore we use natural numbers to allow for free variables, e.g.
+  -- (λ x . deepDup 0) t ⇝ deepDup 0
+  -- deepDup n will duplicate the n-th variable in the heap.
+  -- Problem: π might change by the time we get to execute it.
+  -- Can we avoid restricted syntax?
+  deepDup : ∀ {τ} -> (n : ℕ) -> Term π τ
 
   -- Represent sensitive information that has been erased.
   ∙ : ∀ {{τ}} -> Term π τ
@@ -141,7 +146,15 @@ subst {Δ = Δ} v t = tm-subst [] Δ v t
 --   _∷_ : ∀ {t₂ t₃ n n' ns ns'} -> Subst n (Var n') t₁ t₂ -> Substs t₂ ns ns' t₃
 --                               -> Substs t₁ (n ∷ ns) (n' ∷ ns') t₃
 
--- --------------------------------------------------------------------------------
+-- TypedIx τ n π τ∈π is the proof that the n-th element of π is of type τ
+-- turning it into the corresponding proof object τ∈π
+-- We need this indirection because we keep track of
+-- **unguarded** free variables.
+data TypedIx (τ : Ty) : ℕ -> (π : Context) -> τ ∈ π -> Set where
+  here : ∀ {π} -> TypedIx τ 0 (τ ∷ π) here
+  there : ∀ {τ' n π} {τ∈π : τ ∈ π} -> TypedIx τ n π τ∈π -> TypedIx τ (suc n) (τ' ∷ π) (there τ∈π)
+
+--------------------------------------------------------------------------------
 
 -- A Well-Typed continuation (Cont), contains well-typed terms and
 -- transform the input type (first indexed) in the output type (second
@@ -239,3 +252,49 @@ data State (ls : List Label) (l : Label) : Ty -> Set where
   ⟨_,_,_⟩ : ∀ {τ₁ τ₂} {π : Context} -> Heap ls -> Term π τ₁ -> Stack l τ₁ τ₂ -> State ls l τ₂
 
 --------------------------------------------------------------------------------
+
+data Vars (π : Context) : Set where
+  [] : Vars π
+  _∷_ : ∀ {τ : Ty} -> (τ∈π : τ ∈ π) -> Vars π -> Vars π
+
+_+++_ : ∀ {π} -> Vars π -> Vars π -> Vars π
+[] +++ ys = ys
+(τ∈π ∷ xs) +++ ys = τ∈π ∷ (xs +++ ys)
+
+infixr 3 _+++_
+
+-- Removes variables τ ∈ (τ ∷ π)
+dropⱽ : ∀ {τ π} -> Vars (τ ∷ π) -> Vars π
+dropⱽ [] = []
+dropⱽ (here ∷ vs) = dropⱽ vs
+dropⱽ (there τ∈π ∷ vs) = τ∈π ∷ dropⱽ vs
+
+ufv : ∀ {τ π} -> Term π τ -> Vars π
+ufv （） = []
+ufv True = []
+ufv False = []
+ufv (Id t) = ufv t
+ufv (unId t) = ufv t
+ufv (Var τ∈π) = τ∈π ∷ []
+ufv (Abs t) = dropⱽ (ufv t)
+ufv (App t t₁) = ufv t +++ ufv t₁ -- In theory it should be ∪ to avoid duplicates, but I don't have sets :-(
+ufv (If t Then t₁ Else t₂) = ufv t +++ ufv t₁ +++ ufv t₂
+ufv (Return l t) = ufv t
+ufv (t >>= t₁) = ufv t +++ ufv t₁
+ufv (Mac l t) = ufv t
+ufv (Res l t) = ufv t
+ufv (label l⊑h t) = ufv t
+ufv (label∙ l⊑h t) = ufv t
+ufv (unlabel l⊑h t) = ufv t
+ufv (unlabel∙ l⊑h t) = ufv t
+ufv (fork l⊑h t) = ufv t
+ufv (deepDup n) = [] -- Unguarded
+ufv ∙ = []
+
+tys : ∀ {π} -> Vars π -> Context
+tys [] = []
+tys (_∷_ {τ} τ∈π vs) = τ ∷ (tys vs)
+
+dups : ∀ {π l} -> (vs : Vars π) -> Env l π -> Env l (tys vs ++ π)
+dups [] Δ = Δ
+dups (τ∈π ∷ vs) Δ = (just (deepDup {!!})) ∷ (dups vs Δ)
