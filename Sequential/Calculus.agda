@@ -352,3 +352,7 @@ dup-ufv vs ∙ = ∙
 
 deepDupᵀ : ∀ {τ π} -> Term π τ -> Term π τ
 deepDupᵀ t = dup-ufv [] t
+
+-- The proof that a term is a variable
+data IsVar {π} {τ} : Term π τ -> Set where
+  Var : (τ∈π : τ ∈ π) -> IsVar (Var τ∈π)

@@ -115,13 +115,20 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  -- 2) Γ₁ ≌ Γ₂ => (∙ {π₁}) ∷ Γ₁ ≌ (∙ {π₂}) ∷ Γ₂
  -- 3) Γ₁ ≌ Γ₂ => Δ ∷ Γ₁ ≌ Δ ∷ Γ₂
 
- DeepDup : ∀ {Γ Γ' n ns' t π τ τ'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'} {τ∈π : τ ∈ π}
-                 -> l ↦ Δ ∈ᴴ Γ
-                 -> TypedIx τ n π τ∈π
-                 -> τ∈π ↦ t ∈ᴱ Δ
-                 -> Γ' ≔ Γ [ l ↦ {!!} ]ᴴ
+ -- deepDupᵀ t takes care of replacing unguarded free variables with deepDup.
+ -- Note that deepDupᵀ (deepDup t) = deepDup t, so also in case of
+ -- nested deepDup (e.g. deepDup (deepDup t)) we make progress.
+ DeepDup : ∀ {Γ Γ' π τ τ'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'} {τ∈π : τ ∈ π}
+                 -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
+                 -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
+                 -> (uᴴ : Γ' ≔ Γ [ l ↦ insert (deepDupᵀ t) Δ ]ᴴ)
+                 -> ⟨ Γ , deepDup (Var τ∈π) , S ⟩ ⇝ ⟨ Γ' , Var {π = τ ∷ π} here , S ⟩
 
- --                                -> Substs t (ufv t) ns' t'
- --                                -> Γ₂ ≔ᴰ Γ₁ [ ns' ↦ (l , ufv t) ]
- --                                -> Γ₃ ≔ᴬ Γ₂ [ n' ↦ (l , t') ]
-                                -> ⟨ Γ , deepDup n , S ⟩ ⇝ ⟨ Γ' , {!!} , S ⟩
+
+ -- If the argument to deepDup is not a variable we introduce a new fresh variable (similarly to
+ -- so that next rule DeepDup will apply.
+ DeepDup' : ∀ {Γ Γ' π τ τ'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'}
+              -> (¬var : ¬ (IsVar t))
+              -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
+              -> (uᴴ : Γ' ≔ Γ [ l ↦ insert t Δ ]ᴴ)
+              -> ⟨ Γ , deepDup t , S ⟩ ⇝ ⟨ Γ' , deepDup (Var {π = τ ∷ π} here) , S ⟩
