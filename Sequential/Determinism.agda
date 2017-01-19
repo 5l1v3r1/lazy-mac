@@ -32,12 +32,12 @@ update-∈ : ∀ {l ls π} {Δ : Env l π} {Γ Γ' : Heap ls} -> Γ' ≔ Γ [ l 
 update-∈ here = here
 update-∈ (there x) = there (update-∈ x)
 
-memberᴴ-≡ : ∀ {l π₁ π₂ ls} {Γ : Heap ls} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} ->
+memberᴴ-≅ : ∀ {l π₁ π₂ ls} {Γ : Heap ls} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} ->
             l ↦ Δ₁ ∈ᴴ Γ -> l ↦ Δ₂ ∈ᴴ Γ -> Δ₁ ≅ Δ₂
-memberᴴ-≡ here here = refl
-memberᴴ-≡ here (there {u = u} b) = ⊥-elim (∈-not-unique (member-∈ b) u)
-memberᴴ-≡ (there {u = u} a) here = ⊥-elim (∈-not-unique (member-∈ a) u)
-memberᴴ-≡ (there a) (there b) = memberᴴ-≡ a b
+memberᴴ-≅ here here = refl
+memberᴴ-≅ here (there {u = u} b) = ⊥-elim (∈-not-unique (member-∈ b) u)
+memberᴴ-≅ (there {u = u} a) here = ⊥-elim (∈-not-unique (member-∈ a) u)
+memberᴴ-≅ (there a) (there b) = memberᴴ-≅ a b
 
 updateᴴ-≡ : ∀ {l ls π} {Γ Γ₁ Γ₂ : Heap ls} {Δ : Env l π} -> Γ₁ ≔ Γ [ l ↦ Δ ]ᴴ -> Γ₂ ≔ Γ [ l ↦ Δ ]ᴴ -> Γ₁ ≡ Γ₂
 updateᴴ-≡ here here = refl
@@ -46,28 +46,28 @@ updateᴴ-≡ (there {u = u} a) here = ⊥-elim (∈-not-unique (update-∈ a) u
 updateᴴ-≡ (there a) (there b) rewrite updateᴴ-≡ a b = refl
 
 determinism : ∀ {ls l τ} {s₁ s₂ s₃ : State ls l τ} -> s₁ ⇝ s₂ -> s₁ ⇝ s₃ -> s₂ ≡ s₃
-determinism (App₁ Δ∈Γ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+determinism (App₁ Δ∈Γ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
 determinism (App₁ Δ∈Γ uᴴ) (Var₂ Δ∈Γ₁ x∈π () uᴱ₁ uᴴ₁)
 determinism (App₂ y∈π x∈π) (App₂ y∈π₁ .x∈π) = refl
-determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁ Δ∈Γ₁ .x∈π t∈Δ₁ ¬val₁ rᴱ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁ Δ∈Γ₁ .x∈π t∈Δ₁ ¬val₁ rᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl with memberᴱ-≅ᵀ t∈Δ t∈Δ₁
 ... | refl rewrite updateᴱ-≡ rᴱ rᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
-determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁' Δ∈Γ₁ .x∈π v∈Δ val) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁' Δ∈Γ₁ .x∈π v∈Δ val) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl with memberᴱ-≅ᵀ t∈Δ v∈Δ
 ... | refl = ⊥-elim (¬val val)
 determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₂ Δ∈Γ₁ x∈π₁ () uᴱ uᴴ₁)
-determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁ Δ∈Γ₁ .x∈π t∈Δ ¬val rᴱ uᴴ) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁ Δ∈Γ₁ .x∈π t∈Δ ¬val rᴱ uᴴ) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl with memberᴱ-≅ᵀ t∈Δ v∈Δ
 ... | refl = ⊥-elim (¬val val)
-determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁' Δ∈Γ₁ .x∈π v∈Δ₁ val₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁' Δ∈Γ₁ .x∈π v∈Δ₁ val₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl with memberᴱ-≅ᵀ v∈Δ v∈Δ₁
 ... | refl = refl
 determinism (Var₁' Δ∈Γ x∈π v∈Δ v) (Var₂ Δ∈Γ₁ x∈π₁ () uᴱ uᴴ)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Var₁ Δ∈Γ₁ x∈π₁ t∈Δ ¬val rᴱ uᴴ₁)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Var₁' Δ∈Γ₁ x∈π₁ v∈Δ val₁)
-determinism (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) (Var₂ Δ∈Γ₁ .x∈π val₁ uᴱ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+determinism (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) (Var₂ Δ∈Γ₁ .x∈π val₁ uᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) If
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) Return
@@ -105,13 +105,13 @@ determinism UnId₂ UnId₂ = refl
 determinism (Fork p) (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
 determinism (Fork p) (Fork .p) = refl
 determinism (DeepDup Δ∈Γ t∈Δ uᴴ) (Var₂ Δ∈Γ₁ τ∈π₁ () uᴱ uᴴ₁)
-determinism (DeepDup Δ∈Γ t∈Δ uᴴ) (DeepDup Δ∈Γ₁ t∈Δ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+determinism (DeepDup Δ∈Γ t∈Δ uᴴ) (DeepDup Δ∈Γ₁ t∈Δ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl with memberᴱ-≅ᵀ t∈Δ t∈Δ₁
 ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
 determinism (DeepDup Δ∈Γ t∈Δ uᴴ) (DeepDup' ¬var Δ∈Γ₁ uᴴ₁) = ⊥-elim (¬var (Var _))
 determinism (DeepDup' ¬var Δ∈Γ uᴴ) (Var₂ Δ∈Γ₁ τ∈π () uᴱ uᴴ₁)
 determinism (DeepDup' ¬var Δ∈Γ uᴴ) (DeepDup Δ∈Γ₁ t∈Δ uᴴ₁) = ⊥-elim (¬var (Var _))
-determinism (DeepDup' ¬var Δ∈Γ uᴴ) (DeepDup' ¬var₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+determinism (DeepDup' ¬var Δ∈Γ uᴴ) (DeepDup' ¬var₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
 -- Morally they are the same, however the context π is chosen non deterministically
 -- I wonder if this can be made to work using π = ∙ or if it is pushing it too much.
