@@ -78,6 +78,8 @@ determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Unlabel₁ p)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Unlabel∙₁ p)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) UnId₁
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Fork p)
+determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup _ _ _)
+determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup' _ _ _)
 determinism If (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
 determinism If If = refl
 determinism IfTrue IfTrue = refl
@@ -102,6 +104,15 @@ determinism UnId₁ UnId₁ = refl
 determinism UnId₂ UnId₂ = refl
 determinism (Fork p) (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
 determinism (Fork p) (Fork .p) = refl
+determinism (DeepDup Δ∈Γ t∈Δ uᴴ) (Var₂ Δ∈Γ₁ τ∈π₁ () uᴱ uᴴ₁)
+determinism (DeepDup Δ∈Γ t∈Δ uᴴ) (DeepDup Δ∈Γ₁ t∈Δ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+... | refl with memberᴱ-≅ᵀ t∈Δ t∈Δ₁
+... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
+determinism (DeepDup Δ∈Γ t∈Δ uᴴ) (DeepDup' ¬var Δ∈Γ₁ uᴴ₁) = ⊥-elim (¬var (Var _))
+determinism (DeepDup' ¬var Δ∈Γ uᴴ) (Var₂ Δ∈Γ₁ τ∈π () uᴱ uᴴ₁)
+determinism (DeepDup' ¬var Δ∈Γ uᴴ) (DeepDup Δ∈Γ₁ t∈Δ uᴴ₁) = ⊥-elim (¬var (Var _))
+determinism (DeepDup' ¬var Δ∈Γ uᴴ) (DeepDup' ¬var₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≡ Δ∈Γ Δ∈Γ₁
+... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
 -- Morally they are the same, however the context π is chosen non deterministically
 -- I wonder if this can be made to work using π = ∙ or if it is pushing it too much.
 determinism Hole Hole = {!!} -- π₁ ≠ π₂
