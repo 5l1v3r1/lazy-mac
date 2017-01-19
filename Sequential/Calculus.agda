@@ -49,15 +49,7 @@ data Term (π : Context) : Ty -> Set where
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
-  -- We cannot use τ ∈ π here because it would prevent
-  -- substitution (λ x . deepDup x) t ↛ deepDup t because
-  -- deepDup takes only variables in restricted syntax.
-  -- Therefore we use natural numbers to allow for free variables, e.g.
-  -- (λ x . deepDup 0) t ⇝ deepDup 0
-  -- deepDup n will duplicate the n-th variable in the heap.
-  -- Problem: π might change by the time we get to execute it.
-  -- Can we avoid restricted syntax?
-  deepDup : ∀ {τ} -> (n : ℕ) -> Term π τ
+  deepDup : ∀ {τ} -> Term π τ -> Term π τ
 
   -- Represent sensitive information that has been erased.
   ∙ : ∀ {{τ}} -> Term π τ
@@ -97,7 +89,7 @@ wken (unlabel∙ x t) p = unlabel∙ x (wken t p)
 -- wken (write x t t₁) p = write x (wken t p) (wken t₁ p)
 -- wken (new x t) p = new x (wken t p)
 wken (fork x t) p = fork x (wken t p)
-wken (deepDup x) p = deepDup x
+wken (deepDup x) p = deepDup (wken x p)
 wken ∙ p = ∙
 
 _↑¹ : ∀ {α β} {Δ : Context} -> Term Δ α -> Term (β ∷ Δ) α
@@ -133,18 +125,11 @@ tm-subst Δ₁ Δ₂ v (unlabel∙ x t) = unlabel∙ x (tm-subst Δ₁ Δ₂ v t
 -- tm-subst Δ₁ Δ₂ v (write x t t₁) = write x (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
 -- tm-subst Δ₁ Δ₂ v (new x t) = new x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (fork x t) = fork x (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (deepDup x) = deepDup x  -- x is free
+tm-subst Δ₁ Δ₂ v (deepDup x) = deepDup (tm-subst Δ₁ Δ₂ v x)
 tm-subst Δ₁ Δ₂ v ∙ = ∙
 
 subst : ∀ {α β} {Δ : Context} -> Term Δ α -> Term (α ∷ Δ) β -> Term Δ β
 subst {Δ = Δ} v t = tm-subst [] Δ v t
-
--- -- Substs t ns ns' t' applies the substitution t [ n / Var n' ] consecutively
--- -- for every n ∈ ns and n' ∈ ns' and returns the resulting term t'
--- data Substs (t₁ : Term) : List ℕ -> List ℕ -> Term -> Set where
---   [] : Substs t₁ [] [] t₁
---   _∷_ : ∀ {t₂ t₃ n n' ns ns'} -> Subst n (Var n') t₁ t₂ -> Substs t₂ ns ns' t₃
---                               -> Substs t₁ (n ∷ ns) (n' ∷ ns') t₃
 
 -- TypedIx τ n π τ∈π is the proof that the n-th element of π is of type τ
 -- turning it into the corresponding proof object τ∈π
@@ -253,6 +238,7 @@ data State (ls : List Label) (l : Label) : Ty -> Set where
 
 --------------------------------------------------------------------------------
 
+-- A list of variables bound in context π
 data Vars (π : Context) : Set where
   [] : Vars π
   _∷_ : ∀ {τ : Ty} -> (τ∈π : τ ∈ π) -> Vars π -> Vars π
@@ -295,6 +281,10 @@ tys : ∀ {π} -> Vars π -> Context
 tys [] = []
 tys (_∷_ {τ} τ∈π vs) = τ ∷ (tys vs)
 
+prefix-⊆ˡ : ∀ {π₁} -> (π₂ : Context)  -> π₁ ⊆ˡ π₂ ++ π₁
+prefix-⊆ˡ [] = refl-⊆ˡ
+prefix-⊆ˡ (x ∷ π) = drop (prefix-⊆ˡ π)
+
 dups : ∀ {π l} -> (vs : Vars π) -> Env l π -> Env l (tys vs ++ π)
 dups [] Δ = Δ
-dups (τ∈π ∷ vs) Δ = (just (deepDup {!!})) ∷ (dups vs Δ)
+dups (τ∈π ∷ vs) Δ = (just (deepDup (Var (wken-∈ (prefix-⊆ˡ (tys vs)) τ∈π)))) ∷ (dups vs Δ)
