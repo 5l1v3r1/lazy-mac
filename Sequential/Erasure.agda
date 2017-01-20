@@ -53,37 +53,38 @@ open import Data.Product
 εᵗ x True = True
 εᵗ x False = False
 εᵗ x (Id t) = Id (εᵗ (isSecret? _) t)
-εᵗ (inj₁ x) (unId t) = ∙
-εᵗ (inj₂ y) (unId t) = unId (εᵗ (inj₂ Id) t)
+-- εᵗ (inj₁ x) (unId t) = ∙
+εᵗ _ (unId t) = unId (εᵗ (inj₂ Id) t)
 εᵗ x (Var x∈π) = Var x∈π  -- Can we kill variables as well?
 εᵗ _ (Abs t) = Abs (εᵗ (isSecret? _) t)
-εᵗ (inj₁ x) (App t t₁) = ∙
-εᵗ (inj₂ y) (App t t₁) = App (εᵗ (inj₂ Fun) t) (εᵗ (isSecret? _) t₁)
-εᵗ (inj₁ x) (If t Then t₁ Else t₂) = ∙
-εᵗ (inj₂ y) (If t Then t₁ Else t₂) = If (εᵗ (inj₂ Bool) t) Then (εᵗ (inj₂ y) t₁) Else (εᵗ (inj₂ y) t₂)
-εᵗ (inj₁ x) (Return l t) = ∙
-εᵗ (inj₂ y) (Return l t) = Return l (εᵗ (isSecret? _) t)
-εᵗ (inj₁ x) (t >>= t₁) = ∙
-εᵗ (inj₂ (Macᴸ l⊑A)) (t >>= t₁) = εᵗ (inj₂ (Macᴸ l⊑A)) t >>= (εᵗ (inj₂ Fun) t₁)
-εᵗ (inj₁ x) (Mac l t) = ∙
-εᵗ (inj₂ y) (Mac l t) = Mac l (εᵗ (isSecret? _) t)
+-- εᵗ (inj₁ x) (App t t₁) = ∙
+εᵗ _ (App t t₁) = App (εᵗ (inj₂ Fun) t) (εᵗ (isSecret? _) t₁)
+-- εᵗ (inj₁ x) (If t Then t₁ Else t₂) = ∙
+εᵗ x (If t Then t₁ Else t₂) = If (εᵗ (inj₂ Bool) t) Then (εᵗ x t₁) Else (εᵗ x t₂)
+-- εᵗ (inj₁ x) (Return l t) = ∙
+εᵗ _ (Return l t) = Return l (εᵗ (isSecret? _) t)
+-- εᵗ (inj₁ x) (t >>= t₁) = ∙
+εᵗ _ (t >>= t₁) = εᵗ (isSecret? _) t >>= (εᵗ (inj₂ Fun) t₁)
+-- εᵗ (inj₁ x) (Mac l t) = ∙
+εᵗ _ (Mac l t) = Mac l (εᵗ (isSecret? _) t)
 εᵗ (inj₁ ()) (Res l t)
 εᵗ (inj₂ (Res (yes p))) (Res l t) = Res l (εᵗ (isSecret? _) t)
 εᵗ (inj₂ (Res (no ¬p))) (Res l t) = Res l ∙
-εᵗ (inj₁ x) (label L⊑H t) = ∙
-εᵗ (inj₂ (Macᴸ l⊑A)) (label {h = H} L⊑H t) with H ⊑? A
-εᵗ (inj₂ (Macᴸ l⊑A)) (label L⊑H t) | yes p = label L⊑H (εᵗ (isSecret? _) t)
-εᵗ (inj₂ (Macᴸ l⊑A)) (label L⊑H t) | no ¬p = label∙ L⊑H (εᵗ (isSecret? _) t)
-εᵗ (inj₁ x) (label∙ L⊑H t) = ∙
-εᵗ (inj₂ y) (label∙ L⊑H t) = label∙ L⊑H (εᵗ (isSecret? _) t)
-εᵗ (inj₁ x) (unlabel l⊑h t) = ∙
-εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel {α = τ} L⊑H t) with isSecret? τ
-εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel L⊑H t) | inj₁ x = unlabel∙ L⊑H (εᵗ (isSecret? _) t)
-εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel L⊑H t) | inj₂ y = unlabel L⊑H (εᵗ (isSecret? _) t) -- This should be only inj₂ due to transitivity
-εᵗ (inj₁ _) (unlabel∙ L⊑H t) = ∙
-εᵗ (inj₂ (Macᴸ L⊑A)) (unlabel∙ L⊑H t) = unlabel∙ L⊑H (εᵗ (isSecret? _) t)
-εᵗ (inj₁ x) (fork l⊑h t) = ∙
-εᵗ (inj₂ y) (fork l⊑h t) = fork l⊑h (εᵗ (isSecret? _) t)
+-- εᵗ (inj₁ x) (label L⊑H t) = ∙
+εᵗ _ (label {h = H} L⊑H t) with H ⊑? A
+εᵗ _ (label L⊑H t) | yes p = label L⊑H (εᵗ (isSecret? _) t)
+εᵗ _ (label L⊑H t) | no ¬p = label∙ L⊑H (εᵗ (isSecret? _) t)
+-- εᵗ (inj₁ x) (label∙ L⊑H t) = ∙
+εᵗ _ (label∙ L⊑H t) = label∙ L⊑H (εᵗ (isSecret? _) t)
+-- εᵗ (inj₁ x) (unlabel l⊑h t) = ∙
+εᵗ _ (unlabel {α = τ} L⊑H t) = unlabel L⊑H (εᵗ (isSecret? _) t)
+-- with isSecret? τ
+-- εᵗ _ (unlabel L⊑H t) | inj₁ x = unlabel∙ L⊑H (εᵗ (isSecret? _) t)
+-- εᵗ _ (unlabel L⊑H t) | inj₂ y = unlabel L⊑H (εᵗ (isSecret? _) t) -- This should be only inj₂ due to transitivity
+-- εᵗ (inj₁ _) (unlabel∙ L⊑H t) = ∙
+εᵗ _ (unlabel∙ L⊑H t) = unlabel∙ L⊑H (εᵗ (isSecret? _) t)
+-- εᵗ (inj₁ x) (fork l⊑h t) = ∙
+εᵗ _ (fork l⊑h t) = fork l⊑h (εᵗ (isSecret? _) t)
 εᵗ x (deepDup t) = deepDup (εᵗ x t)
 εᵗ x ∙ = ∙
 
@@ -200,7 +201,7 @@ open import Data.Product
 εᵗ-ext (inj₁ x) (inj₂ y) (App t t₁) = ⊥-elim (secretNotPublic x y)
 εᵗ-ext (inj₂ y) (inj₁ x) (App t t₁) = ⊥-elim (secretNotPublic x y)
 εᵗ-ext (inj₂ y) (inj₂ y₁) (App t t₁) = refl
-εᵗ-ext (inj₁ x) (inj₁ x₁) (If t Then t₁ Else t₂) = refl
+εᵗ-ext (inj₁ x) (inj₁ x₁) (If t Then t₁ Else t₂) = {!!} -- refl
 εᵗ-ext (inj₁ x) (inj₂ y) (If t Then t₁ Else t₂) = ⊥-elim (secretNotPublic x y)
 εᵗ-ext (inj₂ y) (inj₁ x) (If t Then t₁ Else t₂) = ⊥-elim (secretNotPublic x y)
 εᵗ-ext (inj₂ y) (inj₂ y₁) (If t Then t₁ Else t₂)
@@ -282,9 +283,10 @@ open import Function
 εᶜ (# x∈π) = # x∈π
 εᶜ {τ₂ = τ₂} (Then t₁ Else t₂) = Then (εᵀ t₁) Else εᵀ t₂
 εᶜ {τ₁ = Mac .l α} {τ₂ = Mac l β} (Bind t) = Bind (εᵀ t)
-εᶜ (unlabel {τ = τ} p) with isSecret? τ
-εᶜ (unlabel p) | inj₁ x = unlabel∙ p
-εᶜ (unlabel p) | inj₂ y = unlabel p
+εᶜ (unlabel {τ = τ} p) = unlabel p
+-- with isSecret? τ
+-- εᶜ (unlabel p) | inj₁ x = unlabel∙ p
+-- εᶜ (unlabel p) | inj₂ y = unlabel p
 εᶜ (unlabel∙ p) = unlabel∙ p
 εᶜ unId = unId
 
@@ -317,50 +319,50 @@ open import Function
 
 --------------------------------------------------------------------------------
 
-ε-wken : ∀ {τ π₁ π₂} -> (x : Level τ) -> (t : Term π₁ τ) (p : π₁ ⊆ˡ π₂) -> εᵗ x (wken t p) ≡ wken (εᵗ x t) p
-ε-wken x （） p = refl
-ε-wken x True p = refl
-ε-wken x False p = refl
-ε-wken x (Id t) p rewrite ε-wken (isSecret? _) t p = refl
-ε-wken (inj₁ x) (unId t) p = refl
-ε-wken (inj₂ y) (unId t) p rewrite ε-wken (inj₂ Id) t p = refl
-ε-wken x (Var x∈π) p = refl
-ε-wken x₁ (Abs t) p rewrite ε-wken (isSecret? _) t (cons p) = refl
-ε-wken (inj₁ x) (App t t₁) p = refl
-ε-wken (inj₂ y) (App t t₁) p rewrite ε-wken (inj₂ Fun) t p | ε-wken (isSecret? _) t₁ p = refl
-ε-wken (inj₁ x) (If t Then t₁ Else t₂) p = refl
-ε-wken (inj₂ y) (If t Then t₁ Else t₂) p
-  rewrite ε-wken (inj₂ Bool) t p | ε-wken (inj₂ y) t₁ p | ε-wken (inj₂ y) t₂ p = refl
-ε-wken (inj₁ x) (Return l t) p = refl
-ε-wken (inj₂ y) (Return l t) p
-  rewrite ε-wken (isSecret? _) t p = refl
-ε-wken (inj₁ x) (t >>= t₁) p = refl
-ε-wken (inj₂ (Macᴸ y)) (t >>= t₁) p
-  rewrite ε-wken (inj₂ (Macᴸ y)) t p | ε-wken (inj₂ Fun)  t₁ p = refl
-ε-wken (inj₁ x) (Mac l t) p = refl
-ε-wken (inj₂ y) (Mac l t) p
-  rewrite ε-wken (isSecret? _) t p = refl
-ε-wken (inj₁ ()) (Res l t) p
-ε-wken (inj₂ (Res (yes p))) (Res l t) p₁
-  rewrite ε-wken (isSecret? _) t p₁ = refl
-ε-wken (inj₂ (Res (no ¬p))) (Res l t) p = refl
-ε-wken (inj₁ x) (label l⊑h t) p = refl
-ε-wken (inj₂ (Macᴸ l⊑A)) (label {h = H} l⊑h t) p with H ⊑? A
-ε-wken (inj₂ (Macᴸ l⊑A)) (label l⊑h t) p₁ | yes p rewrite ε-wken (isSecret? _) t p₁ = refl
-ε-wken (inj₂ (Macᴸ l⊑A)) (label l⊑h t) p | no ¬p rewrite ε-wken (isSecret? _) t p = refl
-ε-wken (inj₁ x) (label∙ l⊑h t) p = refl
-ε-wken (inj₂ y) (label∙ l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
-ε-wken (inj₁ x) (unlabel l⊑h t) p = refl
-ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel {α = τ} l⊑h t) p with isSecret? τ
-ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel l⊑h t) p | inj₁ x rewrite ε-wken (isSecret? _) t p = refl
-ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel l⊑h t) p | inj₂ y rewrite ε-wken (isSecret? _) t p = refl
-ε-wken (inj₁ x) (unlabel∙ l⊑h t) p = refl
-ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel∙ l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
-ε-wken (inj₁ x) (fork l⊑h t) p = refl
-ε-wken (inj₂ y) (fork {h = H} l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
-ε-wken (inj₁ x) (deepDup x₁) p rewrite ε-wken (inj₁ x) x₁ p = refl
-ε-wken (inj₂ y) (deepDup x₁) p rewrite ε-wken (inj₂ y) x₁ p = refl
-ε-wken x ∙ p = refl
+postulate ε-wken : ∀ {τ π₁ π₂} -> (x : Level τ) -> (t : Term π₁ τ) (p : π₁ ⊆ˡ π₂) -> εᵗ x (wken t p) ≡ wken (εᵗ x t) p
+-- ε-wken x （） p = refl
+-- ε-wken x True p = refl
+-- ε-wken x False p = refl
+-- ε-wken x (Id t) p rewrite ε-wken (isSecret? _) t p = refl
+-- ε-wken (inj₁ x) (unId t) p = ? -- refl
+-- ε-wken (inj₂ y) (unId t) p rewrite ε-wken (inj₂ Id) t p = refl
+-- ε-wken x (Var x∈π) p = refl
+-- ε-wken x₁ (Abs t) p rewrite ε-wken (isSecret? _) t (cons p) = refl
+-- ε-wken (inj₁ x) (App t t₁) p = ? -- refl
+-- ε-wken (inj₂ y) (App t t₁) p rewrite ε-wken (inj₂ Fun) t p | ε-wken (isSecret? _) t₁ p = refl
+-- ε-wken (inj₁ x) (If t Then t₁ Else t₂) p = {!!} -- refl
+-- ε-wken (inj₂ y) (If t Then t₁ Else t₂) p
+--   rewrite ε-wken (inj₂ Bool) t p | ε-wken (inj₂ y) t₁ p | ε-wken (inj₂ y) t₂ p = refl
+-- ε-wken (inj₁ x) (Return l t) p = ? -- refl
+-- ε-wken (inj₂ y) (Return l t) p
+--   rewrite ε-wken (isSecret? _) t p = refl
+-- ε-wken (inj₁ x) (t >>= t₁) p = refl
+-- ε-wken (inj₂ (Macᴸ y)) (t >>= t₁) p
+--   rewrite ε-wken (inj₂ (Macᴸ y)) t p | ε-wken (inj₂ Fun)  t₁ p = refl
+-- ε-wken (inj₁ x) (Mac l t) p = refl
+-- ε-wken (inj₂ y) (Mac l t) p
+--   rewrite ε-wken (isSecret? _) t p = refl
+-- ε-wken (inj₁ ()) (Res l t) p
+-- ε-wken (inj₂ (Res (yes p))) (Res l t) p₁
+--   rewrite ε-wken (isSecret? _) t p₁ = refl
+-- ε-wken (inj₂ (Res (no ¬p))) (Res l t) p = refl
+-- ε-wken (inj₁ x) (label l⊑h t) p = refl
+-- ε-wken (inj₂ (Macᴸ l⊑A)) (label {h = H} l⊑h t) p with H ⊑? A
+-- ε-wken (inj₂ (Macᴸ l⊑A)) (label l⊑h t) p₁ | yes p rewrite ε-wken (isSecret? _) t p₁ = refl
+-- ε-wken (inj₂ (Macᴸ l⊑A)) (label l⊑h t) p | no ¬p rewrite ε-wken (isSecret? _) t p = refl
+-- ε-wken (inj₁ x) (label∙ l⊑h t) p = refl
+-- ε-wken (inj₂ y) (label∙ l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
+-- ε-wken (inj₁ x) (unlabel l⊑h t) p = refl
+-- ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel {α = τ} l⊑h t) p with isSecret? τ
+-- ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel l⊑h t) p | inj₁ x rewrite ε-wken (isSecret? _) t p = refl
+-- ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel l⊑h t) p | inj₂ y rewrite ε-wken (isSecret? _) t p = refl
+-- ε-wken (inj₁ x) (unlabel∙ l⊑h t) p = refl
+-- ε-wken (inj₂ (Macᴸ L⊑A)) (unlabel∙ l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
+-- ε-wken (inj₁ x) (fork l⊑h t) p = refl
+-- ε-wken (inj₂ y) (fork {h = H} l⊑h t) p rewrite ε-wken (isSecret? _) t p = refl
+-- ε-wken (inj₁ x) (deepDup x₁) p rewrite ε-wken (inj₁ x) x₁ p = refl
+-- ε-wken (inj₂ y) (deepDup x₁) p rewrite ε-wken (inj₂ y) x₁ p = refl
+-- ε-wken x ∙ p = refl
 
 ε-subst : ∀ {τ τ' π} (t₁ : Term π τ') (t₂ : Term (τ' ∷ π) τ) (x : Level τ) ->
                  εᵗ x (subst t₁ t₂) ≡ subst (εᵀ t₁) (εᵗ x t₂)
@@ -376,108 +378,108 @@ open import Function
         ε-var-subst (x₁ ∷ π₁) π₂ t₁ (there x∈π) p
           rewrite ε-wken p (var-subst π₁ π₂ t₁ x∈π) (drop {x₁} refl-⊆ˡ) | ε-var-subst π₁ π₂ t₁ x∈π p = refl
 
-        ε-tm-subst : ∀ {τ τ'} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ τ') (t₂ : Term (π₁ ++ [ τ' ] ++ π₂) τ) (x : Level τ)
+        postulate ε-tm-subst : ∀ {τ τ'} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ τ') (t₂ : Term (π₁ ++ [ τ' ] ++ π₂) τ) (x : Level τ)
                    ->  εᵗ x (tm-subst π₁ π₂ t₁ t₂) ≡ tm-subst π₁ π₂ (εᵗ (isSecret? _) t₁) (εᵗ x t₂)
-        ε-tm-subst π₁ π₂ t₁ （） p = refl
-        ε-tm-subst π₁ π₂ t₁ True p = refl
-        ε-tm-subst π₁ π₂ t₁ False p = refl
-        ε-tm-subst π₁ π₂ t₁ (Id t₂) p rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (unId t₂) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (unId t₂) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (Var τ∈π) p rewrite ε-var-subst π₁ π₂ t₁ τ∈π p = refl
-        ε-tm-subst π₁ π₂ t₁ (Abs t₂) p rewrite  ε-tm-subst (_ ∷ π₁) _ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (App t₂ t₃) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (App t₂ t₃) (inj₂ y)
-          rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) | ε-tm-subst π₁ π₂ t₁ t₃ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (If t₂ Then t₃ Else t₄) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (If t₂ Then t₃ Else t₄) (inj₂ y)
-          rewrite ε-tm-subst π₁ π₂ t₁ t₂ (inj₂ Bool) | ε-tm-subst π₁ π₂ t₁ t₃ (inj₂ y) | ε-tm-subst π₁ π₂ t₁ t₄ (inj₂ y) = refl
-        ε-tm-subst π₁ π₂ t₁ (Return l t₂) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (Return l t₂) (inj₂ y)
-          rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (t₂ >>= t₃) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (t₂ >>= t₃) (inj₂ (Macᴸ y))
-          rewrite ε-tm-subst π₁ π₂ t₁ t₂ (inj₂ (Macᴸ y)) | ε-tm-subst π₁ π₂ t₁ t₃ (inj₂ Fun) = refl
-        ε-tm-subst π₁ π₂ t₁ (Mac l t₂) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (Mac l t₂) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (Res l t₂) (inj₁ ())
-        ε-tm-subst π₁ π₂ t₁ (Res l t₂) (inj₂ (Res (yes p))) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (Res l t₂) (inj₂ (Res (no ¬p))) = refl
-        ε-tm-subst π₁ π₂ t₁ (label l⊑h t₂) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (label {h = H} l⊑h t₂) (inj₂ (Macᴸ l⊑A)) with H ⊑? A
-        ε-tm-subst π₁ π₂ t₁ (label l⊑h t₂) (inj₂ (Macᴸ l⊑A)) | yes p rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (label l⊑h t₂) (inj₂ (Macᴸ l⊑A)) | no ¬p rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (label∙ l⊑h t₂) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (label∙ l⊑h t₂) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (unlabel l⊑h t₂) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (unlabel {α = τ} l⊑h t₂) (inj₂ (Macᴸ _)) with isSecret? τ
-        ε-tm-subst π₁ π₂ t₁ (unlabel l⊑h t₂) (inj₂ (Macᴸ _)) | inj₁ x₁ rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (unlabel l⊑h t₂) (inj₂ (Macᴸ _)) | inj₂ y rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (unlabel∙ l⊑h t₂) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (unlabel∙ l⊑h t₂) (inj₂ (Macᴸ l⊑A)) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (fork l⊑h t₂) (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (fork {h = H} l⊑h t₂) (inj₂ (Macᴸ l⊑A)) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
-        ε-tm-subst π₁ π₂ t₁ (deepDup x) (inj₁ x₁) rewrite ε-tm-subst π₁ π₂ t₁ x (inj₁ x₁) = refl
-        ε-tm-subst π₁ π₂ t₁ (deepDup x) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ x (inj₂ y) = refl
-        ε-tm-subst π₁ π₂ t₁ ∙ p = refl
+        -- ε-tm-subst π₁ π₂ t₁ （） p = refl
+        -- ε-tm-subst π₁ π₂ t₁ True p = refl
+        -- ε-tm-subst π₁ π₂ t₁ False p = refl
+        -- ε-tm-subst π₁ π₂ t₁ (Id t₂) p rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (unId t₂) (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (unId t₂) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (Var τ∈π) p rewrite ε-var-subst π₁ π₂ t₁ τ∈π p = refl
+        -- ε-tm-subst π₁ π₂ t₁ (Abs t₂) p rewrite  ε-tm-subst (_ ∷ π₁) _ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (App t₂ t₃) (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (App t₂ t₃) (inj₂ y)
+        --   rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) | ε-tm-subst π₁ π₂ t₁ t₃ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (If t₂ Then t₃ Else t₄) (inj₁ x₁) = {!!} -- refl
+        -- ε-tm-subst π₁ π₂ t₁ (If t₂ Then t₃ Else t₄) (inj₂ y)
+        --   rewrite ε-tm-subst π₁ π₂ t₁ t₂ (inj₂ Bool) | ε-tm-subst π₁ π₂ t₁ t₃ (inj₂ y) | ε-tm-subst π₁ π₂ t₁ t₄ (inj₂ y) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (Return l t₂) (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (Return l t₂) (inj₂ y)
+        --   rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (t₂ >>= t₃) (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (t₂ >>= t₃) (inj₂ (Macᴸ y))
+        --   rewrite ε-tm-subst π₁ π₂ t₁ t₂ (inj₂ (Macᴸ y)) | ε-tm-subst π₁ π₂ t₁ t₃ (inj₂ Fun) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (Mac l t₂) (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (Mac l t₂) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (Res l t₂) (inj₁ ())
+        -- ε-tm-subst π₁ π₂ t₁ (Res l t₂) (inj₂ (Res (yes p))) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (Res l t₂) (inj₂ (Res (no ¬p))) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (label l⊑h t₂) (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (label {h = H} l⊑h t₂) (inj₂ (Macᴸ l⊑A)) with H ⊑? A
+        -- ε-tm-subst π₁ π₂ t₁ (label l⊑h t₂) (inj₂ (Macᴸ l⊑A)) | yes p rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (label l⊑h t₂) (inj₂ (Macᴸ l⊑A)) | no ¬p rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (label∙ l⊑h t₂) (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (label∙ l⊑h t₂) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (unlabel l⊑h t₂) (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (unlabel {α = τ} l⊑h t₂) (inj₂ (Macᴸ _)) with isSecret? τ
+        -- ε-tm-subst π₁ π₂ t₁ (unlabel l⊑h t₂) (inj₂ (Macᴸ _)) | inj₁ x₁ rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (unlabel l⊑h t₂) (inj₂ (Macᴸ _)) | inj₂ y rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (unlabel∙ l⊑h t₂) (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (unlabel∙ l⊑h t₂) (inj₂ (Macᴸ l⊑A)) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (fork l⊑h t₂) (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (fork {h = H} l⊑h t₂) (inj₂ (Macᴸ l⊑A)) rewrite ε-tm-subst π₁ π₂ t₁ t₂ (isSecret? _) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (deepDup x) (inj₁ x₁) rewrite ε-tm-subst π₁ π₂ t₁ x (inj₁ x₁) = refl
+        -- ε-tm-subst π₁ π₂ t₁ (deepDup x) (inj₂ y) rewrite ε-tm-subst π₁ π₂ t₁ x (inj₂ y) = refl
+        -- ε-tm-subst π₁ π₂ t₁ ∙ p = refl
 
 
-εᵗ-dup-ufv-≡ : ∀ {π τ} -> (x : Level τ) (vs : Vars π) (t : Term π τ) ->  εᵗ x (dup-ufv vs t) ≡ dup-ufv vs (εᵗ x t)
-εᵗ-dup-ufv-≡ x vs （） = refl
-εᵗ-dup-ufv-≡ x vs True = refl
-εᵗ-dup-ufv-≡ x vs False = refl
-εᵗ-dup-ufv-≡ x vs (Id t) rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (unId t) = refl
-εᵗ-dup-ufv-≡ (inj₂ y) vs (unId t) rewrite εᵗ-dup-ufv-≡ (inj₂ Id) vs t = refl
-εᵗ-dup-ufv-≡ x vs (Var τ∈π) with memberⱽ τ∈π vs
-εᵗ-dup-ufv-≡ x vs (Var τ∈π) | yes p = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (Var τ∈π) | no ¬p = refl -- Doh!
-εᵗ-dup-ufv-≡ (inj₂ y) vs (Var τ∈π) | no ¬p = refl
-εᵗ-dup-ufv-≡ x vs (Abs t)
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) (here ∷ (mapⱽ there vs)) t = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (App t t₁) = refl
-εᵗ-dup-ufv-≡ (inj₂ y) vs (App t t₁)
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _ ) vs t | εᵗ-dup-ufv-≡ (isSecret? _ ) vs t₁ = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (If t Then t₁ Else t₂) = refl
-εᵗ-dup-ufv-≡ (inj₂ y) vs (If t Then t₁ Else t₂)
-  rewrite εᵗ-dup-ufv-≡ (inj₂ Bool) vs t | εᵗ-dup-ufv-≡ (inj₂ y) vs t₁ | εᵗ-dup-ufv-≡ (inj₂ y) vs t₂ = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (Return l t) = refl
-εᵗ-dup-ufv-≡ (inj₂ y) vs (Return l t)
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (t >>= t₁) = refl
-εᵗ-dup-ufv-≡ (inj₂ (Macᴸ h⊑A)) vs (t >>= t₁)
-  rewrite εᵗ-dup-ufv-≡ (inj₂ (Macᴸ h⊑A)) vs t | εᵗ-dup-ufv-≡ (isSecret? _) vs t₁ = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (Mac l t) = refl
-εᵗ-dup-ufv-≡ (inj₂ y) vs (Mac l t)
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₁ ()) vs (Res l t)
-εᵗ-dup-ufv-≡ (inj₂ (Res (yes p))) vs (Res l t)
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₂ (Res (no ¬p))) vs (Res l t)
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (label l⊑h t) = refl
-εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (label {h = H} l⊑h t) with H ⊑? A
-εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (label l⊑h t) | yes p
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (label l⊑h t) | no ¬p
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (label∙ l⊑h t) = refl
-εᵗ-dup-ufv-≡ (inj₂ y) vs (label∙ l⊑h t)
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (unlabel l⊑h t) = refl
-εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel {α = τ} l⊑h t) with isSecret? τ
-εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel l⊑h t) | inj₁ x
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel l⊑h t) | inj₂ y
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (unlabel∙ l⊑h t) = refl
-εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel∙ l⊑h t)
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ (inj₁ x) vs (fork l⊑h t) = refl
-εᵗ-dup-ufv-≡ (inj₂ y) vs (fork l⊑h t)
-  rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
-εᵗ-dup-ufv-≡ x vs (deepDup t) = refl
-εᵗ-dup-ufv-≡ x vs ∙ = refl
+postulate εᵗ-dup-ufv-≡ : ∀ {π τ} -> (x : Level τ) (vs : Vars π) (t : Term π τ) ->  εᵗ x (dup-ufv vs t) ≡ dup-ufv vs (εᵗ x t)
+-- εᵗ-dup-ufv-≡ x vs （） = refl
+-- εᵗ-dup-ufv-≡ x vs True = refl
+-- εᵗ-dup-ufv-≡ x vs False = refl
+-- εᵗ-dup-ufv-≡ x vs (Id t) rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (unId t) = refl
+-- εᵗ-dup-ufv-≡ (inj₂ y) vs (unId t) rewrite εᵗ-dup-ufv-≡ (inj₂ Id) vs t = refl
+-- εᵗ-dup-ufv-≡ x vs (Var τ∈π) with memberⱽ τ∈π vs
+-- εᵗ-dup-ufv-≡ x vs (Var τ∈π) | yes p = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (Var τ∈π) | no ¬p = refl -- Doh!
+-- εᵗ-dup-ufv-≡ (inj₂ y) vs (Var τ∈π) | no ¬p = refl
+-- εᵗ-dup-ufv-≡ x vs (Abs t)
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) (here ∷ (mapⱽ there vs)) t = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (App t t₁) = refl
+-- εᵗ-dup-ufv-≡ (inj₂ y) vs (App t t₁)
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _ ) vs t | εᵗ-dup-ufv-≡ (isSecret? _ ) vs t₁ = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (If t Then t₁ Else t₂) = {!!} -- refl
+-- εᵗ-dup-ufv-≡ (inj₂ y) vs (If t Then t₁ Else t₂)
+--   rewrite εᵗ-dup-ufv-≡ (inj₂ Bool) vs t | εᵗ-dup-ufv-≡ (inj₂ y) vs t₁ | εᵗ-dup-ufv-≡ (inj₂ y) vs t₂ = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (Return l t) = refl
+-- εᵗ-dup-ufv-≡ (inj₂ y) vs (Return l t)
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (t >>= t₁) = refl
+-- εᵗ-dup-ufv-≡ (inj₂ (Macᴸ h⊑A)) vs (t >>= t₁)
+--   rewrite εᵗ-dup-ufv-≡ (inj₂ (Macᴸ h⊑A)) vs t | εᵗ-dup-ufv-≡ (isSecret? _) vs t₁ = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (Mac l t) = refl
+-- εᵗ-dup-ufv-≡ (inj₂ y) vs (Mac l t)
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₁ ()) vs (Res l t)
+-- εᵗ-dup-ufv-≡ (inj₂ (Res (yes p))) vs (Res l t)
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₂ (Res (no ¬p))) vs (Res l t)
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (label l⊑h t) = refl
+-- εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (label {h = H} l⊑h t) with H ⊑? A
+-- εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (label l⊑h t) | yes p
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (label l⊑h t) | no ¬p
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (label∙ l⊑h t) = refl
+-- εᵗ-dup-ufv-≡ (inj₂ y) vs (label∙ l⊑h t)
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (unlabel l⊑h t) = refl
+-- εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel {α = τ} l⊑h t) with isSecret? τ
+-- εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel l⊑h t) | inj₁ x
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel l⊑h t) | inj₂ y
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (unlabel∙ l⊑h t) = refl
+-- εᵗ-dup-ufv-≡ (inj₂ (Macᴸ l⊑A)) vs (unlabel∙ l⊑h t)
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ (inj₁ x) vs (fork l⊑h t) = refl
+-- εᵗ-dup-ufv-≡ (inj₂ y) vs (fork l⊑h t)
+--   rewrite εᵗ-dup-ufv-≡ (isSecret? _) vs t = refl
+-- εᵗ-dup-ufv-≡ x vs (deepDup t) = refl
+-- εᵗ-dup-ufv-≡ x vs ∙ = refl
 
 -- This is the proof that it is impossible to turn a high computation into a low one
 -- We need this lemma to discharge those cases in which the Stack produce a Mac L
@@ -622,17 +624,19 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Unlabel₁ p₁) with isSecret? (Mac l τ)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑A))
 ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Unlabel₁ p₁) | inj₂ y with l ⊑? A
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ {τ = τ₁} p₁) | inj₂ y | yes p with isSecret? τ₁
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ p₁) | inj₂ y | yes p | inj₁ x = Unlabel∙₁ p₁
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ p₁) | inj₂ y₁ | yes p | inj₂ y = Unlabel₁ p₁
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ {τ = τ₁} p₁) | inj₂ y | yes p = Unlabel₁ p₁
+-- with isSecret? τ₁
+-- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ p₁) | inj₂ y | yes p | inj₁ x = {!!} -- Unlabel∙₁ p₁
+-- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ p₁) | inj₂ y₁ | yes p | inj₂ y = Unlabel₁ p₁
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
 ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Unlabel₂ p₁) with isSecret? (Mac l τ)
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑A))
 ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Unlabel₂ p₁) | inj₂ y with l ⊑? A
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ {l' = l'} p₁) | inj₂ y | yes p with l' ⊑? A
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ {τ = τ} p₂) | inj₂ y | yes p₁ | yes p with isSecret? τ
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₂) | inj₂ y | yes p₁ | yes p | inj₁ (Macᴴ h⋤A) = Unlabel∙₂ p₂
-ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₂) | inj₂ y₁ | yes p₁ | yes p | inj₂ y = Unlabel₂ p₂
+ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ {τ = τ} p₂) | inj₂ y | yes p₁ | yes p = Unlabel₂ p₂
+-- with isSecret? τ
+-- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₂) | inj₂ y | yes p₁ | yes p | inj₁ (Macᴴ h⋤A) = Unlabel₂ p₂ -- Unlabel∙₂ p₂
+-- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₂) | inj₂ y₁ | yes p₁ | yes p | inj₂ y = Unlabel₂ p₂
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₁) | inj₂ y | yes p | no ¬p = ⊥-elim (¬p (trans-⊑ p₁ l⊑A))
 ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
 ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Unlabel∙₁ p) with isSecret? (Mac l τ)
