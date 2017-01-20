@@ -41,9 +41,12 @@ data Term (π : Context) : Ty -> Set where
 
   unlabel : ∀ {l h α} -> (l⊑h : l ⊑ h) -> Term π (Labeled l α) -> Term π (Mac h α)
 
-  -- read : ∀ {α l h} -> l ⊑ h -> Term π (Ref l α) -> Term π (Mac h α)
-  -- write : ∀ {α l h} -> l ⊑ h -> Term π (Ref h α) -> Term π α -> Term π (Mac l （）)
-  -- new : ∀ {α l h} -> l ⊑ h -> Term π α -> Term π (Mac l (Ref h α))
+  read : ∀ {l h τ} -> l ⊑ h -> Term π (Ref l τ) -> Term π (Mac h τ)
+  write : ∀ {l h τ} -> l ⊑ h -> Term π (Ref h τ) -> Term π τ -> Term π (Mac l （）)
+  new : ∀ {l h τ} -> l ⊑ h -> Term π τ -> Term π (Mac l (Ref h τ))
+
+  #[_] : (n : ℕ) -> Term π Addr
+  #[_]ᴰ : (n : ℕ) -> Term π Addr  -- Duplicate on read
 
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
@@ -52,6 +55,9 @@ data Term (π : Context) : Ty -> Set where
 
   -- Represent sensitive information that has been erased.
   ∙ : ∀ {{τ}} -> Term π τ
+
+infixl 3 #[_]
+infixl 3 #[_]ᴰ
 
 -- The proof that a certain term is a value
 data Value {π : Context} : ∀ {τ} -> Term π τ -> Set where
@@ -83,9 +89,11 @@ wken (Res l t) p = Res l (wken t p)
 wken (label x t) p = label x (wken t p)
 wken (label∙ x t) p = label∙ x (wken t p)
 wken (unlabel x t) p = unlabel x (wken t p)
--- wken (read x t) p = read x (wken t p)
--- wken (write x t t₁) p = write x (wken t p) (wken t₁ p)
--- wken (new x t) p = new x (wken t p)
+wken (read x t) p = read x (wken t p)
+wken (write x t t₁) p = write x (wken t p) (wken t₁ p)
+wken (new x t) p = new x (wken t p)
+wken (#[ n ]) p = #[ n ]
+wken (#[ n ]ᴰ) p = #[ n ]ᴰ
 wken (fork x t) p = fork x (wken t p)
 wken (deepDup x) p = deepDup (wken x p)
 wken ∙ p = ∙
@@ -118,9 +126,11 @@ tm-subst Δ₁ Δ₂ v (Res l t) = Res l (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (label x t) = label x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (label∙ x t) = label∙ x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (unlabel x t) = unlabel x (tm-subst Δ₁ Δ₂ v t)
--- tm-subst Δ₁ Δ₂ v (read x t) = read x (tm-subst Δ₁ Δ₂ v t)
--- tm-subst Δ₁ Δ₂ v (write x t t₁) = write x (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
--- tm-subst Δ₁ Δ₂ v (new x t) = new x (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (read x t) = read x (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (write x t t₁) = write x (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
+tm-subst Δ₁ Δ₂ v (new x t) = new x (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (#[ n ]) = #[ n ]
+tm-subst Δ₁ Δ₂ v (#[ n ]ᴰ) = #[ n ]ᴰ
 tm-subst Δ₁ Δ₂ v (fork x t) = fork x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (deepDup x) = deepDup (tm-subst Δ₁ Δ₂ v x)
 tm-subst Δ₁ Δ₂ v ∙ = ∙
@@ -251,7 +261,7 @@ dropⱽ : ∀ {τ π} -> Vars (τ ∷ π) -> Vars π
 dropⱽ [] = []
 dropⱽ (here ∷ vs) = dropⱽ vs
 dropⱽ (there τ∈π ∷ vs) = τ∈π ∷ dropⱽ vs
-
+-- TODO remove
 ufv : ∀ {τ π} -> Term π τ -> Vars π
 ufv （） = []
 ufv True = []
@@ -269,6 +279,11 @@ ufv (Res l t) = ufv t
 ufv (label l⊑h t) = ufv t
 ufv (label∙ l⊑h t) = ufv t
 ufv (unlabel l⊑h t) = ufv t
+ufv (read l⊑h t) = ufv t
+ufv (write l⊑h t₁ t₂) = ufv t₁ +++ ufv t₂
+ufv (new l⊑h t) = ufv t
+ufv (#[ n ]) = []
+ufv (#[ n ]ᴰ) = []
 ufv (fork l⊑h t) = ufv t
 ufv (deepDup n) = [] -- Unguarded
 ufv ∙ = []
@@ -340,6 +355,11 @@ dup-ufv vs (Res l t) = Res l (dup-ufv vs t)
 dup-ufv vs (label l⊑h t) = label l⊑h (dup-ufv vs t)
 dup-ufv vs (label∙ l⊑h t) = label∙ l⊑h (dup-ufv vs t)
 dup-ufv vs (unlabel l⊑h t) = unlabel l⊑h (dup-ufv vs t)
+dup-ufv vs(read l⊑h t) = read l⊑h (dup-ufv vs t)
+dup-ufv vs (write l⊑h t₁ t₂) = write l⊑h (dup-ufv vs t₁) (dup-ufv vs t₂)
+dup-ufv vs (new l⊑h t) = new l⊑h (dup-ufv vs t)
+dup-ufv vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!
+dup-ufv vs (#[ n ]ᴰ) = #[ n ]ᴰ
 dup-ufv vs (fork l⊑h t) = fork l⊑h (dup-ufv vs t)
 dup-ufv vs (deepDup t) = deepDup t  -- deepDup (deepDup t) is semantically equal to deepDup t
 dup-ufv vs ∙ = ∙
