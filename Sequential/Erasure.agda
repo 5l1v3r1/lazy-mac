@@ -119,7 +119,7 @@ open import Data.Product
 εᵗ¬Var {t = Return l t} ¬var ()
 εᵗ¬Var {t = t >>= t₁} ¬var ()
 εᵗ¬Var {t = Mac l t} ¬var ()
-εᵗ¬Var {t = Res l t} ¬var var-ε with A ⊑? l
+εᵗ¬Var {t = Res l t} ¬var var-ε with l ⊑? A
 εᵗ¬Var {π} {._} {Res l t} ¬var () | yes p
 εᵗ¬Var {π} {._} {Res l t} ¬var () | no ¬p
 εᵗ¬Var {t = label {h = H} l⊑h t} ¬var var-ε with H ⊑? A
@@ -280,16 +280,6 @@ open import Function
         εᵗ-dup-ufv-≡ vs (deepDup t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs ∙ = refl
 
--- TODO remove, not needed
--- This is the proof that it is impossible to turn a high computation into a low one
--- We need this lemma to discharge those cases in which the Stack produce a Mac L
--- computation but the current term under evaluation has type Mac H.
--- ¬secureStack : ∀ {l h τ₁ τ₂} -> Secret (Mac h τ₁) -> Public (Mac l τ₂) -> Stack l (Mac h τ₁) (Mac l τ₂) -> ⊥
--- ¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) [] = ⊥-elim (h⋤A l⊑A)
--- ¬secureStack x y (# x∈π ∷ S) = ¬secureStack x y S
--- ¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) (Bind x₁ ∷ S) = ¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) S
--- ¬secureStack (Macᴴ h⋤A) (Macᴸ l⊑A) ∙ = {!!} -- No because ∙ can freely choose types also the insecure ones
-
 --------------------------------------------------------------------------------
 -- Env lemmas
 
@@ -342,14 +332,12 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 -- Simulation Property
 -- Note that I fixed the type of the whole configuration to be Mac l τ, in order
 -- to tie the security level of the computation to that of the stack.
--- It is also with the fact that all of these computations will be threads
+-- It is also consistent with the fact that all of these computations will be threads
 -- in the concurrent semantics.
 -- Since the actual term under evaluation can have any type the property
 -- is still sufficiently general.
--- ε-sim : ∀ {l τ ls} (s₁ s₂ : State ls l (Mac l τ)) (x : Level (Mac l τ)) -> s₁ ⇝ s₂ -> ε x s₁ ⇝ ε x s₂
--- ε-sim x step = {!!}
-
 ε-sim : ∀ {l τ ls} {s₁ s₂ : State ls l (Mac l τ)} (x : Level (Mac l τ)) -> s₁ ⇝ s₂ -> ε x s₁ ⇝ ε x s₂
+
 -- High-Computations
 ε-sim (inj₁ (Macᴴ h⋤A)) (App₁ Δ∈Γ uᴴ) rewrite insertᴴ∙ h⋤A uᴴ = Hole
 ε-sim (inj₁ x) (App₂ α∈π α∈π₁) = Hole
@@ -389,51 +377,6 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₂ y) Return = Return
 ε-sim (inj₂ y) Bind₁ = Bind₁
 ε-sim (inj₂ y) Bind₂ = Bind₂
--- ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Label' p₁) with isSecret? (Mac l τ)
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑A))
--- ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Label' p₁) | inj₂ y with l ⊑? A
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' {h = h} p₁) | inj₂ y | yes p with h ⊑? A
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₂) | inj₂ y | yes p₁ | yes p = Label' p₂
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₁) | inj₂ y | yes p | no ¬p = Label'∙ p₁
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label' p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
--- ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Label'∙ p₁) with isSecret? (Mac l τ)
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label'∙ p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑A))
--- ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Label'∙ p₁) | inj₂ y with l ⊑? A
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label'∙ {h = h} p₁) | inj₂ y | yes p with h ⊑? A
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label'∙ p₂) | inj₂ y | yes p₁ | yes p = Label'∙ p₂
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label'∙ p₁) | inj₂ y | yes p | no ¬p = Label'∙ p₁
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Label'∙ p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
--- ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Unlabel₁ p₁) with isSecret? (Mac l τ)
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑A))
--- ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Unlabel₁ p₁) | inj₂ y with l ⊑? A
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ {τ = τ₁} p₁) | inj₂ y | yes p = Unlabel₁ p₁
--- -- with isSecret? τ₁
--- -- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ p₁) | inj₂ y | yes p | inj₁ x = {!!} -- Unlabel∙₁ p₁
--- -- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ p₁) | inj₂ y₁ | yes p | inj₂ y = Unlabel₁ p₁
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₁ p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
--- ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Unlabel₂ p₁) with isSecret? (Mac l τ)
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₁) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑A))
--- ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Unlabel₂ p₁) | inj₂ y with l ⊑? A
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ {l' = l'} p₁) | inj₂ y | yes p with l' ⊑? A
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ {τ = τ} p₂) | inj₂ y | yes p₁ | yes p = Unlabel₂ p₂
--- -- with isSecret? τ
--- -- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₂) | inj₂ y | yes p₁ | yes p | inj₁ (Macᴴ h⋤A) = Unlabel₂ p₂ -- Unlabel∙₂ p₂
--- -- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₂) | inj₂ y₁ | yes p₁ | yes p | inj₂ y = Unlabel₂ p₂
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₁) | inj₂ y | yes p | no ¬p = ⊥-elim (¬p (trans-⊑ p₁ l⊑A))
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel₂ p₁) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
--- ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Unlabel∙₁ p) with isSecret? (Mac l τ)
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel∙₁ p) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑A))
--- ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Unlabel∙₁ p) | inj₂ y with l ⊑? A
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel∙₁ p₁) | inj₂ y | yes p = Unlabel∙₁ p₁
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel∙₁ p) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
--- ε-sim ._ ._ (inj₂ (Macᴸ {τ} {l} l⊑A)) (Unlabel∙₂ p) with isSecret? (Mac l τ)
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel∙₂ p) | inj₁ x = ⊥-elim (secretNotPublic x (Macᴸ l⊑A))
--- ε-sim ._ ._ (inj₂ (Macᴸ {l = l} l⊑A)) (Unlabel∙₂ p) | inj₂ y with l ⊑? A
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel∙₂ {l' = l'}  p₁) | inj₂ y | yes p with l' ⊑? A
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel∙₂ p₂) | inj₂ y | yes p₁ | yes p = Unlabel∙₂ p₂
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel∙₂ p₁) | inj₂ y | yes p | no ¬p = Unlabel∙₂ p₁
--- ε-sim ._ ._ (inj₂ (Macᴸ l⊑A)) (Unlabel∙₂ p) | inj₂ y | no ¬p = ⊥-elim (¬p l⊑A)
-
 ε-sim (inj₂ y) (Label' {h = H} p) with H ⊑? A
 ε-sim (inj₂ y) (Label' p₁) | yes p = Label' p₁
 ε-sim (inj₂ y) (Label' p) | no ¬p = Label'∙ p
