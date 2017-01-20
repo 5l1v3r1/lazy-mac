@@ -65,7 +65,6 @@ open import Data.Product
 εᵗ (label l⊑h t) | no ¬p = label∙ l⊑h (εᵗ t)
 εᵗ (label∙ l⊑h t) = label∙ l⊑h (εᵗ t)
 εᵗ (unlabel l⊑h t) = unlabel l⊑h (εᵗ t)
-εᵗ (unlabel∙ l⊑h t) = unlabel∙ l⊑h (εᵗ t) -- We shouldn't need this
 εᵗ (fork l⊑h t) = fork l⊑h (εᵗ t)
 εᵗ (deepDup t) = deepDup (εᵗ t)
 εᵗ ∙ = ∙
@@ -92,7 +91,6 @@ open import Data.Product
 εᵀ¬Val {π} {._} {label l⊑h t} ¬val () | no ¬p
 εᵀ¬Val {t = label∙ l⊑h t} ¬val ()
 εᵀ¬Val {t = unlabel l⊑h t} ¬val ()
-εᵀ¬Val {t = unlabel∙ l⊑h t} ¬val ()
 εᵀ¬Val {t = fork l⊑h t} ¬val ()
 εᵀ¬Val {t = deepDup t} ¬val ()
 εᵀ¬Val {t = ∙} ¬val ()
@@ -129,7 +127,6 @@ open import Data.Product
 εᵗ¬Var {π} {._} {label l⊑h t} ¬var () | no ¬p
 εᵗ¬Var {t = label∙ l⊑h t} ¬var ()
 εᵗ¬Var {t = unlabel l⊑h t} ¬var ()
-εᵗ¬Var {t = unlabel∙ l⊑h t} ¬var ()
 εᵗ¬Var {t = fork l⊑h t} ¬var ()
 εᵗ¬Var {t = deepDup t} ¬var ()
 εᵗ¬Var {t = ∙} ¬var ()
@@ -166,7 +163,6 @@ open import Function
 εᶜ {τ₂ = τ₂} (Then t₁ Else t₂) = Then (εᵀ t₁) Else εᵀ t₂
 εᶜ {τ₁ = Mac .l α} {τ₂ = Mac l β} (Bind t) = Bind (εᵀ t)
 εᶜ (unlabel {τ = τ} p) = unlabel p
-εᶜ (unlabel∙ p) = unlabel∙ p
 εᶜ unId = unId
 
 -- Fully homomorphic erasure on stack
@@ -207,7 +203,6 @@ open import Function
 ... | yes _ rewrite ε-wken t p = refl
 ε-wken (label∙ l⊑h t) p rewrite ε-wken t p = refl
 ε-wken (unlabel l⊑h t) p rewrite ε-wken t p = refl
-ε-wken (unlabel∙ l⊑h t) p rewrite ε-wken t p = refl
 ε-wken (fork l⊑h t) p rewrite ε-wken t p = refl
 ε-wken (deepDup t) p rewrite ε-wken t p = refl
 ε-wken ∙ p = refl
@@ -246,7 +241,6 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ (label l⊑h t₂) | no ¬p rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (label∙ l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (unlabel l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
-        ε-tm-subst π₁ π₂ t₁ (unlabel∙ l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (fork l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (deepDup t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ ∙ = refl
@@ -282,7 +276,6 @@ open import Function
         εᵗ-dup-ufv-≡ vs (label l⊑h t) | no ¬p rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (label∙ l⊑h t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (unlabel l⊑h t) rewrite εᵗ-dup-ufv-≡ vs t = refl
-        εᵗ-dup-ufv-≡ vs (unlabel∙ l⊑h t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (fork l⊑h t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (deepDup t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs ∙ = refl
@@ -375,8 +368,6 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₁ x) (Label'∙ p) = Hole
 ε-sim (inj₁ x) (Unlabel₁ p) = Hole
 ε-sim (inj₁ x) (Unlabel₂ p) = Hole
-ε-sim (inj₁ x) (Unlabel∙₁ p) = Hole
-ε-sim (inj₁ x) (Unlabel∙₂ p) = Hole
 ε-sim (inj₁ x) UnId₁ = Hole
 ε-sim (inj₁ x) UnId₂ = Hole
 ε-sim (inj₁ x) (Fork p) = Hole
@@ -453,10 +444,6 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₂ (Macᴸ H⊑A)) (Unlabel₂ {l' = L} L⊑H) with L ⊑? A
 ε-sim (inj₂ (Macᴸ H⊑A)) (Unlabel₂ L⊑H) | yes p = Unlabel₂ L⊑H
 ε-sim (inj₂ (Macᴸ H⊑A)) (Unlabel₂ L⊑H) | no L⋤A = ⊥-elim (L⋤A (trans-⊑ L⊑H H⊑A))
-ε-sim (inj₂ y) (Unlabel∙₁ p) = Unlabel∙₁ p
-ε-sim (inj₂ (Macᴸ H⊑A)) (Unlabel∙₂ {l' = L} p) with L ⊑? A  -- Probably don't need this
-ε-sim (inj₂ (Macᴸ H⊑A)) (Unlabel∙₂ p₁) | yes p = Unlabel∙₂ p₁
-ε-sim (inj₂ (Macᴸ H⊑A)) (Unlabel∙₂ p) | no ¬p = Unlabel∙₂ p
 ε-sim (inj₂ y) UnId₁ = UnId₁
 ε-sim (inj₂ y) UnId₂ = UnId₂
 ε-sim (inj₂ y) (Fork p) = Fork p

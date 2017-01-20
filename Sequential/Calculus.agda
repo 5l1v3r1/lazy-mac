@@ -40,7 +40,6 @@ data Term (π : Context) : Ty -> Set where
   label∙ : ∀ {l h α} -> (l⊑h : l ⊑ h) -> Term π α -> Term π (Mac l (Labeled h α))
 
   unlabel : ∀ {l h α} -> (l⊑h : l ⊑ h) -> Term π (Labeled l α) -> Term π (Mac h α)
-  unlabel∙ : ∀ {l h α} -> (l⊑h : l ⊑ h) -> Term π (Labeled l α) -> Term π (Mac h α)
 
   -- read : ∀ {α l h} -> l ⊑ h -> Term π (Ref l α) -> Term π (Mac h α)
   -- write : ∀ {α l h} -> l ⊑ h -> Term π (Ref h α) -> Term π α -> Term π (Mac l （）)
@@ -84,7 +83,6 @@ wken (Res l t) p = Res l (wken t p)
 wken (label x t) p = label x (wken t p)
 wken (label∙ x t) p = label∙ x (wken t p)
 wken (unlabel x t) p = unlabel x (wken t p)
-wken (unlabel∙ x t) p = unlabel∙ x (wken t p)
 -- wken (read x t) p = read x (wken t p)
 -- wken (write x t t₁) p = write x (wken t p) (wken t₁ p)
 -- wken (new x t) p = new x (wken t p)
@@ -120,7 +118,6 @@ tm-subst Δ₁ Δ₂ v (Res l t) = Res l (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (label x t) = label x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (label∙ x t) = label∙ x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (unlabel x t) = unlabel x (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (unlabel∙ x t) = unlabel∙ x (tm-subst Δ₁ Δ₂ v t)
 -- tm-subst Δ₁ Δ₂ v (read x t) = read x (tm-subst Δ₁ Δ₂ v t)
 -- tm-subst Δ₁ Δ₂ v (write x t t₁) = write x (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
 -- tm-subst Δ₁ Δ₂ v (new x t) = new x (tm-subst Δ₁ Δ₂ v t)
@@ -150,7 +147,6 @@ data Cont (l : Label) : Ty -> Ty -> Set where
  Then_Else_ : ∀ {τ} {π : Context} -> Term π τ -> Term π τ -> Cont l Bool τ
  Bind :  ∀ {τ₁ τ₂} {π : Context} -> Term π (τ₁ => Mac l τ₂) -> Cont l (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Cont l (Labeled l' τ) (Mac l τ)
- unlabel∙ : ∀ {l' τ} (p : l' ⊑ l) -> Cont l (Labeled l' τ) (Mac l τ) -- For simulation
  unId : ∀ {τ} -> Cont l (Id τ) τ
 
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
@@ -273,7 +269,6 @@ ufv (Res l t) = ufv t
 ufv (label l⊑h t) = ufv t
 ufv (label∙ l⊑h t) = ufv t
 ufv (unlabel l⊑h t) = ufv t
-ufv (unlabel∙ l⊑h t) = ufv t
 ufv (fork l⊑h t) = ufv t
 ufv (deepDup n) = [] -- Unguarded
 ufv ∙ = []
@@ -345,7 +340,6 @@ dup-ufv vs (Res l t) = Res l (dup-ufv vs t)
 dup-ufv vs (label l⊑h t) = label l⊑h (dup-ufv vs t)
 dup-ufv vs (label∙ l⊑h t) = label∙ l⊑h (dup-ufv vs t)
 dup-ufv vs (unlabel l⊑h t) = unlabel l⊑h (dup-ufv vs t)
-dup-ufv vs (unlabel∙ l⊑h t) = unlabel∙ l⊑h (dup-ufv vs t)
 dup-ufv vs (fork l⊑h t) = fork l⊑h (dup-ufv vs t)
 dup-ufv vs (deepDup t) = deepDup t  -- deepDup (deepDup t) is semantically equal to deepDup t
 dup-ufv vs ∙ = ∙

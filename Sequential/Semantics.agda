@@ -91,12 +91,6 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  Unlabel₂ : ∀ {Γ τ τ' l'} {π : Context} {S : Stack l _ τ'} {t : Term π (Id τ)} -> (p : l' ⊑ l) ->
               ⟨ Γ , Res l' t , unlabel p ∷ S ⟩ ⇝ ⟨ Γ , Return l (unId t) , S ⟩
 
- Unlabel∙₁ : ∀ {Γ τ τ' l'} {π : Context} {S : Stack l _ τ'} {t : Term π (Labeled l' τ)} -> (p : l' ⊑ l) ->
-              ⟨ Γ , unlabel∙ p t , S ⟩ ⇝ ⟨ Γ , t , unlabel∙ p ∷ S ⟩
-
- Unlabel∙₂ : ∀ {Γ τ τ' l'} {π : Context} {S : Stack l _ τ'} {t : Term π (Id τ)} -> (p : l' ⊑ l) ->
-              ⟨ Γ , Res l' t , unlabel∙ p ∷ S ⟩ ⇝ ⟨ Γ , Return {π = π} l ∙ , S ⟩
-
  UnId₁ : ∀ {Γ τ τ'} {π : Context} {S : Stack l τ τ'} {t : Term π (Id τ)} ->
            ⟨ Γ , unId t , S ⟩ ⇝ ⟨ Γ , t , unId ∷ S ⟩
 
