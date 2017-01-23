@@ -45,8 +45,10 @@ data Term (π : Context) : Ty -> Set where
   write : ∀ {l h τ} -> l ⊑ h -> Term π (Ref h τ) -> Term π τ -> Term π (Mac l （）)
   new : ∀ {l h τ} -> l ⊑ h -> Term π τ -> Term π (Mac l (Ref h τ))
 
-  #[_] : (n : ℕ) -> Term π Addr
-  #[_]ᴰ : (n : ℕ) -> Term π Addr  -- Duplicate on read
+  -- Here terms are supposed to be variables
+  -- We use terms to avoid complicating the substitution lemma.
+  #[_] : ∀ {τ} -> Term π τ -> Term π (Addr τ)
+  #[_]ᴰ : ∀ {τ} -> Term π τ -> Term π (Addr τ)  -- Duplicate on read
 
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
@@ -68,8 +70,8 @@ data Value {π : Context} : ∀ {τ} -> Term π τ -> Set where
   Id : ∀ {τ} (t : Term π τ) -> Value (Id t)
   Mac : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Mac l t)
   Res : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Res l t)
-  #[_] : (n : ℕ) -> Value #[ n ]
-  #[_]ᴰ : (n : ℕ) -> Value #[ n ]ᴰ
+  #[_] : ∀ {τ} -> (t : Term π τ) -> Value #[ t ]
+  #[_]ᴰ : ∀ {τ} -> (t : Term π τ) -> Value #[ t ]ᴰ
 
 --------------------------------------------------------------------------------
 
@@ -94,8 +96,8 @@ wken (unlabel x t) p = unlabel x (wken t p)
 wken (read x t) p = read x (wken t p)
 wken (write x t t₁) p = write x (wken t p) (wken t₁ p)
 wken (new x t) p = new x (wken t p)
-wken (#[ n ]) p = #[ n ]
-wken (#[ n ]ᴰ) p = #[ n ]ᴰ
+wken (#[ t ]) p = #[ wken t p ]
+wken (#[ t ]ᴰ) p = #[ wken t p ]ᴰ
 wken (fork x t) p = fork x (wken t p)
 wken (deepDup x) p = deepDup (wken x p)
 wken ∙ p = ∙
@@ -131,22 +133,14 @@ tm-subst Δ₁ Δ₂ v (unlabel x t) = unlabel x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (read x t) = read x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (write x t t₁) = write x (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
 tm-subst Δ₁ Δ₂ v (new x t) = new x (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (#[ n ]) = #[ n ]
-tm-subst Δ₁ Δ₂ v (#[ n ]ᴰ) = #[ n ]ᴰ
+tm-subst Δ₁ Δ₂ v (#[ t ]) = #[ tm-subst Δ₁ Δ₂ v t ]
+tm-subst Δ₁ Δ₂ v (#[ t ]ᴰ) = #[ tm-subst Δ₁ Δ₂ v t ]ᴰ
 tm-subst Δ₁ Δ₂ v (fork x t) = fork x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (deepDup x) = deepDup (tm-subst Δ₁ Δ₂ v x)
 tm-subst Δ₁ Δ₂ v ∙ = ∙
 
 subst : ∀ {α β} {Δ : Context} -> Term Δ α -> Term (α ∷ Δ) β -> Term Δ β
 subst {Δ = Δ} v t = tm-subst [] Δ v t
-
--- TypedIx τ n π τ∈π is the proof that the n-th element of π is of type τ
--- turning it into the corresponding proof object τ∈π
--- We need this indirection because we keep track of
--- **unguarded** free variables.
-data TypedIx (τ : Ty) : ℕ -> (π : Context) -> τ ∈ π -> Set where
-  here : ∀ {π} -> TypedIx τ 0 (τ ∷ π) here
-  there : ∀ {τ' n π} {τ∈π : τ ∈ π} -> TypedIx τ n π τ∈π -> TypedIx τ (suc n) (τ' ∷ π) (there τ∈π)
 
 --------------------------------------------------------------------------------
 
