@@ -99,27 +99,28 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  Fork : ∀ {Γ τ h} {π : Context} {S : Stack l _ τ} {t : Term π (Mac h _)} -> (p : l ⊑ h) ->
           ⟨ Γ , (fork p t) , S ⟩ ⇝ ⟨ Γ , Return {π = π} l （） , S ⟩
 
- -- TODO Δ should be Env h π
- New : ∀ {Γ Γ' τ τ' h} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ h}
-         -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
-         ->  Γ' ≔ Γ [ l ↦ insert t Δ ]ᴴ ->
-         ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = (τ ∷ π)} h #[ Var here ])) , S ⟩
+ -- We have to write the term in the memory segment labeled as the reference (H)
+ -- so that it can be correctly read by threads labeled with H or more.
+ -- Note that if the current thread can also read the reference, then l ≡ H and we
+ -- are still writing in the right memory.
+ New : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ H}
+         -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
+         ->  Γ' ≔ Γ [ H ↦ insert t Δ ]ᴴ ->
+         ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = (τ ∷ π)} H #[ Var here ])) , S ⟩
 
  Write₁ : ∀ {Γ τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
          ⟨ Γ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (write l⊑H t₂ ∷ S) ⟩
 
- -- TODO Δ should be Env h π
- Write₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env l π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ π}
-          -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
+ Write₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ π}
+          -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
           -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)
-          -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ) ->
+          -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
          ⟨ Γ , Res {π = π} H #[ Var τ∈π ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
- -- TODO Δ should be Env h π
- Writeᴰ₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env l π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ π}
-          -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
+ Writeᴰ₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ π}
+          -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
           -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)
-          -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ) ->
+          -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
          ⟨ Γ , Res {π = π} H #[ Var τ∈π ]ᴰ , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
  Read₁ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {t₂ : Term π τ} {L⊑l : L ⊑ l} ->
