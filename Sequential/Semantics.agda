@@ -99,20 +99,43 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  Fork : ∀ {Γ τ h} {π : Context} {S : Stack l _ τ} {t : Term π (Mac h _)} -> (p : l ⊑ h) ->
           ⟨ Γ , (fork p t) , S ⟩ ⇝ ⟨ Γ , Return {π = π} l （） , S ⟩
 
+ -- TODO Δ should be Env h π
  New : ∀ {Γ Γ' τ τ' h} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ h}
          -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
          ->  Γ' ≔ Γ [ l ↦ insert t Δ ]ᴴ ->
-         ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = π} h #[ length π ])) , S ⟩
+         ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = (τ ∷ π)} h #[ Var here ])) , S ⟩
 
  Write₁ : ∀ {Γ τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
          ⟨ Γ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (write l⊑H t₂ ∷ S) ⟩
 
- Write₂ : ∀ {Γ Γ' τ τ' H n} {π : Context} {Δ Δ' : Env l π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ π}
-          -> (tIx : TypedIx τ n π τ∈π)
+ -- TODO Δ should be Env h π
+ Write₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env l π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ π}
           -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
           -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)
           -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ) ->
-         ⟨ Γ , Res {π = π} H #[ n ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
+         ⟨ Γ , Res {π = π} H #[ Var τ∈π ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
+
+ -- TODO Δ should be Env h π
+ Writeᴰ₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env l π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ π}
+          -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
+          -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)
+          -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ) ->
+         ⟨ Γ , Res {π = π} H #[ Var τ∈π ]ᴰ , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
+
+ Read₁ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {t₂ : Term π τ} {L⊑l : L ⊑ l} ->
+         ⟨ Γ , read L⊑l t , S ⟩ ⇝ ⟨ Γ , t , read L⊑l ∷ S ⟩
+
+ Read₂ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l} {τ∈π : τ ∈ π}
+         -> (Δ∈Γ : L ↦ Δ ∈ᴴ Γ)
+         -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ) ->
+         ⟨ Γ , Res L #[ (Var τ∈π) ] , read L⊑l ∷ S ⟩ ⇝ ⟨ Γ , Return l t , S ⟩
+
+ Readᴰ₂ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l} {τ∈π : τ ∈ π}
+         -> (Δ∈Γ : L ↦ Δ ∈ᴴ Γ)
+         -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ) ->
+         -- Without restricted syntax I believe we can directly deepDup the term pointed by τ∈π
+         -- (No need to introduce a fresh copy)
+         ⟨ Γ , Res L #[ (Var τ∈π) ]ᴰ , read L⊑l ∷ S ⟩ ⇝ ⟨ Γ , Return l (deepDup t) , S ⟩
 
  Hole : ∀ {Γ τ₁ τ₂ τ₃} {π₁ : Context} {π₂ : Context} ->
           ⟨ Γ , ∙ {π = π₁}, ∙ {l} {τ₁} {τ₃} ⟩ ⇝ ⟨ Γ , ∙ {π = π₂} , ∙ {l} {τ₂} {τ₃} ⟩
