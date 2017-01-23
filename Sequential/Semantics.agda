@@ -108,12 +108,12 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
          -> (uᴴ : Γ' ≔ Γ [ H ↦ insert t Δ ]ᴴ) ->
          ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = (τ ∷ π)} H #[ Var here ])) , S ⟩
 
- Write₁ : ∀ {Γ τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
+ Write₁ : ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
          ⟨ Γ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (write l⊑H t₂ ∷ S) ⟩
 
  Write₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ π}
           -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
-          -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)
+          -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)  -- Not ok beause other code might reference τ∈π. We must change the Reference to point to t.
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
          ⟨ Γ , Res {π = π} H #[ Var τ∈π ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
@@ -123,7 +123,7 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
          ⟨ Γ , Res {π = π} H #[ Var τ∈π ]ᴰ , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
- Read₁ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {t₂ : Term π τ} {L⊑l : L ⊑ l} ->
+ Read₁ : ∀ {Γ τ τ' L} {π : Context} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {L⊑l : L ⊑ l} ->
          ⟨ Γ , read L⊑l t , S ⟩ ⇝ ⟨ Γ , t , read L⊑l ∷ S ⟩
 
  Read₂ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l} {τ∈π : τ ∈ π}
