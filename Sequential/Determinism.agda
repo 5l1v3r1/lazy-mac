@@ -75,11 +75,30 @@ determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) Bind₁
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Label' p)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Label'∙ p)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Unlabel₁ p)
-determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Unlabel∙₁ p)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) UnId₁
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Fork p)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup _ _ _)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup' _ _ _)
+determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) (New Δ∈Γ₁ x)
+determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) Write₁
+determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) Read₁
+determinism (New Δ∈Γ x) (Var₂ Δ∈Γ₁ τ∈π () uᴱ uᴴ)
+determinism (New Δ∈Γ uᴴ) (New Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
+... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
+determinism Write₁ (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ)
+determinism Write₁ Write₁ = refl
+determinism (Write₂ Δ∈Γ uᴱ uᴴ) (Write₂ Δ∈Γ₁ uᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
+... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
+determinism (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) (Writeᴰ₂ Δ∈Γ₁ uᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
+... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
+determinism Read₁ (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ)
+determinism Read₁ Read₁ = refl
+determinism (Read₂ Δ∈Γ t∈Δ) (Read₂ Δ∈Γ₁ t∈Δ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
+... | refl with memberᴱ-≅ᵀ t∈Δ t∈Δ₁
+... | refl = refl
+determinism (Readᴰ₂ Δ∈Γ t∈Δ) (Readᴰ₂ Δ∈Γ₁ t∈Δ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
+... | refl with memberᴱ-≅ᵀ t∈Δ t∈Δ₁
+... | refl = refl
 determinism If (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
 determinism If If = refl
 determinism IfTrue IfTrue = refl
@@ -96,9 +115,6 @@ determinism (Label'∙ p) (Label'∙ .p) = refl
 determinism (Unlabel₁ p) (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
 determinism (Unlabel₁ p) (Unlabel₁ .p) = refl
 determinism (Unlabel₂ p) (Unlabel₂ .p) = refl
-determinism (Unlabel∙₁ p) (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
-determinism (Unlabel∙₁ p) (Unlabel∙₁ .p) = refl
-determinism (Unlabel∙₂ p) (Unlabel∙₂ .p) = refl
 determinism UnId₁ (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
 determinism UnId₁ UnId₁ = refl
 determinism UnId₂ UnId₂ = refl

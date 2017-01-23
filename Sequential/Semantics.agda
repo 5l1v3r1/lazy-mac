@@ -105,7 +105,7 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  -- are still writing in the right memory.
  New : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ H}
          -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
-         ->  Γ' ≔ Γ [ H ↦ insert t Δ ]ᴴ ->
+         -> (uᴴ : Γ' ≔ Γ [ H ↦ insert t Δ ]ᴴ) ->
          ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = (τ ∷ π)} H #[ Var here ])) , S ⟩
 
  Write₁ : ∀ {Γ τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
