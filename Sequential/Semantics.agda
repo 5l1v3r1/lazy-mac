@@ -84,7 +84,6 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  Label'∙ : ∀ {Γ h τ τ'} {π : Context} {S : Stack l _ τ'} {t : Term π τ} -> (p : l ⊑ h) ->
             ⟨ Γ , label∙ p t , S ⟩ ⇝ ⟨ Γ , (Return l (Res {π = π} h ∙)) , S ⟩
 
-
  Unlabel₁ : ∀ {Γ τ τ' l'} {π : Context} {S : Stack l _ τ'} {t : Term π (Labeled l' τ)} -> (p : l' ⊑ l) ->
               ⟨ Γ , unlabel p t , S ⟩ ⇝ ⟨ Γ , t , unlabel p ∷ S ⟩
 
@@ -99,6 +98,21 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
 
  Fork : ∀ {Γ τ h} {π : Context} {S : Stack l _ τ} {t : Term π (Mac h _)} -> (p : l ⊑ h) ->
           ⟨ Γ , (fork p t) , S ⟩ ⇝ ⟨ Γ , Return {π = π} l （） , S ⟩
+
+ New : ∀ {Γ Γ' τ τ' h} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ h}
+         -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
+         ->  Γ' ≔ Γ [ l ↦ insert t Δ ]ᴴ ->
+         ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = π} h #[ length π ])) , S ⟩
+
+ Write₁ : ∀ {Γ τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
+         ⟨ Γ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (write l⊑H t₂ ∷ S) ⟩
+
+ Write₂ : ∀ {Γ Γ' τ τ' H n} {π : Context} {Δ Δ' : Env l π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ π}
+          -> (tIx : TypedIx τ n π τ∈π)
+          -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
+          -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)
+          -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ) ->
+         ⟨ Γ , Res {π = π} H #[ n ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
  Hole : ∀ {Γ τ₁ τ₂ τ₃} {π₁ : Context} {π₂ : Context} ->
           ⟨ Γ , ∙ {π = π₁}, ∙ {l} {τ₁} {τ₃} ⟩ ⇝ ⟨ Γ , ∙ {π = π₂} , ∙ {l} {τ₂} {τ₃} ⟩

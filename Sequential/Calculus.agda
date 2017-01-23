@@ -68,6 +68,8 @@ data Value {π : Context} : ∀ {τ} -> Term π τ -> Set where
   Id : ∀ {τ} (t : Term π τ) -> Value (Id t)
   Mac : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Mac l t)
   Res : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Res l t)
+  #[_] : (n : ℕ) -> Value #[ n ]
+  #[_]ᴰ : (n : ℕ) -> Value #[ n ]ᴰ
 
 --------------------------------------------------------------------------------
 
@@ -158,6 +160,8 @@ data Cont (l : Label) : Ty -> Ty -> Set where
  Bind :  ∀ {τ₁ τ₂} {π : Context} -> Term π (τ₁ => Mac l τ₂) -> Cont l (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Cont l (Labeled l' τ) (Mac l τ)
  unId : ∀ {τ} -> Cont l (Id τ) τ
+ write : ∀ {τ H π} -> l ⊑ H -> Term π τ -> Cont l (Ref H τ) (Mac l （）)
+ read : ∀ {τ L} -> L ⊑ l -> Cont l (Ref L τ) (Mac l τ)
 
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
 -- by an input type and an output type.
