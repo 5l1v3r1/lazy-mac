@@ -29,11 +29,11 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  App₁ : ∀ {τ₁ τ₂ τ₃ π Γ Γ'} {Δ : Env l π} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃}
           -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
           -> (uᴴ : Γ' ≔ Γ [ l ↦ insert t₂ Δ ]ᴴ) ->
-          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ' , t₁ , (Var {π = τ₁ ∷ π} hereᴿ) ∷ S ⟩
+          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ' , t₁ , (Var {{π = τ₁ ∷ π}} hereᴿ) ∷ S ⟩
 
  App₂ : ∀ {Γ β α τ'} {π : Context} {S : Stack l β τ'} {t : Term (α ∷ π) β}
             -> (α∈π : α ∈ᴿ π) ->
-          ⟨ Γ , Abs t , Var {π = π} α∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var α∈π) t , S ⟩
+          ⟨ Γ , Abs t , Var α∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var α∈π) t , S ⟩
 
  Var₁ : ∀ {Γ Γ' τ τ'} {π π' : Context} {Δ Δ' : Env l π}  {S : Stack l τ τ'} {t : Term π' τ} ->
            (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
@@ -42,7 +42,7 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
         -> (¬val :  ¬ (Value t))
         -> (rᴱ : Δ' ≔ Δ [ τ∈π ↛ t ]ᴱ)
         -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ)
-        -> ⟨ Γ , Var {π = π} τ∈π , S ⟩ ⇝ ⟨  Γ'  , t , (# {π = π} τ∈π) ∷ S ⟩
+        -> ⟨ Γ , Var {π = π} τ∈π , S ⟩ ⇝ ⟨  Γ'  , t , (# τ∈π) ∷ S ⟩
 
  Var₁' : ∀ {Γ τ τ'} {π : Context} {Δ : Env l π} {S : Stack l τ τ'} {v : Term π τ}
          -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
@@ -57,7 +57,7 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
         -> (val : Value v)
         -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ v ]ᴱ)
         -> (uᴴ : Γ' ≔ Γ [ l ↦ Δ' ]ᴴ)
-        -> ⟨ Γ , v , (# {π = π} τ∈π) ∷ S ⟩ ⇝ ⟨  Γ' , v , S ⟩
+        -> ⟨ Γ , v , (# τ∈π) ∷ S ⟩ ⇝ ⟨  Γ' , v , S ⟩
 
  If : ∀ {Γ τ τ'} {π : Context} {S : Stack l τ τ'} {t₁ : Term π Bool} {t₂ t₃ : Term π τ} ->
         ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩

@@ -148,8 +148,8 @@ subst {Δ = Δ} v t = tm-subst [] Δ v t
 -- transform the input type (first indexed) in the output type (second
 -- index).
 data Cont (l : Label) : Ty -> Ty -> Set where
- Var : ∀ {τ₁ τ₂} {π : Context} -> (τ∈π : τ₁ ∈ᴿ π) -> Cont l (τ₁ => τ₂) τ₂
- # : ∀ {τ} {π : Context} -> (τ∈π : τ ∈ᴿ π)  -> Cont l τ τ
+ Var : ∀ {τ₁ τ₂} {{π : Context}} -> (τ∈π : τ₁ ∈ᴿ π) -> Cont l (τ₁ => τ₂) τ₂
+ # : ∀ {τ} {{π : Context}} -> (τ∈π : τ ∈ᴿ π)  -> Cont l τ τ
  Then_Else_ : ∀ {τ} {π : Context} -> Term π τ -> Term π τ -> Cont l Bool τ
  Bind :  ∀ {τ₁ τ₂} {π : Context} -> Term π (τ₁ => Mac l τ₂) -> Cont l (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Cont l (Labeled l' τ) (Mac l τ)
