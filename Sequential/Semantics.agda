@@ -29,12 +29,12 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  App₁ : ∀ {τ₁ τ₂ τ₃ π Γ Γ'} {Δ : Env l π} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃}
           -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
           -> (uᴴ : Γ' ≔ Γ [ l ↦ insert t₂ Δ ]ᴴ) ->
-          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ' , t₁ , (Var {π = τ₁ ∷ π} here) ∷ S ⟩
+          ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ' , t₁ , (Var {π = τ₁ ∷ π} {!!}) ∷ S ⟩ -- here
 
  App₂ : ∀ {Γ β α τ'} {π : Context} {S : Stack l β τ'} {t : Term (α ∷ π) β}
-            -> (α∈π : α ∈ π)
-            -> (α∈π : α ∈ π) ->
-          ⟨ Γ , Abs t , Var α∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var α∈π) t , S ⟩
+            -> (α∈π₁ : α ∈ᴿ π)
+            -> (α∈π₂ : α ∈ᴿ π) ->
+          ⟨ Γ , Abs t , Var {π = π} α∈π₁ ∷ S ⟩ ⇝ ⟨ Γ , subst (Var α∈π₂) t , S ⟩
 
  Var₁ : ∀ {Γ Γ' τ τ'} {π π' : Context} {Δ Δ' : Env l π}  {S : Stack l τ τ'} {t : Term π' τ} ->
            (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
@@ -106,7 +106,7 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  New : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ H}
          -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
          -> (uᴴ : Γ' ≔ Γ [ H ↦ insert t Δ ]ᴴ) ->
-         ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = (τ ∷ π)} H #[ Var here ])) , S ⟩
+         ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = (τ ∷ π)} H #[ Var {!!} ])) , S ⟩ -- here
 
  Write₁ : ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
          ⟨ Γ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (write l⊑H t₂ ∷ S) ⟩
@@ -115,13 +115,13 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
           -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
           -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)  -- Not ok beause other code might reference τ∈π. We must change the Reference to point to t.
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
-         ⟨ Γ , Res {π = π} H #[ Var τ∈π ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
+         ⟨ Γ , Res {π = π} H #[ Var {!!} ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩ -- τ∈π
 
  Writeᴰ₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ π}
           -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
           -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
-         ⟨ Γ , Res {π = π} H #[ Var τ∈π ]ᴰ , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
+         ⟨ Γ , Res {π = π} H #[ Var {!!} ]ᴰ , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩ -- τ∈π
 
  Read₁ : ∀ {Γ τ τ' L} {π : Context} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {L⊑l : L ⊑ l} ->
          ⟨ Γ , read L⊑l t , S ⟩ ⇝ ⟨ Γ , t , read L⊑l ∷ S ⟩
@@ -154,7 +154,7 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
                  -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
                  -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
                  -> (uᴴ : Γ' ≔ Γ [ l ↦ insert (deepDupᵀ t) Δ ]ᴴ)
-                 -> ⟨ Γ , deepDup (Var τ∈π) , S ⟩ ⇝ ⟨ Γ' , Var {π = τ ∷ π} here , S ⟩
+                 -> ⟨ Γ , deepDup (Var τ∈π) , S ⟩ ⇝ ⟨ Γ' , Var {π = τ ∷ π} {!!} , S ⟩ -- here
 
 
  -- If the argument to deepDup is not a variable we introduce a new fresh variable (similarly to
@@ -163,4 +163,4 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
               -> (¬var : ¬ (IsVar t))
               -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
               -> (uᴴ : Γ' ≔ Γ [ l ↦ insert t Δ ]ᴴ)
-              -> ⟨ Γ , deepDup t , S ⟩ ⇝ ⟨ Γ' , deepDup (Var {π = τ ∷ π} here) , S ⟩
+              -> ⟨ Γ , deepDup t , S ⟩ ⇝ ⟨ Γ' , deepDup (Var {π = τ ∷ π} {!!}) , S ⟩ -- here
