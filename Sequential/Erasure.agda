@@ -248,7 +248,7 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ False = refl
         ε-tm-subst π₁ π₂ t₁ (Id t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (unId t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
-        ε-tm-subst π₁ π₂ t₁ (Var τ∈π) rewrite ε-var-subst π₁ π₂ t₁ τ∈π = refl
+        ε-tm-subst π₁ π₂ t₁ (Var τ∈π) rewrite ε-var-subst π₁ π₂ t₁ (∈ᴿ-∈ τ∈π) = refl
         ε-tm-subst π₁ π₂ t₁ (Abs t₂)  rewrite ε-tm-subst (_ ∷ π₁) π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (App t₂ t₃)
           rewrite ε-tm-subst π₁ π₂ t₁ t₂ | ε-tm-subst π₁ π₂ t₁ t₃ = refl
@@ -287,7 +287,7 @@ open import Function
           rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (unId t)
           rewrite εᵗ-dup-ufv-≡ vs t = refl
-        εᵗ-dup-ufv-≡ vs (Var τ∈π) with memberⱽ τ∈π vs
+        εᵗ-dup-ufv-≡ vs (Var τ∈π) with memberⱽ (∈ᴿ-∈ τ∈π) vs
         εᵗ-dup-ufv-≡ vs (Var τ∈π) | yes p = refl
         εᵗ-dup-ufv-≡ vs (Var τ∈π) | no ¬p = refl
         εᵗ-dup-ufv-≡ vs (Abs t)
@@ -320,10 +320,13 @@ open import Function
 --------------------------------------------------------------------------------
 -- Env lemmas
 
-memberᴱ : ∀ {l π π' τ} {Δ : Env l π} {t : Term π' τ} {τ∈π : τ ∈ π} ->
+memberᴱ : ∀ {l π π' τ} {Δ : Env l π} {t : Term π' τ} (τ∈π : τ ∈ᴿ π) ->
           (l⊑A : l ⊑ A) -> τ∈π ↦ t ∈ᴱ Δ -> τ∈π ↦ (εᵀ t) ∈ᴱ (εᴱ (yes l⊑A) Δ)
-memberᴱ l⊑A here = here
-memberᴱ l⊑A (there t∈Δ) = there (memberᴱ l⊑A t∈Δ)
+memberᴱ {l} τ∈π l⊑A = aux (∈ᴿ-∈ τ∈π)
+  where aux : ∀ {π π' τ} {Δ : Env l π} {t : Term π' τ} (τ∈π : τ ∈ π)
+              -> Memberᴱ (just t) τ∈π Δ -> Memberᴱ (just (εᵀ t)) τ∈π (εᴱ (yes l⊑A) Δ)
+        aux .here here = here
+        aux (there τ∈π') (there x) = there (aux τ∈π' x)
 
 updateᴱ : ∀ {l π π' τ} {Δ Δ' : Env l π} {mt : Maybe (Term π' τ)} {τ∈π : τ ∈ π}
           (l⊑A : l ⊑ A) -> Updateᴱ mt τ∈π Δ Δ' -> Updateᴱ (M.map εᵀ mt) τ∈π (εᴱ (yes l⊑A) Δ) (εᴱ (yes l⊑A) Δ')
@@ -376,7 +379,7 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim : ∀ {l τ ls} {s₁ s₂ : State ls l (Mac l τ)} (x : Level (Mac l τ)) -> s₁ ⇝ s₂ -> ε x s₁ ⇝ ε x s₂
 -- High-Computations
 ε-sim (inj₁ (Macᴴ h⋤A)) (App₁ Δ∈Γ uᴴ) rewrite insertᴴ∙ h⋤A uᴴ = Hole
-ε-sim (inj₁ x) (App₂ α∈π α∈π₁) = Hole
+ε-sim (inj₁ x) (App₂ α∈π) = Hole
 ε-sim (inj₁ (Macᴴ h⋤A)) (Var₁ Δ∈Γ τ∈π t∈Δ ¬val rᴱ uᴴ)
   rewrite updateᴴ∙ h⋤A uᴴ = Hole
 ε-sim (inj₁ x) (Var₁' Δ∈Γ τ∈π v∈Δ val) = Hole
@@ -403,19 +406,19 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₁ (Macᴴ h⋤A)) (Writeᴰ₂ {l⊑H = l⊑H} Δ∈Γ uᴱ uᴴ)
   rewrite updateᴴ∙ (trans-⋢ l⊑H h⋤A) uᴴ = Hole
 ε-sim (inj₁ x) Read₁ = Hole
-ε-sim (inj₁ x) (Read₂ Δ∈Γ t∈Δ) = Hole
-ε-sim (inj₁ x) (Readᴰ₂ Δ∈Γ t∈Δ) = Hole
+ε-sim (inj₁ x) (Read₂ τ∈π Δ∈Γ t∈Δ) = Hole
+ε-sim (inj₁ x) (Readᴰ₂ τ∈π Δ∈Γ t∈Δ) = Hole
 ε-sim (inj₁ x) Hole = Hole
-ε-sim (inj₁ (Macᴴ h⋤A)) (DeepDup Δ∈Γ t∈Δ uᴴ)
+ε-sim (inj₁ (Macᴴ h⋤A)) (DeepDup τ∈π Δ∈Γ t∈Δ uᴴ)
   rewrite insertᴴ∙ h⋤A uᴴ = Hole
 ε-sim (inj₁ (Macᴴ h⋤A)) (DeepDup' ¬var Δ∈Γ uᴴ)
   rewrite insertᴴ∙ h⋤A uᴴ = Hole
 
 -- Low-compuations
 ε-sim (inj₂ (Macᴸ l⊑A)) (App₁ Δ∈Γ uᴴ) = App₁ (memberᴴ l⊑A Δ∈Γ) (insertᴴ l⊑A uᴴ)
-ε-sim (inj₂ (Macᴸ l⊑A)) (App₂ {t = t} α∈π α∈π₁) rewrite ε-subst (Var α∈π₁) t = App₂ α∈π α∈π₁
-ε-sim (inj₂ (Macᴸ l⊑A)) (Var₁ Δ∈Γ τ∈π t∈Δ ¬val rᴱ uᴴ) = Var₁ (memberᴴ l⊑A Δ∈Γ) τ∈π (memberᴱ l⊑A t∈Δ) (εᵀ¬Val ¬val) (updateᴱ l⊑A rᴱ) (updateᴴ l⊑A uᴴ)
-ε-sim (inj₂ (Macᴸ l⊑A)) (Var₁' Δ∈Γ τ∈π v∈Δ val) = Var₁' (memberᴴ l⊑A Δ∈Γ) τ∈π (memberᴱ l⊑A v∈Δ) (εᵀ-Val val)
+ε-sim (inj₂ (Macᴸ l⊑A)) (App₂ {t = t} α∈π) rewrite ε-subst (Var α∈π) t = App₂ α∈π
+ε-sim (inj₂ (Macᴸ l⊑A)) (Var₁ Δ∈Γ τ∈π t∈Δ ¬val rᴱ uᴴ) = Var₁ (memberᴴ l⊑A Δ∈Γ) τ∈π (memberᴱ τ∈π l⊑A t∈Δ) (εᵀ¬Val ¬val) (updateᴱ l⊑A rᴱ) (updateᴴ l⊑A uᴴ)
+ε-sim (inj₂ (Macᴸ l⊑A)) (Var₁' Δ∈Γ τ∈π v∈Δ val) = Var₁' (memberᴴ l⊑A Δ∈Γ) τ∈π (memberᴱ τ∈π l⊑A v∈Δ) (εᵀ-Val val)
 ε-sim (inj₂ (Macᴸ l⊑A)) (Var₂ Δ∈Γ τ∈π val uᴱ uᴴ) = Var₂ (memberᴴ l⊑A Δ∈Γ) τ∈π (εᵀ-Val val) (updateᴱ l⊑A uᴱ) (updateᴴ l⊑A uᴴ)
 ε-sim (inj₂ y) If = If
 ε-sim (inj₂ y) IfTrue = IfTrue
@@ -447,13 +450,13 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₂ y) (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) | yes p = Writeᴰ₂ (memberᴴ p Δ∈Γ) (updateᴱ p uᴱ) (updateᴴ p uᴴ)
 ε-sim (inj₂ y) (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) | no ¬p = {!!} -- Res should say to duplicate or not, not the address itself
 ε-sim (inj₂ y) Read₁ = Read₁
-ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ {L = L} Δ∈Γ t∈Δ) with L ⊑? A
-ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ Δ∈Γ t∈Δ) | yes p = Read₂ (memberᴴ p Δ∈Γ) (memberᴱ p t∈Δ)
-ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ {L⊑l = L⊑l} Δ∈Γ t∈Δ) | no ¬p = ⊥-elim (¬p (trans-⊑ L⊑l l⊑A))
-ε-sim (inj₂ (Macᴸ l⊑A)) (Readᴰ₂ {L = L} Δ∈Γ t∈Δ) with L ⊑? A
-ε-sim (inj₂ (Macᴸ l⊑A)) (Readᴰ₂ Δ∈Γ t∈Δ) | yes p = Readᴰ₂ (memberᴴ p Δ∈Γ) (memberᴱ p t∈Δ)
-ε-sim (inj₂ (Macᴸ l⊑A)) (Readᴰ₂ {L⊑l = L⊑l} Δ∈Γ t∈Δ) | no ¬p = ⊥-elim (¬p (trans-⊑ L⊑l l⊑A))
+ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ {L = L} τ∈π Δ∈Γ t∈Δ) with L ⊑? A
+ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ τ∈π Δ∈Γ t∈Δ) | yes p = Read₂ τ∈π (memberᴴ p Δ∈Γ) (memberᴱ τ∈π p t∈Δ)
+ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ {L⊑l = L⊑l} τ∈π Δ∈Γ t∈Δ) | no ¬p = ⊥-elim (¬p (trans-⊑ L⊑l l⊑A))
+ε-sim (inj₂ (Macᴸ l⊑A)) (Readᴰ₂ {L = L} τ∈π Δ∈Γ t∈Δ) with L ⊑? A
+ε-sim (inj₂ (Macᴸ l⊑A)) (Readᴰ₂ τ∈π Δ∈Γ t∈Δ) | yes p = Readᴰ₂ τ∈π (memberᴴ p Δ∈Γ) (memberᴱ τ∈π p t∈Δ)
+ε-sim (inj₂ (Macᴸ l⊑A)) (Readᴰ₂ {L⊑l = L⊑l} τ∈π Δ∈Γ t∈Δ) | no ¬p = ⊥-elim (¬p (trans-⊑ L⊑l l⊑A))
 ε-sim (inj₂ y) Hole = Hole
-ε-sim (inj₂ (Macᴸ l⊑A)) (DeepDup {t = t} Δ∈Γ t∈Δ uᴴ) with insertᴴ l⊑A uᴴ
-... | uᴴ' rewrite ε-deepDupᵀ-≡ t = DeepDup (memberᴴ l⊑A Δ∈Γ) (memberᴱ l⊑A t∈Δ) uᴴ'
+ε-sim (inj₂ (Macᴸ l⊑A)) (DeepDup {t = t} τ∈π Δ∈Γ t∈Δ uᴴ) with insertᴴ l⊑A uᴴ
+... | uᴴ' rewrite ε-deepDupᵀ-≡ t = DeepDup τ∈π (memberᴴ l⊑A Δ∈Γ) (memberᴱ τ∈π l⊑A t∈Δ) uᴴ'
 ε-sim (inj₂ (Macᴸ l⊑A)) (DeepDup' ¬var Δ∈Γ uᴴ) = DeepDup' (εᵗ¬Var ¬var) (memberᴴ l⊑A Δ∈Γ) (insertᴴ l⊑A uᴴ)
