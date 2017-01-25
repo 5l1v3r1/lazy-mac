@@ -146,4 +146,8 @@ rev-rev-≡ (x ∷ π) rewrite rev-append-≡ {x} (reverse π) = cong (_∷_ x) 
 
 wken-∈ᴿ : ∀ {x} {π₁ : Context} {π₂ : Context} -> π₁ ⊆ˡ π₂ -> x ∈ᴿ π₁ -> x ∈ᴿ π₂
 wken-∈ᴿ x p = wken-∈ (rev-⊆ˡ x) p
+
+hereᴿ : ∀ {{π}} {τ} -> τ ∈ᴿ (τ ∷ π)
+hereᴿ {{π}} {τ} = snoc-∈ τ (reverse π)
+
 --------------------------------------------------------------------------------

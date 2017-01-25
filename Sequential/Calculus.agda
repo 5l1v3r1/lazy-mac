@@ -148,8 +148,8 @@ subst {Δ = Δ} v t = tm-subst [] Δ v t
 -- transform the input type (first indexed) in the output type (second
 -- index).
 data Cont (l : Label) : Ty -> Ty -> Set where
- Var : ∀ {τ₁ τ₂} {π : Context} -> (τ∈π : τ₁ ∈ π) -> Cont l (τ₁ => τ₂) τ₂
- # : ∀ {τ} {π : Context} -> (τ∈π : τ ∈ π)  -> Cont l τ τ
+ Var : ∀ {τ₁ τ₂} {π : Context} -> (τ∈π : τ₁ ∈ᴿ π) -> Cont l (τ₁ => τ₂) τ₂
+ # : ∀ {τ} {π : Context} -> (τ∈π : τ ∈ᴿ π)  -> Cont l τ τ
  Then_Else_ : ∀ {τ} {π : Context} -> Term π τ -> Term π τ -> Cont l Bool τ
  Bind :  ∀ {τ₁ τ₂} {π : Context} -> Term π (τ₁ => Mac l τ₂) -> Cont l (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Cont l (Labeled l' τ) (Mac l τ)
@@ -181,21 +181,21 @@ data Updateᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈ π' -> 
   there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ Δ' : Env l π'} {mt' : Maybe (Term _ τ')} -> Updateᴱ mt τ∈π' Δ Δ' -> Updateᴱ mt (there τ∈π') (mt' ∷ Δ) (mt' ∷ Δ')
   ∙ : ∀ {π'} {τ∈π' : τ ∈ π'} -> Updateᴱ mt τ∈π' ∙ ∙
 
-_≔_[_↦_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈ π' -> Term π τ -> Set
-Δ' ≔ Δ [ τ∈π' ↦ t ]ᴱ = Updateᴱ (just t) τ∈π' Δ Δ'
+_≔_[_↦_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈ᴿ π' -> Term π τ -> Set
+Δ' ≔ Δ [ τ∈π' ↦ t ]ᴱ = Updateᴱ (just t) (∈ᴿ-∈ τ∈π') Δ Δ'
 
 -- Syntatic sugar for removing a term from the environment.
 -- The term is used only to fix its context π and avoid unsolved metas.
-_≔_[_↛_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈ π' -> Term π τ -> Set
-_≔_[_↛_]ᴱ {π = π} Δ' Δ x t = Updateᴱ {π = π} nothing x Δ Δ'
+_≔_[_↛_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈ᴿ π' -> Term π τ -> Set
+_≔_[_↛_]ᴱ {π = π} Δ' Δ x t = Updateᴱ {π = π} nothing (∈ᴿ-∈ x) Δ Δ'
 
 data Memberᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈ π' -> Env l π' -> Set where
   here : ∀ {Δ : Env l π} -> Memberᴱ mt here (mt ∷ Δ)
   there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ mt τ∈π' Δ -> Memberᴱ mt (there τ∈π') (mt' ∷ Δ)
   -- TODO add x ↦ just ∙ ∈ ∙
 
-_↦_∈ᴱ_ : ∀ {l τ} {π π' : Context} -> τ ∈ π' -> Term π τ -> Env l π' -> Set
-x ↦ t ∈ᴱ Δ = Memberᴱ (just t) x Δ
+_↦_∈ᴱ_ : ∀ {l τ} {π π' : Context} -> τ ∈ᴿ π' -> Term π τ -> Env l π' -> Set
+x ↦ t ∈ᴱ Δ = Memberᴱ (just t) (∈ᴿ-∈ x) Δ
 
 -- Extends the environment with a new binding
 insert : ∀ {l τ π} -> Term π τ -> Env l π -> Env l (τ ∷ π)
