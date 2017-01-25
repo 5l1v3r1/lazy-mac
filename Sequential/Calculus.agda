@@ -23,7 +23,7 @@ data Term (π : Context) : Ty -> Set where
   Id : ∀ {τ} -> Term π τ -> Term π (Id τ)
   unId : ∀ {τ} -> Term π (Id τ) -> Term π τ
 
-  Var : ∀ {τ} -> (τ∈π : τ ∈ π) -> Term π τ
+  Var : ∀ {τ} -> (τ∈π : τ ∈ᴿ π) -> Term π τ
   Abs : ∀ {α β} -> Term (α ∷ π) β -> Term π (α => β)
   App : ∀ {α β} -> Term π (α => β) -> Term π α -> Term π β
 
@@ -82,7 +82,7 @@ wken True p = True
 wken False p = False
 wken (Id t) p = Id (wken t p)
 wken (unId t) p = unId (wken t p)
-wken (Var x) p = Var (wken-∈ p x)
+wken (Var x) p = Var (wken-∈ᴿ p x)
 wken (Abs t) p = Abs (wken t (cons p))
 wken (App t t₁) p = App (wken t p) (wken t₁ p)
 wken (If t Then t₁ Else t₂) p = If (wken t p) Then (wken t₁ p) Else (wken t₂ p)
@@ -109,8 +109,8 @@ t ↑¹ = wken t (drop refl-⊆ˡ)
 var-subst : ∀ {α β} (Δ₁ : Context) (Δ₂ : Context)
             -> Term Δ₂ β -> α ∈ (Δ₁ ++ [ β ] ++ Δ₂) -> Term (Δ₁ ++ Δ₂) α
 var-subst [] Δ₂ v here = v
-var-subst [] Δ₂ v (there p) = Var p
-var-subst (._ ∷ Δ₁) Δ₂ v here = Var here
+var-subst [] Δ₂ v (there p) = Var (∈-∈ᴿ p)
+var-subst {α} (._ ∷ Δ₁) Δ₂ v here = Var (∈-∈ᴿ {α} {α ∷ Δ₁ ++ Δ₂} here)
 var-subst (x ∷ Δ₁) Δ₂ v (there p) = (var-subst Δ₁ Δ₂ v p) ↑¹
 
 tm-subst : ∀ {τ α} (Δ₁ : Context) (Δ₂ : Context)-> Term Δ₂ α -> Term (Δ₁ ++ [ α ] ++ Δ₂) τ -> Term (Δ₁ ++ Δ₂) τ
@@ -119,7 +119,7 @@ tm-subst Δ₁ Δ₂ v True = True
 tm-subst Δ₁ Δ₂ v False = False
 tm-subst Δ₁ Δ₂ v (Id t) = Id (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (unId t) = unId (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (Var y∈π) = var-subst Δ₁ Δ₂ v y∈π
+tm-subst Δ₁ Δ₂ v (Var y∈π) = var-subst Δ₁ Δ₂ v (∈ᴿ-∈ y∈π) -- var-subst Δ₁ Δ₂ v y∈π
 tm-subst Δ₁ Δ₂ v (Abs t) = Abs (tm-subst (_ ∷ Δ₁) Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (App t t₁) = App (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
 tm-subst Δ₁ Δ₂ v (If t Then t₁ Else t₂) = If (tm-subst Δ₁ Δ₂ v t) Then (tm-subst Δ₁ Δ₂ v t₁) Else (tm-subst Δ₁ Δ₂ v t₂)
@@ -248,56 +248,6 @@ data Vars (π : Context) : Set where
   [] : Vars π
   _∷_ : ∀ {τ : Ty} -> (τ∈π : τ ∈ π) -> Vars π -> Vars π
 
-_+++_ : ∀ {π} -> Vars π -> Vars π -> Vars π
-[] +++ ys = ys
-(τ∈π ∷ xs) +++ ys = τ∈π ∷ (xs +++ ys)
-
-infixr 3 _+++_
-
--- Removes variables τ ∈ (τ ∷ π)
-dropⱽ : ∀ {τ π} -> Vars (τ ∷ π) -> Vars π
-dropⱽ [] = []
-dropⱽ (here ∷ vs) = dropⱽ vs
-dropⱽ (there τ∈π ∷ vs) = τ∈π ∷ dropⱽ vs
--- TODO remove
-ufv : ∀ {τ π} -> Term π τ -> Vars π
-ufv （） = []
-ufv True = []
-ufv False = []
-ufv (Id t) = ufv t
-ufv (unId t) = ufv t
-ufv (Var τ∈π) = τ∈π ∷ []
-ufv (Abs t) = dropⱽ (ufv t)
-ufv (App t t₁) = ufv t +++ ufv t₁ -- In theory it should be ∪ to avoid duplicates, but I don't have sets :-(
-ufv (If t Then t₁ Else t₂) = ufv t +++ ufv t₁ +++ ufv t₂
-ufv (Return l t) = ufv t
-ufv (t >>= t₁) = ufv t +++ ufv t₁
-ufv (Mac l t) = ufv t
-ufv (Res l t) = ufv t
-ufv (label l⊑h t) = ufv t
-ufv (label∙ l⊑h t) = ufv t
-ufv (unlabel l⊑h t) = ufv t
-ufv (read l⊑h t) = ufv t
-ufv (write l⊑h t₁ t₂) = ufv t₁ +++ ufv t₂
-ufv (new l⊑h t) = ufv t
-ufv (#[ n ]) = []
-ufv (#[ n ]ᴰ) = []
-ufv (fork l⊑h t) = ufv t
-ufv (deepDup n) = [] -- Unguarded
-ufv ∙ = []
-
-tys : ∀ {π} -> Vars π -> Context
-tys [] = []
-tys (_∷_ {τ} τ∈π vs) = τ ∷ (tys vs)
-
-prefix-⊆ˡ : ∀ {π₁} -> (π₂ : Context)  -> π₁ ⊆ˡ π₂ ++ π₁
-prefix-⊆ˡ [] = refl-⊆ˡ
-prefix-⊆ˡ (x ∷ π) = drop (prefix-⊆ˡ π)
-
-dups : ∀ {π l} -> (vs : Vars π) -> Env l π -> Env l (tys vs ++ π)
-dups [] Δ = Δ
-dups (τ∈π ∷ vs) Δ = (just (deepDup (Var (wken-∈ (prefix-⊆ˡ (tys vs)) τ∈π)))) ∷ (dups vs Δ)
-
 data _∈ⱽ_ {τ π} (x : τ ∈ π) : Vars π -> Set where
   here : ∀ {vs} -> x ∈ⱽ (x ∷ vs)
   there : ∀ {τ' vs} {y : τ' ∈ π} -> x ∈ⱽ vs -> x ∈ⱽ (y ∷ vs)
@@ -312,7 +262,7 @@ there x ≟ⱽ here = no (λ ())
 there x ≟ⱽ there y with x ≟ⱽ y
 there x ≟ⱽ there .x | yes refl = yes refl
 there {τ} x ≟ⱽ there y | no ¬p = no (aux ¬p)
-  where aux : ∀ {τ τ' τ'' π} {x : τ ∈ π} {y : τ' ∈ π} -> ¬ x ≅ⱽ y -> ¬ (there {_} {_} {_} {τ''} x ≅ⱽ there y)
+  where aux : ∀ {τ τ' τ'' π} {x : τ ∈ π} {y : τ' ∈ π} -> ¬ x ≅ⱽ y -> ¬ (there {τ' = τ''} x ≅ⱽ there y)
         aux ¬p₁ refl = ¬p₁ refl
 
 memberⱽ : ∀ {τ π} -> (v : τ ∈ π) -> (vs : Vars π) -> Dec (v ∈ⱽ vs)
@@ -340,7 +290,7 @@ dup-ufv vs True = True
 dup-ufv vs False = False
 dup-ufv vs (Id t) = Id (dup-ufv vs t)
 dup-ufv vs (unId t) = unId (dup-ufv vs t)
-dup-ufv vs (Var τ∈π) with memberⱽ τ∈π vs
+dup-ufv vs (Var τ∈π) with memberⱽ (∈ᴿ-∈ τ∈π) vs
 dup-ufv vs (Var τ∈π) | yes p = Var τ∈π  -- In scope
 dup-ufv vs (Var τ∈π) | no ¬p = deepDup (Var τ∈π) -- Free
 dup-ufv vs (Abs t) = Abs (dup-ufv (here ∷ mapⱽ there vs) t)
@@ -349,14 +299,14 @@ dup-ufv vs (If t Then t₁ Else t₂) = If (dup-ufv vs t) Then (dup-ufv vs t₁)
 dup-ufv vs (Return l t) = Return l (dup-ufv vs t)
 dup-ufv vs (t >>= t₁) = (dup-ufv vs t) >>= (dup-ufv vs t₁)
 dup-ufv vs (Mac l t) = Mac l (dup-ufv vs t)
-dup-ufv vs (Res l t) = Res l (dup-ufv vs t)
+dup-ufv vs (Res l t) = Res l (dup-ufv vs t)  -- TODO must duplicate
 dup-ufv vs (label l⊑h t) = label l⊑h (dup-ufv vs t)
 dup-ufv vs (label∙ l⊑h t) = label∙ l⊑h (dup-ufv vs t)
 dup-ufv vs (unlabel l⊑h t) = unlabel l⊑h (dup-ufv vs t)
 dup-ufv vs(read l⊑h t) = read l⊑h (dup-ufv vs t)
 dup-ufv vs (write l⊑h t₁ t₂) = write l⊑h (dup-ufv vs t₁) (dup-ufv vs t₂)
 dup-ufv vs (new l⊑h t) = new l⊑h (dup-ufv vs t)
-dup-ufv vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!
+dup-ufv vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!  -- TODO remove
 dup-ufv vs (#[ n ]ᴰ) = #[ n ]ᴰ
 dup-ufv vs (fork l⊑h t) = fork l⊑h (dup-ufv vs t)
 dup-ufv vs (deepDup t) = deepDup t  -- deepDup (deepDup t) is semantically equal to deepDup t
@@ -367,4 +317,4 @@ deepDupᵀ t = dup-ufv [] t
 
 -- The proof that a term is a variable
 data IsVar {π} {τ} : Term π τ -> Set where
-  Var : (τ∈π : τ ∈ π) -> IsVar (Var τ∈π)
+  Var : (τ∈π : τ ∈ᴿ π) -> IsVar (Var τ∈π)

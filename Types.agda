@@ -74,8 +74,7 @@ reverse : Context -> Context
 reverse [] = []
 reverse (x ∷ π) = reverse π ++ [ x ]
 
--- Reference to a variable, bound during some abstraction.
-data _∈_ (τ : Ty) : Context -> Set where
+data _∈_ {A : Set} (τ : A) : List A -> Set where
  here : ∀ {π} -> τ ∈ (τ ∷ π)
  there : ∀ {τ' π} -> τ ∈ π -> τ ∈ (τ' ∷ π)
 
@@ -97,6 +96,21 @@ refl-⊆ˡ : {π : Context} -> π ⊆ˡ π
 refl-⊆ˡ {[]} = base
 refl-⊆ˡ {x ∷ π} = cons refl-⊆ˡ
 
+prod-⊆ : ∀ {τ π₁ π₂} -> π₁ ⊆ˡ π₂ -> π₁ ⊆ˡ π₂ ++ [ τ ]
+prod-⊆ base = drop base
+prod-⊆ (cons x) = cons (prod-⊆ x)
+prod-⊆ (drop x) = drop (prod-⊆ x)
+
+snoc-⊆ : ∀ {τ π₁ π₂} -> π₁ ⊆ˡ π₂ -> π₁ ++ [ τ ] ⊆ˡ π₂ ++ [ τ ]
+snoc-⊆ base = cons base
+snoc-⊆ (cons x) = cons (snoc-⊆ x)
+snoc-⊆ (drop x) = drop (snoc-⊆ x)
+
+rev-⊆ˡ : ∀ {π₁ π₂} -> π₁ ⊆ˡ π₂ -> reverse π₁ ⊆ˡ reverse π₂
+rev-⊆ˡ base = base
+rev-⊆ˡ (cons x) = snoc-⊆ (rev-⊆ˡ x)
+rev-⊆ˡ (drop x) = prod-⊆ (rev-⊆ˡ x)
+
 drop-⊆ : ∀ {π₁} {π₂} -> π₁ ⊆ˡ π₁ ++ π₂
 drop-⊆ {[]} {[]} = base
 drop-⊆ {[]} {x ∷ π₂} = drop drop-⊆
@@ -108,7 +122,7 @@ wken-∈ (cons p) here = here
 wken-∈ (cons p) (there q) = there (wken-∈ p q)
 wken-∈ (drop p) q = there (wken-∈ p q)
 
-snoc-∈ : ∀ τ π -> τ ∈ (π ++ [ τ ])
+snoc-∈ : ∀ (τ : Ty) (π : Context) -> τ ∈ (π ++ [ τ ])
 snoc-∈ τ [] = here
 snoc-∈ τ (x ∷ π) = there (snoc-∈ τ π)
 
@@ -126,8 +140,10 @@ rev-rev-≡ : ∀ π -> reverse (reverse π) ≡ π
 rev-rev-≡ [] = refl
 rev-rev-≡ (x ∷ π) rewrite rev-append-≡ {x} (reverse π) = cong (_∷_ x) (rev-rev-≡ π)
 
-rev-∈ : ∀ {τ π} -> τ ∈ᴿ π -> τ ∈ π
-rev-∈ {τ} {π} x with ∈-∈ᴿ x
+∈ᴿ-∈ : ∀ {τ π} -> τ ∈ᴿ π -> τ ∈ π
+∈ᴿ-∈ {τ} {π} x with ∈-∈ᴿ x
 ... | y rewrite rev-rev-≡ π = y
 
+wken-∈ᴿ : ∀ {x} {π₁ : Context} {π₂ : Context} -> π₁ ⊆ˡ π₂ -> x ∈ᴿ π₁ -> x ∈ᴿ π₂
+wken-∈ᴿ x p = wken-∈ (rev-⊆ˡ x) p
 --------------------------------------------------------------------------------
