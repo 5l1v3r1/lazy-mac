@@ -19,10 +19,13 @@ updateᴱ-≡ ∙ ∙ = refl
 data _≅ᵀ_ {π τ} (t : Term π τ) : ∀ {π'} -> Term π' τ -> Set where
   refl : t ≅ᵀ t
 
-memberᴱ-≅ᵀ : ∀ {τ l π π₁ π₂} {Δ : Env l π} {t₁ : Term π₁ τ} {t₂ : Term π₂ τ} {τ∈π : τ ∈ π} -> τ∈π ↦ t₁ ∈ᴱ Δ -> τ∈π ↦ t₂ ∈ᴱ Δ -> t₁ ≅ᵀ t₂
-memberᴱ-≅ᵀ here here = refl
-memberᴱ-≅ᵀ (there a) (there b) with memberᴱ-≅ᵀ a b
-memberᴱ-≅ᵀ (there a) (there b) | refl = refl
+memberᴱ-≅ᵀ : ∀ {τ l π π₁ π₂} {Δ : Env l π} {t₁ : Term π₁ τ} {t₂ : Term π₂ τ} (τ∈π : τ ∈ᴿ π) -> τ∈π ↦ t₁ ∈ᴱ Δ -> τ∈π ↦ t₂ ∈ᴱ Δ -> t₁ ≅ᵀ t₂
+memberᴱ-≅ᵀ τ∈π x y = aux x y
+  where aux : ∀ {τ l π π₁ π₂} {Δ : Env l π} {t₁ : Term π₁ τ} {t₂ : Term π₂ τ} {τ∈π : τ ∈ π}
+                   -> Memberᴱ (just t₁) τ∈π Δ -> Memberᴱ (just t₂) τ∈π Δ -> t₁ ≅ᵀ t₂
+        aux here here = refl
+        aux (there x) (there y) with aux x y
+        ... | refl = refl
 
 member-∈ : ∀ {l ls π} {Δ : Env l π} {Γ : Heap ls} -> l ↦ Δ ∈ᴴ Γ -> l ∈ ls
 member-∈ here = here
@@ -49,19 +52,20 @@ determinism : ∀ {ls l τ} {s₁ s₂ s₃ : State ls l τ} -> s₁ ⇝ s₂ ->
 determinism (App₁ Δ∈Γ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
 determinism (App₁ Δ∈Γ uᴴ) (Var₂ Δ∈Γ₁ x∈π () uᴱ₁ uᴴ₁)
-determinism (App₂ y∈π x∈π) (App₂ y∈π₁ .x∈π) = refl
-determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁ Δ∈Γ₁ .x∈π t∈Δ₁ ¬val₁ rᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
-... | refl with memberᴱ-≅ᵀ t∈Δ t∈Δ₁
-... | refl rewrite updateᴱ-≡ rᴱ rᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
-determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁' Δ∈Γ₁ .x∈π v∈Δ val) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
-... | refl with memberᴱ-≅ᵀ t∈Δ v∈Δ
-... | refl = ⊥-elim (¬val val)
+determinism (App₂ y∈π) (App₂ .y∈π) = refl
+determinism (Var₁ {π = π} {π'} Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁ {π' = π''} Δ∈Γ₁ .x∈π t∈Δ₁ ¬val₁ rᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
+... | refl with memberᴱ-≅ᵀ {π = π} {π'} {π''} x∈π t∈Δ t∈Δ₁
+determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁ Δ∈Γ₁ .x∈π t∈Δ₁ ¬val₁ rᴱ₁ uᴴ₁) | refl | refl
+  rewrite updateᴱ-≡ rᴱ rᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
+determinism (Var₁ {π = π} {π'} Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁' Δ∈Γ₁ .x∈π v∈Δ val) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
+... | refl with memberᴱ-≅ᵀ x∈π t∈Δ v∈Δ
+determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁' Δ∈Γ₁ .x∈π v∈Δ val) | refl | refl = ⊥-elim (¬val val)
 determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₂ Δ∈Γ₁ x∈π₁ () uᴱ uᴴ₁)
 determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁ Δ∈Γ₁ .x∈π t∈Δ ¬val rᴱ uᴴ) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
-... | refl with memberᴱ-≅ᵀ t∈Δ v∈Δ
+... | refl with memberᴱ-≅ᵀ x∈π t∈Δ v∈Δ
 ... | refl = ⊥-elim (¬val val)
 determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁' Δ∈Γ₁ .x∈π v∈Δ₁ val₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
-... | refl with memberᴱ-≅ᵀ v∈Δ v∈Δ₁
+... | refl with memberᴱ-≅ᵀ x∈π v∈Δ v∈Δ₁
 ... | refl = refl
 determinism (Var₁' Δ∈Γ x∈π v∈Δ v) (Var₂ Δ∈Γ₁ x∈π₁ () uᴱ uᴴ)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁)
@@ -77,7 +81,7 @@ determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Label'∙ p)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Unlabel₁ p)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) UnId₁
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Fork p)
-determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup _ _ _)
+determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup _ _ _ _)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup' _ _ _)
 determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) (New Δ∈Γ₁ x)
 determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) Write₁
@@ -93,11 +97,11 @@ determinism (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) (Writeᴰ₂ Δ∈Γ₁ uᴱ₁ uᴴ
 ... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
 determinism Read₁ (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ)
 determinism Read₁ Read₁ = refl
-determinism (Read₂ Δ∈Γ t∈Δ) (Read₂ Δ∈Γ₁ t∈Δ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
-... | refl with memberᴱ-≅ᵀ t∈Δ t∈Δ₁
+determinism (Read₂ τ∈π Δ∈Γ t∈Δ) (Read₂ .τ∈π Δ∈Γ₁ t∈Δ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
+... | refl with memberᴱ-≅ᵀ τ∈π t∈Δ t∈Δ₁
 ... | refl = refl
-determinism (Readᴰ₂ Δ∈Γ t∈Δ) (Readᴰ₂ Δ∈Γ₁ t∈Δ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
-... | refl with memberᴱ-≅ᵀ t∈Δ t∈Δ₁
+determinism (Readᴰ₂ τ∈π Δ∈Γ t∈Δ) (Readᴰ₂ .τ∈π Δ∈Γ₁ t∈Δ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
+... | refl with memberᴱ-≅ᵀ τ∈π t∈Δ t∈Δ₁
 ... | refl = refl
 determinism If (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
 determinism If If = refl
@@ -120,13 +124,13 @@ determinism UnId₁ UnId₁ = refl
 determinism UnId₂ UnId₂ = refl
 determinism (Fork p) (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
 determinism (Fork p) (Fork .p) = refl
-determinism (DeepDup Δ∈Γ t∈Δ uᴴ) (Var₂ Δ∈Γ₁ τ∈π₁ () uᴱ uᴴ₁)
-determinism (DeepDup Δ∈Γ t∈Δ uᴴ) (DeepDup Δ∈Γ₁ t∈Δ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
-... | refl with memberᴱ-≅ᵀ t∈Δ t∈Δ₁
+determinism (DeepDup τ∈π Δ∈Γ t∈Δ uᴴ) (Var₂ Δ∈Γ₁ τ∈π₁ () uᴱ uᴴ₁)
+determinism (DeepDup τ∈π Δ∈Γ t∈Δ uᴴ) (DeepDup .τ∈π Δ∈Γ₁ t∈Δ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
+... | refl with memberᴱ-≅ᵀ τ∈π t∈Δ t∈Δ₁
 ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
-determinism (DeepDup Δ∈Γ t∈Δ uᴴ) (DeepDup' ¬var Δ∈Γ₁ uᴴ₁) = ⊥-elim (¬var (Var _))
+determinism (DeepDup τ∈π Δ∈Γ t∈Δ uᴴ) (DeepDup' ¬var Δ∈Γ₁ uᴴ₁) = ⊥-elim (¬var (Var _))
 determinism (DeepDup' ¬var Δ∈Γ uᴴ) (Var₂ Δ∈Γ₁ τ∈π () uᴱ uᴴ₁)
-determinism (DeepDup' ¬var Δ∈Γ uᴴ) (DeepDup Δ∈Γ₁ t∈Δ uᴴ₁) = ⊥-elim (¬var (Var _))
+determinism (DeepDup' ¬var Δ∈Γ uᴴ) (DeepDup τ∈π Δ∈Γ₁ t∈Δ uᴴ₁) = ⊥-elim (¬var (Var _))
 determinism (DeepDup' ¬var Δ∈Γ uᴴ) (DeepDup' ¬var₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
 -- Morally they are the same, however the context π is chosen non deterministically

@@ -1,3 +1,5 @@
+{-# OPTIONS --rewriting #-}
+
 import Lattice
 
 module Types where
@@ -9,6 +11,8 @@ open import Data.Empty public
 postulate 𝓛 : Lattice.Lattice
 open Lattice.Lattice 𝓛
 --open Lattice.Lattice 𝓛 public
+
+{-# BUILTIN REWRITE _≡_ #-}
 
 open import Data.List hiding (drop ; reverse ) public
 open import Data.Fin using (Fin ; zero ; suc) public
@@ -74,6 +78,7 @@ reverse : Context -> Context
 reverse [] = []
 reverse (x ∷ π) = reverse π ++ [ x ]
 
+
 data _∈_ {A : Set} (τ : A) : List A -> Set where
  here : ∀ {π} -> τ ∈ (τ ∷ π)
  there : ∀ {τ' π} -> τ ∈ π -> τ ∈ (τ' ∷ π)
@@ -127,22 +132,23 @@ snoc-∈ τ [] = here
 snoc-∈ τ (x ∷ π) = there (snoc-∈ τ π)
 
 ∈-∈ᴿ : ∀ {τ π} -> τ ∈ π -> τ ∈ᴿ π
-∈-∈ᴿ x = aux x
-  where aux : ∀ {τ π} -> τ ∈ π -> τ ∈ reverse π
-        aux {τ} {.τ ∷ π} here = snoc-∈ τ (reverse π)
-        aux {τ} {τ' ∷ π} (there x) = wken-∈ drop-⊆ (aux x)
+∈-∈ᴿ {τ} {.τ ∷ π} here = snoc-∈ τ (reverse π)
+∈-∈ᴿ {τ} {τ' ∷ π} (there x) = wken-∈ drop-⊆ (∈-∈ᴿ x)
 
 rev-append-≡ : ∀ {x} -> (π : Context) -> reverse (π ++ [ x ]) ≡ x ∷ reverse π
 rev-append-≡ [] = refl
 rev-append-≡ {x} (x₁ ∷ π) rewrite rev-append-≡ {x} π = refl
 
+{-# REWRITE  rev-append-≡ #-}
+
 rev-rev-≡ : ∀ π -> reverse (reverse π) ≡ π
 rev-rev-≡ [] = refl
-rev-rev-≡ (x ∷ π) rewrite rev-append-≡ {x} (reverse π) = cong (_∷_ x) (rev-rev-≡ π)
+rev-rev-≡ (x ∷ π) = cong (_∷_ x) (rev-rev-≡ π)
+
+{-# REWRITE  rev-rev-≡ #-}
 
 ∈ᴿ-∈ : ∀ {τ π} -> τ ∈ᴿ π -> τ ∈ π
-∈ᴿ-∈ {τ} {π} x with ∈-∈ᴿ x
-... | y rewrite rev-rev-≡ π = y
+∈ᴿ-∈ {τ} {π} x = ∈-∈ᴿ x
 
 wken-∈ᴿ : ∀ {x} {π₁ : Context} {π₂ : Context} -> π₁ ⊆ˡ π₂ -> x ∈ᴿ π₁ -> x ∈ᴿ π₂
 wken-∈ᴿ x p = wken-∈ (rev-⊆ˡ x) p

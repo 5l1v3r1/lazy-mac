@@ -32,9 +32,8 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
           ⟨ Γ , (App t₁ t₂) , S ⟩ ⇝ ⟨ Γ' , t₁ , (Var {π = τ₁ ∷ π} hereᴿ) ∷ S ⟩
 
  App₂ : ∀ {Γ β α τ'} {π : Context} {S : Stack l β τ'} {t : Term (α ∷ π) β}
-            -> (α∈π₁ : α ∈ᴿ π)
-            -> (α∈π₂ : α ∈ᴿ π) ->
-          ⟨ Γ , Abs t , Var {π = π} α∈π₁ ∷ S ⟩ ⇝ ⟨ Γ , subst (Var α∈π₂) t , S ⟩
+            -> (α∈π : α ∈ᴿ π) ->
+          ⟨ Γ , Abs t , Var {π = π} α∈π ∷ S ⟩ ⇝ ⟨ Γ , subst (Var α∈π) t , S ⟩
 
  Var₁ : ∀ {Γ Γ' τ τ'} {π π' : Context} {Δ Δ' : Env l π}  {S : Stack l τ τ'} {t : Term π' τ} ->
            (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
@@ -126,12 +125,14 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  Read₁ : ∀ {Γ τ τ' L} {π : Context} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {L⊑l : L ⊑ l} ->
          ⟨ Γ , read L⊑l t , S ⟩ ⇝ ⟨ Γ , t , read L⊑l ∷ S ⟩
 
- Read₂ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l} {τ∈π : τ ∈ᴿ π}
+ Read₂ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l}
+         -> (τ∈π : τ ∈ᴿ π)
          -> (Δ∈Γ : L ↦ Δ ∈ᴴ Γ)
          -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ) ->
          ⟨ Γ , Res L #[ (Var {π = π} τ∈π) ] , read L⊑l ∷ S ⟩ ⇝ ⟨ Γ , Return l t , S ⟩
 
- Readᴰ₂ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l} {τ∈π : τ ∈ᴿ π}
+ Readᴰ₂ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l}
+         -> (τ∈π : τ ∈ᴿ π)
          -> (Δ∈Γ : L ↦ Δ ∈ᴴ Γ)
          -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ) ->
          -- Without restricted syntax I believe we can directly deepDup the term pointed by τ∈π
@@ -150,7 +151,8 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  -- deepDupᵀ t takes care of replacing unguarded free variables with deepDup.
  -- Note that deepDupᵀ (deepDup t) = deepDup t, so also in case of
  -- nested deepDup (e.g. deepDup (deepDup t)) we make progress.
- DeepDup : ∀ {Γ Γ' π τ τ'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'} {τ∈π : τ ∈ᴿ π}
+ DeepDup : ∀ {Γ Γ' π τ τ'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'}
+                 -> (τ∈π : τ ∈ᴿ π)
                  -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
                  -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
                  -> (uᴴ : Γ' ≔ Γ [ l ↦ insert (deepDupᵀ t) Δ ]ᴴ)
