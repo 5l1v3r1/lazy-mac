@@ -153,7 +153,7 @@ data Cont (l : Label) : Ty -> Ty -> Set where
  Bind :  ∀ {τ₁ τ₂} {π : Context} -> Term π (τ₁ => Mac l τ₂) -> Cont l (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Cont l (Labeled l' τ) (Mac l τ)
  unId : ∀ {τ} -> Cont l (Id τ) τ
- write : ∀ {τ H π} -> l ⊑ H -> Term π τ -> Cont l (Ref H τ) (Mac l （）)
+ write : ∀ {τ H} {{π : Context}} -> l ⊑ H -> τ ∈ᴿ π -> Cont l (Ref H τ) (Mac l （）)
  read : ∀ {τ L} -> L ⊑ l -> Cont l (Ref L τ) (Mac l τ)
 
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed

@@ -86,6 +86,7 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  Unlabel₁ : ∀ {Γ τ τ' l'} {π : Context} {S : Stack l _ τ'} {t : Term π (Labeled l' τ)} -> (p : l' ⊑ l) ->
               ⟨ Γ , unlabel p t , S ⟩ ⇝ ⟨ Γ , t , unlabel p ∷ S ⟩
 
+  -- TODO since Res can be duplicated we must account also for Resᴰ
  Unlabel₂ : ∀ {Γ τ τ' l'} {π : Context} {S : Stack l _ τ'} {t : Term π (Id τ)} -> (p : l' ⊑ l) ->
               ⟨ Γ , Res l' t , unlabel p ∷ S ⟩ ⇝ ⟨ Γ , Return l (unId t) , S ⟩
 
@@ -104,24 +105,27 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  -- are still writing in the right memory.
  New : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ H}
          -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
-         -> (uᴴ : Γ' ≔ Γ [ H ↦ insert t Δ ]ᴴ) ->
-         ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = (τ ∷ π)} H #[ Var hereᴿ ])) , S ⟩
+         -- Insert the value (t) and a pointer (hereᴿ) to it.
+         -> (uᴴ : Γ' ≔ Γ [ H ↦ insert (Var hereᴿ) (insert t Δ) ]ᴴ) ->
+         -- Return a reference with a pointer (hereᴿ) to the pointer in the heap.
+         ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = τ ∷ (τ ∷ π)} H #[ Var (hereᴿ {{τ ∷ π}} ) ])) , S ⟩
 
- Write₁ : ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
-         ⟨ Γ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (write l⊑H t₂ ∷ S) ⟩
+ Write₁ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
+            (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
+            (uᴴ : Γ' ≔ Γ [ H ↦ insert t₂ Δ ]ᴴ ) ->
+         ⟨ Γ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ' , t₁ , (write {{π = τ ∷ π}} l⊑H hereᴿ ∷ S) ⟩
 
- Write₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ᴿ π}
+ Write₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π τ∈π' : τ ∈ᴿ π}
           -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
-          -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)  -- Not ok beause other code might reference τ∈π. We must change the Reference to point to t.
+          -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ Var {π = π} τ∈π' ]ᴱ)
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
-         ⟨ Γ , Res {π = π} H #[ Var τ∈π ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
+         ⟨ Γ , Res {π = π} H #[ Var τ∈π ] , write l⊑H τ∈π' ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
- -- TODO check
- Writeᴰ₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ᴿ π}
-          -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
-          -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)
+ Writeᴰ₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π τ∈π' : τ ∈ᴿ π} ->
+             (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
+          -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ Var {π = π} τ∈π' ]ᴱ)
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
-         ⟨ Γ , Resᴰ {π = π} H #[ Var τ∈π ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
+         ⟨ Γ , Resᴰ {π = π} H #[ Var τ∈π ] , write l⊑H τ∈π' ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
  Read₁ : ∀ {Γ τ τ' L} {π : Context} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {L⊑l : L ⊑ l} ->
          ⟨ Γ , read L⊑l t , S ⟩ ⇝ ⟨ Γ , t , read L⊑l ∷ S ⟩
@@ -132,7 +136,6 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
          -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ) ->
          ⟨ Γ , Res L #[ (Var {π = π} τ∈π) ] , read L⊑l ∷ S ⟩ ⇝ ⟨ Γ , Return l t , S ⟩
 
- -- TODO check
  Readᴰ₂ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l}
          -> (τ∈π : τ ∈ᴿ π)
          -> (Δ∈Γ : L ↦ Δ ∈ᴴ Γ)

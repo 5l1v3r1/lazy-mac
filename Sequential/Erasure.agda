@@ -187,7 +187,7 @@ open import Function
 εᶜ {τ₂ = τ₂} (Then t₁ Else t₂) = Then (εᵀ t₁) Else εᵀ t₂
 εᶜ {τ₁ = Mac .l α} {τ₂ = Mac l β} (Bind t) = Bind (εᵀ t)
 εᶜ (unlabel {τ = τ} p) = unlabel p
-εᶜ (write l⊑h t) = write l⊑h (εᵗ t)
+εᶜ (write l⊑h τ∈π) = write l⊑h τ∈π
 εᶜ (read l⊑h) = read l⊑h
 εᶜ unId = unId
 
@@ -378,6 +378,15 @@ insertᴴ {l} {Δ = ∙} l⊑A here | yes p = here
 insertᴴ l⊑A here | no ¬p = ⊥-elim (¬p l⊑A)
 insertᴴ l⊑A (there x) = there (insertᴴ l⊑A x)
 
+insert₂ᴴ : ∀ {l π τ ls} {Γ Γ' : Heap ls} {Δ : Env l π} (l⊑A : l ⊑ A) (t₁ : Term π τ) (t₂ : Term (τ ∷ π) τ) ->
+            Γ' ≔ Γ [ l ↦ insert t₂ (insert t₁ Δ) ]ᴴ -> εᴴ Γ' ≔ (εᴴ Γ) [ l ↦ insert (εᵗ t₂) (insert (εᵗ t₁) (εᴱ (yes l⊑A) Δ)) ]ᴴ
+insert₂ᴴ {l} l⊑A t₁ t₂ here with l ⊑? A
+insert₂ᴴ {l} {Δ = []} l⊑A t₁ t₂ here | yes p = here
+insert₂ᴴ {l} {Δ = _ ∷ Δ} l⊑A t₁ t₂ here | yes p rewrite εᴱ-ext (yes p) (yes l⊑A) Δ = here
+insert₂ᴴ {l} {Δ = ∙} l⊑A t₁ t₂ here | yes p = here
+insert₂ᴴ l⊑A t₁ t₂ here | no ¬p = ⊥-elim (¬p l⊑A)
+insert₂ᴴ l⊑A t₁ t₂ (there u₁) = there (insert₂ᴴ l⊑A t₁ t₂ u₁)
+
 updateᴴ : ∀ {l ls π} {Δ : Env l π} {Γ Γ' : Heap ls} -> (l⊑A : l ⊑ A) -> Γ' ≔ Γ [ l ↦ Δ ]ᴴ -> (εᴴ Γ') ≔ (εᴴ Γ) [ l ↦ (εᴱ (yes l⊑A ) Δ) ]ᴴ
 updateᴴ {l} {Δ = Δ} l⊑A here rewrite εᴱ-ext (yes l⊑A) (l ⊑? A) Δ = here
 updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
@@ -413,7 +422,8 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₁ x) (Fork p) = Hole
 ε-sim (inj₁ (Macᴴ h⋤A)) (New {l⊑h = l⊑h} Δ∈Γ uᴴ)
   rewrite insertᴴ∙ (trans-⋢ l⊑h h⋤A) uᴴ = Hole
-ε-sim (inj₁ x) Write₁ = Hole
+ε-sim (inj₁ (Macᴴ h⋤A)) (Write₁ {l⊑H = l⊑H} Δ∈Γ uᴴ)
+  rewrite insertᴴ∙ (trans-⋢ l⊑H h⋤A) uᴴ = Hole
 ε-sim (inj₁ (Macᴴ h⋤A)) (Write₂ {l⊑H = l⊑H} Δ∈Γ uᴱ uᴴ)
   rewrite updateᴴ∙ (trans-⋢ l⊑H h⋤A) uᴴ = Hole
 ε-sim (inj₁ (Macᴴ h⋤A)) (Writeᴰ₂ {l⊑H = l⊑H} Δ∈Γ uᴱ uᴴ)
@@ -453,15 +463,20 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₂ y) UnId₂ = UnId₂
 ε-sim (inj₂ y) (Fork p) = Fork p
 ε-sim (inj₂ (Macᴸ l⊑A)) (New {H = H} Δ∈Γ uᴴ) with H ⊑? A
-ε-sim (inj₂ (Macᴸ l⊑A)) (New Δ∈Γ uᴴ) | yes p = New (memberᴴ p Δ∈Γ) (insertᴴ p uᴴ)
+ε-sim (inj₂ (Macᴸ l⊑A)) (New {t = t} Δ∈Γ uᴴ) | yes p = New (memberᴴ p Δ∈Γ) (insert₂ᴴ p t (Var hereᴿ) uᴴ)
 ε-sim (inj₂ (Macᴸ l⊑A)) (New Δ∈Γ uᴴ) | no ¬p = {!New ? ? !} -- New∙
-ε-sim (inj₂ y) Write₁ = Write₁
+ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ {H = H} Δ∈Γ uᴴ) with H ⊑? A --  = Write₁ (memberᴴ {!!} {!!}) {!!}
+ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ Δ∈Γ uᴴ) | yes H⊑A = Write₁ (memberᴴ H⊑A Δ∈Γ) (insertᴴ H⊑A uᴴ)
+ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ Δ∈Γ uᴴ) | no H⋤A = {!!}  -- Write∙, do we need to put terms in the continuation?
 ε-sim (inj₂ y) (Write₂ {H = H} Δ∈Γ uᴱ uᴴ) with H ⊑? A
 ε-sim (inj₂ y) (Write₂ Δ∈Γ uᴱ uᴴ) | yes p = Write₂ (memberᴴ p Δ∈Γ) (updateᴱ p uᴱ) (updateᴴ p uᴴ)
 ε-sim (inj₂ y) (Write₂ Δ∈Γ uᴱ uᴴ) | no ¬p = {!!} -- Write∙
 ε-sim (inj₂ y) (Writeᴰ₂ {H = H} Δ∈Γ uᴱ uᴴ) with H ⊑? A
 ε-sim (inj₂ y) (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) | yes p = Writeᴰ₂ (memberᴴ p Δ∈Γ) (updateᴱ p uᴱ) (updateᴴ p uᴴ)
+
+-- Why do we care aboiut Resᴰ here?
 ε-sim (inj₂ y) (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) | no ¬p = {!!} -- Res should say to duplicate or not, not the address itself
+
 ε-sim (inj₂ y) Read₁ = Read₁
 ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ {L = L} τ∈π Δ∈Γ t∈Δ) with L ⊑? A
 ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ τ∈π Δ∈Γ t∈Δ) | yes p = Read₂ τ∈π (memberᴴ p Δ∈Γ) (memberᴱ τ∈π p t∈Δ)
