@@ -116,11 +116,12 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
          ⟨ Γ , Res {π = π} H #[ Var τ∈π ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
+ -- TODO check
  Writeᴰ₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π : τ ∈ᴿ π}
           -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
           -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ t ]ᴱ)
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
-         ⟨ Γ , Res {π = π} H #[ Var τ∈π ]ᴰ , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
+         ⟨ Γ , Resᴰ {π = π} H #[ Var τ∈π ] , write l⊑H t ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
  Read₁ : ∀ {Γ τ τ' L} {π : Context} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {L⊑l : L ⊑ l} ->
          ⟨ Γ , read L⊑l t , S ⟩ ⇝ ⟨ Γ , t , read L⊑l ∷ S ⟩
@@ -131,13 +132,14 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
          -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ) ->
          ⟨ Γ , Res L #[ (Var {π = π} τ∈π) ] , read L⊑l ∷ S ⟩ ⇝ ⟨ Γ , Return l t , S ⟩
 
+ -- TODO check
  Readᴰ₂ : ∀ {Γ τ τ' L} {π : Context} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l}
          -> (τ∈π : τ ∈ᴿ π)
          -> (Δ∈Γ : L ↦ Δ ∈ᴴ Γ)
          -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ) ->
          -- Without restricted syntax I believe we can directly deepDup the term pointed by τ∈π
          -- (No need to introduce a fresh copy)
-         ⟨ Γ , Res L #[ (Var {π = π} τ∈π) ]ᴰ , read L⊑l ∷ S ⟩ ⇝ ⟨ Γ , Return l (deepDup t) , S ⟩
+         ⟨ Γ , Resᴰ L #[ (Var {π = π} τ∈π) ] , read L⊑l ∷ S ⟩ ⇝ ⟨ Γ , Return l (deepDup t) , S ⟩
 
  Hole : ∀ {Γ τ₁ τ₂ τ₃} {π₁ : Context} {π₂ : Context} ->
           ⟨ Γ , ∙ {π = π₁}, ∙ {l} {τ₁} {τ₃} ⟩ ⇝ ⟨ Γ , ∙ {π = π₂} , ∙ {l} {τ₂} {τ₃} ⟩
