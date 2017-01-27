@@ -121,7 +121,7 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
          ⟨ Γ , Res {π = π} H #[ Var τ∈π ] , write l⊑H τ∈π' ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
- Writeᴰ₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {t : Term π τ} {l⊑H : l ⊑ H} {τ∈π τ∈π' : τ ∈ᴿ π} ->
+ Writeᴰ₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π τ∈π' : τ ∈ᴿ π} ->
              (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
           -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ Var {π = π} τ∈π' ]ᴱ)
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->

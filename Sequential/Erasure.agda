@@ -465,7 +465,7 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₂ (Macᴸ l⊑A)) (New {H = H} Δ∈Γ uᴴ) with H ⊑? A
 ε-sim (inj₂ (Macᴸ l⊑A)) (New {t = t} Δ∈Γ uᴴ) | yes p = New (memberᴴ p Δ∈Γ) (insert₂ᴴ p t (Var hereᴿ) uᴴ)
 ε-sim (inj₂ (Macᴸ l⊑A)) (New Δ∈Γ uᴴ) | no ¬p = {!New ? ? !} -- New∙
-ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ {H = H} Δ∈Γ uᴴ) with H ⊑? A --  = Write₁ (memberᴴ {!!} {!!}) {!!}
+ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ {H = H} Δ∈Γ uᴴ) with H ⊑? A
 ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ Δ∈Γ uᴴ) | yes H⊑A = Write₁ (memberᴴ H⊑A Δ∈Γ) (insertᴴ H⊑A uᴴ)
 ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ Δ∈Γ uᴴ) | no H⋤A = {!!}  -- Write∙, do we need to put terms in the continuation?
 ε-sim (inj₂ y) (Write₂ {H = H} Δ∈Γ uᴱ uᴴ) with H ⊑? A
