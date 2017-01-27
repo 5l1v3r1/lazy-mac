@@ -23,6 +23,7 @@ data Public : Ty -> Set where
   Id : ∀ {τ} ->  Public (Id τ)
   Fun : ∀ {α β} -> Public (α => β)
   Addr : ∀ {τ} -> Public (Addr τ)
+
 -- Secret and insensitive are mutually exclusive
 secretNotPublic : ∀ {τ} -> Secret τ -> Public τ -> ⊥
 secretNotPublic (Macᴴ ¬p) (Macᴸ p) = ¬p p
@@ -65,9 +66,15 @@ open import Data.Product
 εᵗ (label l⊑h t) | no ¬p = label∙ l⊑h (εᵗ t)
 εᵗ (label∙ l⊑h t) = label∙ l⊑h (εᵗ t)
 εᵗ (unlabel l⊑h t) = unlabel l⊑h (εᵗ t)
-εᵗ (new l⊑h t) = new l⊑h (εᵗ t)
+εᵗ (new {h = H} l⊑h t) with H ⊑? A
+... | yes p = new l⊑h (εᵗ t)
+... | no ¬p = new∙ l⊑h (εᵗ t)
+εᵗ (new∙ l⊑h t) = new∙ l⊑h (εᵗ t)
 εᵗ (read l⊑h t) = read l⊑h (εᵗ t)
-εᵗ (write l⊑h t₁ t₂) = write l⊑h (εᵗ t₁) (εᵗ t₂)
+εᵗ (write {h = H} l⊑h t₁ t₂) with H ⊑? A
+... | yes p = write l⊑h (εᵗ t₁) (εᵗ t₂)
+... | no ¬p = write∙ l⊑h (εᵗ t₁) (εᵗ t₂)
+εᵗ (write∙ l⊑h t₁ t₂) = write∙ l⊑h (εᵗ t₁) (εᵗ t₂)
 εᵗ (#[ t ]) = #[ (εᵗ t) ]
 εᵗ (#[ t ]ᴰ) = #[ (εᵗ t) ]ᴰ
 εᵗ (fork l⊑h t) = fork l⊑h (εᵗ t)
@@ -97,8 +104,10 @@ open import Data.Product
 εᵀ¬Val {t = label∙ l⊑h t} ¬val ()
 εᵀ¬Val {t = unlabel l⊑h t} ¬val ()
 εᵀ¬Val {t = new l⊑h t} ¬val ()
+εᵀ¬Val {t = new∙ l⊑h t} ¬val ()
 εᵀ¬Val {t = read l⊑h t} ¬val ()
 εᵀ¬Val {t = write l⊑h t₁ t₂} ¬val ()
+εᵀ¬Val {t = write∙ l⊑h t₁ t₂} ¬val ()
 εᵀ¬Val {t = #[ t ]} ¬val val-ε = ¬val #[ t ]
 εᵀ¬Val {t = #[ t ]ᴰ} ¬val val-ε = ¬val #[ t ]ᴰ
 εᵀ¬Val {t = fork l⊑h t} ¬val ()
@@ -140,8 +149,10 @@ open import Data.Product
 εᵗ¬Var {t = label∙ l⊑h t} ¬var ()
 εᵗ¬Var {t = unlabel l⊑h t} ¬var ()
 εᵗ¬Var {t = new l⊑h t} ¬var ()
+εᵗ¬Var {t = new∙ l⊑h t} ¬var ()
 εᵗ¬Var {t = read l⊑h t} ¬var ()
 εᵗ¬Var {t = write l⊑h t₁ t₂} ¬var ()
+εᵗ¬Var {t = write∙ l⊑h t₁ t₂} ¬var ()
 εᵗ¬Var {t = #[ t ]} ¬var ()
 εᵗ¬Var {t = #[ t ]ᴰ} ¬var ()
 εᵗ¬Var {t = fork l⊑h t} ¬var ()
@@ -180,7 +191,10 @@ open import Function
 εᶜ {τ₂ = τ₂} (Then t₁ Else t₂) = Then (εᵀ t₁) Else εᵀ t₂
 εᶜ {τ₁ = Mac .l α} {τ₂ = Mac l β} (Bind t) = Bind (εᵀ t)
 εᶜ (unlabel {τ = τ} p) = unlabel p
-εᶜ (write l⊑h τ∈π) = write l⊑h τ∈π
+εᶜ (write {H = H} l⊑h τ∈π) with H ⊑? A
+... | yes p = write l⊑h τ∈π
+... | no ¬p = write∙ l⊑h τ∈π
+εᶜ (write∙ l⊑h τ∈π) = write∙ l⊑h τ∈π
 εᶜ (read l⊑h) = read l⊑h
 εᶜ unId = unId
 
@@ -223,8 +237,14 @@ open import Function
 ε-wken (label∙ l⊑h t) p rewrite ε-wken t p = refl
 ε-wken (unlabel l⊑h t) p rewrite ε-wken t p = refl
 ε-wken (read x t) p rewrite ε-wken t p = refl
-ε-wken (write x t t₁) p rewrite ε-wken t p | ε-wken t₁ p = refl
-ε-wken (new x t) p rewrite ε-wken t p = refl
+ε-wken (write {h = H} x t t₁) p with H ⊑? A
+... | yes _ rewrite ε-wken t p | ε-wken t₁ p = refl
+... | no _ rewrite ε-wken t p | ε-wken t₁ p = refl
+ε-wken (write∙ x t t₁) p rewrite ε-wken t p | ε-wken t₁ p = refl
+ε-wken (new {h = H} x t) p with H ⊑? A
+... | yes _  rewrite ε-wken t p = refl
+... | no _ rewrite ε-wken t p = refl
+ε-wken (new∙ x t) p rewrite ε-wken t p = refl
 ε-wken #[ t ] p rewrite ε-wken t p = refl
 ε-wken #[ t ]ᴰ p rewrite ε-wken t p = refl
 ε-wken (fork l⊑h t) p rewrite ε-wken t p = refl
@@ -267,9 +287,15 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ (label∙ l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (unlabel l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (read x t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
-        ε-tm-subst π₁ π₂ t₁ (write x t₂ t₃)
+        ε-tm-subst π₁ π₂ t₁ (write {h = H} x t₂ t₃) with H ⊑? A
+        ... | yes _ rewrite ε-tm-subst π₁ π₂ t₁ t₂ | ε-tm-subst π₁ π₂ t₁ t₃ = refl
+        ... | no _ rewrite ε-tm-subst π₁ π₂ t₁ t₂ | ε-tm-subst π₁ π₂ t₁ t₃ = refl
+        ε-tm-subst π₁ π₂ t₁ (write∙ x t₂ t₃)
           rewrite ε-tm-subst π₁ π₂ t₁ t₂ | ε-tm-subst π₁ π₂ t₁ t₃ = refl
-        ε-tm-subst π₁ π₂ t₁ (new x t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
+        ε-tm-subst π₁ π₂ t₁ (new {h = H} x t₂) with H ⊑? A
+        ... | yes _ rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
+        ... | no _ rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
+        ε-tm-subst π₁ π₂ t₁ (new∙ x t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ #[ t₂ ] rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ #[ t₂ ]ᴰ rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (fork l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
@@ -309,8 +335,14 @@ open import Function
         εᵗ-dup-ufv-≡ vs (label∙ l⊑h t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (unlabel l⊑h t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (read x t) rewrite εᵗ-dup-ufv-≡ vs t = refl
-        εᵗ-dup-ufv-≡ vs (write x t t₁) rewrite εᵗ-dup-ufv-≡ vs t |  εᵗ-dup-ufv-≡ vs t₁ = refl
-        εᵗ-dup-ufv-≡ vs (new x t) rewrite εᵗ-dup-ufv-≡ vs t = refl
+        εᵗ-dup-ufv-≡ vs (write {h = H} x t t₁) with H ⊑? A
+        ... | yes _ rewrite εᵗ-dup-ufv-≡ vs t |  εᵗ-dup-ufv-≡ vs t₁ = refl
+        ... | no _ rewrite εᵗ-dup-ufv-≡ vs t |  εᵗ-dup-ufv-≡ vs t₁ = refl
+        εᵗ-dup-ufv-≡ vs (write∙ x t t₁) rewrite εᵗ-dup-ufv-≡ vs t |  εᵗ-dup-ufv-≡ vs t₁ = refl
+        εᵗ-dup-ufv-≡ vs (new {h = H} x t) with H ⊑? A
+        ... | yes _ rewrite εᵗ-dup-ufv-≡ vs t = refl
+        ... | no _ rewrite εᵗ-dup-ufv-≡ vs t = refl
+        εᵗ-dup-ufv-≡ vs (new∙ x t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs #[ t ] rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs #[ t ]ᴰ rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (fork l⊑h t) rewrite εᵗ-dup-ufv-≡ vs t = refl
@@ -409,10 +441,13 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₁ x) (Fork p) = Hole
 ε-sim (inj₁ (Macᴴ h⋤A)) (New {l⊑h = l⊑h} Δ∈Γ uᴴ)
   rewrite insertᴴ∙ (trans-⋢ l⊑h h⋤A) uᴴ = Hole
+ε-sim (inj₁ (Macᴴ h⋤A)) New∙ = Hole
 ε-sim (inj₁ (Macᴴ h⋤A)) (Write₁ {l⊑H = l⊑H} Δ∈Γ uᴴ)
   rewrite insertᴴ∙ (trans-⋢ l⊑H h⋤A) uᴴ = Hole
+ε-sim (inj₁ (Macᴴ h⋤A)) Write∙₁ = Hole
 ε-sim (inj₁ (Macᴴ h⋤A)) (Write₂ {l⊑H = l⊑H} Δ∈Γ uᴱ uᴴ)
   rewrite updateᴴ∙ (trans-⋢ l⊑H h⋤A) uᴴ = Hole
+ε-sim (inj₁ (Macᴴ h⋤A)) Write∙₂ = Hole
 ε-sim (inj₁ (Macᴴ h⋤A)) (Writeᴰ₂ {l⊑H = l⊑H} Δ∈Γ uᴱ uᴴ)
   rewrite updateᴴ∙ (trans-⋢ l⊑H h⋤A) uᴴ = Hole
 ε-sim (inj₁ x) Read₁ = Hole
@@ -451,16 +486,31 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₂ y) (Fork p) = Fork p
 ε-sim (inj₂ (Macᴸ l⊑A)) (New {H = H} Δ∈Γ uᴴ) with H ⊑? A
 ε-sim (inj₂ (Macᴸ l⊑A)) (New {t = t} Δ∈Γ uᴴ) | yes p = New (memberᴴ p Δ∈Γ) (insert₂ᴴ p t (Var hereᴿ) uᴴ)
-ε-sim (inj₂ (Macᴸ l⊑A)) (New Δ∈Γ uᴴ) | no ¬p = {!New ? ? !} -- New∙
+ε-sim (inj₂ (Macᴸ l⊑A)) (New Δ∈Γ uᴴ) | no ¬p
+  rewrite insertᴴ∙ ¬p uᴴ = New∙
+ε-sim (inj₂ (Macᴸ l⊑A)) (New∙ {H = H}) with H ⊑? A
+ε-sim (inj₂ (Macᴸ l⊑A)) New∙ | yes p = New∙
+ε-sim (inj₂ (Macᴸ l⊑A)) New∙ | no ¬p = New∙
 ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ {H = H} Δ∈Γ uᴴ) with H ⊑? A
 ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ Δ∈Γ uᴴ) | yes H⊑A = Write₁ (memberᴴ H⊑A Δ∈Γ) (insertᴴ H⊑A uᴴ)
-ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ Δ∈Γ uᴴ) | no H⋤A = {!!}  -- Write∙, do we need to put terms in the continuation?
+ε-sim (inj₂ (Macᴸ l⊑A)) (Write₁ Δ∈Γ uᴴ) | no H⋤A
+  rewrite insertᴴ∙ H⋤A uᴴ = Write∙₁
+ε-sim (inj₂ (Macᴸ l⊑A)) (Write∙₁ {H = H}) with H ⊑? A
+... | yes _ = Write∙₁
+... | no _ = Write∙₁
 ε-sim (inj₂ y) (Write₂ {H = H} Δ∈Γ uᴱ uᴴ) with H ⊑? A
 ε-sim (inj₂ y) (Write₂ Δ∈Γ uᴱ uᴴ) | yes p = Write₂ (memberᴴ p Δ∈Γ) (updateᴱ p uᴱ) (updateᴴ p uᴴ)
-ε-sim (inj₂ y) (Write₂ Δ∈Γ uᴱ uᴴ) | no ¬p = {!!} -- Write∙
+ε-sim (inj₂ y) (Write₂ Δ∈Γ uᴱ uᴴ) | no ¬p
+  rewrite updateᴴ∙ ¬p uᴴ = Write∙₂
+ε-sim (inj₂ y) (Write∙₂ {H = H}) with H ⊑? A
+... | yes _ = Write∙₂
+... | no  _ = Write∙₂
+-- ε-sim (inj₂ y) (Write∙₂ Δ∈Γ uᴱ uᴴ) | yes p = Write∙₂ (memberᴴ p Δ∈Γ) (updateᴱ p uᴱ) (updateᴴ p uᴴ)
+-- ε-sim (inj₂ y) (Write∙₂ Δ∈Γ uᴱ uᴴ) | no ¬p = {!!} -- Write∙∙
 ε-sim (inj₂ y) (Writeᴰ₂ {H = H} Δ∈Γ uᴱ uᴴ) with H ⊑? A
 ε-sim (inj₂ y) (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) | yes p = Writeᴰ₂ (memberᴴ p Δ∈Γ) (updateᴱ p uᴱ) (updateᴴ p uᴴ)
-ε-sim (inj₂ y) (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) | no ¬p = {!!}
+ε-sim (inj₂ y) (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) | no ¬p
+  rewrite updateᴴ∙ ¬p uᴴ = Write∙₂
 ε-sim (inj₂ y) Read₁ = Read₁
 ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ {L = L} τ∈π Δ∈Γ t∈Δ) with L ⊑? A
 ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ τ∈π Δ∈Γ t∈Δ) | yes p = Read₂ τ∈π (memberᴴ p Δ∈Γ) (memberᴱ τ∈π p t∈Δ)

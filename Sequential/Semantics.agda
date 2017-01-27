@@ -109,16 +109,25 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
          -- Return a reference with a pointer (hereᴿ) to the pointer in the heap.
          ⟨ Γ , (new l⊑h t) , S ⟩ ⇝ ⟨ Γ' , (Return l (Res {π = τ ∷ (τ ∷ π)} H #[ Var (hereᴿ {{τ ∷ π}} ) ])) , S ⟩
 
+ New∙ : ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ H} ->
+         ⟨ Γ , new∙ l⊑h t , S ⟩ ⇝ ⟨ Γ , Return l (Res {π = τ ∷ (τ ∷ π)} H ∙) , S ⟩
+
  Write₁ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
             (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
             (uᴴ : Γ' ≔ Γ [ H ↦ insert t₂ Δ ]ᴴ ) ->
          ⟨ Γ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ' , t₁ , (write l⊑H (hereᴿ {{π}}) ∷ S) ⟩
+
+ Write∙₁ : ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
+         ⟨ Γ , write∙ l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (write∙ l⊑H (hereᴿ {{π}}) ∷ S) ⟩
 
  Write₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π τ∈π' : τ ∈ᴿ π}
           -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
           -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ Var {π = π} τ∈π' ]ᴱ)
           -> (uᴴ : Γ' ≔ Γ [ H ↦ Δ' ]ᴴ) ->
          ⟨ Γ , Res {π = π} H #[ Var τ∈π ] , write l⊑H τ∈π' ∷ S ⟩ ⇝ ⟨ Γ' , Return {π = π} l （） , S ⟩
+
+ Write∙₂ :  ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {t : Term π (Addr τ)} {τ∈π' : τ ∈ᴿ π} ->
+            ⟨ Γ , Res {π = π} H t , write∙ l⊑H τ∈π' ∷ S ⟩ ⇝ ⟨ Γ , Return {π = π} l （） , S ⟩
 
  Writeᴰ₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π τ∈π' : τ ∈ᴿ π} ->
              (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
