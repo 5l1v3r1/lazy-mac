@@ -172,7 +172,6 @@ data Cont (l : Label) : Ty -> Ty -> Set where
 data Stack (l : Label) : Ty -> Ty -> Set where
  [] : ∀ {τ} -> Stack l τ τ
  _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont l τ₁ τ₂ -> Stack l τ₂ τ₃ -> Stack l τ₁ τ₃
- ∙ : ∀ {τ₁ τ₂} -> Stack l τ₁ τ₂
 
 --------------------------------------------------------------------------------
 
@@ -206,6 +205,8 @@ data Memberᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈ π' -> 
 _↦_∈ᴱ_ : ∀ {l τ} {π π' : Context} -> τ ∈ᴿ π' -> Term π τ -> Env l π' -> Set
 x ↦ t ∈ᴱ Δ = Memberᴱ (just t) (∈ᴿ-∈ x) Δ
 
+
+-- TODO remove
 -- Extends the environment with a new binding
 insert : ∀ {l τ π} -> Term π τ -> Env l π -> Env l (τ ∷ π)
 insert t ∙ = ∙
@@ -246,8 +247,9 @@ _≔_[_↦_]ᴴ : ∀ {π ls} -> Heap ls -> Heap ls -> (l : Label) -> Env l π -
 -- The state is labeled to keep track of the security level of the
 -- term (thread) executed.
 
-data State (ls : List Label) (l : Label) : Ty -> Set where
-  ⟨_,_,_⟩ : ∀ {τ₁ τ₂} {π : Context} -> Heap ls -> Term π τ₁ -> Stack l τ₁ τ₂ -> State ls l τ₂
+data State (l : Label) (τ : Ty) : Set where
+  ⟨_,_,_⟩ : ∀ {τ'} {π : Context} -> (Δ : Env l π) (t : Term π τ') (S : Stack l τ' τ) -> State l τ
+  ∙ : State l τ
 
 --------------------------------------------------------------------------------
 -- DeepDup
