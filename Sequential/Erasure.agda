@@ -460,10 +460,7 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 ε-sim (inj₂ y) (Write₂ Δ∈Γ uᴱ uᴴ) | no ¬p = {!!} -- Write∙
 ε-sim (inj₂ y) (Writeᴰ₂ {H = H} Δ∈Γ uᴱ uᴴ) with H ⊑? A
 ε-sim (inj₂ y) (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) | yes p = Writeᴰ₂ (memberᴴ p Δ∈Γ) (updateᴱ p uᴱ) (updateᴴ p uᴴ)
-
--- Why do we care aboiut Resᴰ here?
-ε-sim (inj₂ y) (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) | no ¬p = {!!} -- Res should say to duplicate or not, not the address itself
-
+ε-sim (inj₂ y) (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) | no ¬p = {!!}
 ε-sim (inj₂ y) Read₁ = Read₁
 ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ {L = L} τ∈π Δ∈Γ t∈Δ) with L ⊑? A
 ε-sim (inj₂ (Macᴸ l⊑A)) (Read₂ τ∈π Δ∈Γ t∈Δ) | yes p = Read₂ τ∈π (memberᴴ p Δ∈Γ) (memberᴱ τ∈π p t∈Δ)

@@ -86,7 +86,6 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  Unlabel₁ : ∀ {Γ τ τ' l'} {π : Context} {S : Stack l _ τ'} {t : Term π (Labeled l' τ)} -> (p : l' ⊑ l) ->
               ⟨ Γ , unlabel p t , S ⟩ ⇝ ⟨ Γ , t , unlabel p ∷ S ⟩
 
-  -- TODO since Res can be duplicated we must account also for Resᴰ
  Unlabel₂ : ∀ {Γ τ τ' l'} {π : Context} {S : Stack l _ τ'} {t : Term π (Id τ)} -> (p : l' ⊑ l) ->
               ⟨ Γ , Res l' t , unlabel p ∷ S ⟩ ⇝ ⟨ Γ , Return l (unId t) , S ⟩
 
@@ -113,7 +112,7 @@ data _⇝_ {ls : List Label} {l : Label} : ∀ {τ} -> State ls l τ -> State ls
  Write₁ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
             (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
             (uᴴ : Γ' ≔ Γ [ H ↦ insert t₂ Δ ]ᴴ ) ->
-         ⟨ Γ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ' , t₁ , (write {{π = τ ∷ π}} l⊑H hereᴿ ∷ S) ⟩
+         ⟨ Γ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Γ' , t₁ , (write l⊑H (hereᴿ {{π}}) ∷ S) ⟩
 
  Write₂ : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ Δ' : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π τ∈π' : τ ∈ᴿ π}
           -> (Δ∈Γ : H ↦ Δ ∈ᴴ Γ)
