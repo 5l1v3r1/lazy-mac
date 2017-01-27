@@ -299,14 +299,14 @@ dup-ufv vs (If t Then t₁ Else t₂) = If (dup-ufv vs t) Then (dup-ufv vs t₁)
 dup-ufv vs (Return l t) = Return l (dup-ufv vs t)
 dup-ufv vs (t >>= t₁) = (dup-ufv vs t) >>= (dup-ufv vs t₁)
 dup-ufv vs (Mac l t) = Mac l (dup-ufv vs t)
-dup-ufv vs (Res l t) = Res l (dup-ufv vs t)  -- TODO must duplicate
+dup-ufv vs (Res l t) = Res l (dup-ufv vs t)
 dup-ufv vs (label l⊑h t) = label l⊑h (dup-ufv vs t)
 dup-ufv vs (label∙ l⊑h t) = label∙ l⊑h (dup-ufv vs t)
 dup-ufv vs (unlabel l⊑h t) = unlabel l⊑h (dup-ufv vs t)
 dup-ufv vs(read l⊑h t) = read l⊑h (dup-ufv vs t)
 dup-ufv vs (write l⊑h t₁ t₂) = write l⊑h (dup-ufv vs t₁) (dup-ufv vs t₂)
 dup-ufv vs (new l⊑h t) = new l⊑h (dup-ufv vs t)
-dup-ufv vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!  -- TODO remove
+dup-ufv vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!
 dup-ufv vs (#[ n ]ᴰ) = #[ n ]ᴰ
 dup-ufv vs (fork l⊑h t) = fork l⊑h (dup-ufv vs t)
 dup-ufv vs (deepDup t) = deepDup t  -- deepDup (deepDup t) is semantically equal to deepDup t
