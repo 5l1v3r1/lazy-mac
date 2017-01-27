@@ -35,7 +35,6 @@ data Term (π : Context) : Ty -> Set where
   Mac : ∀ {α} -> (l : Label) -> Term π α -> Term π (Mac l α)
 
   Res : ∀ {α} -> (l : Label) -> Term π α -> Term π (Res l α)
-  Resᴰ : ∀ {α} -> (l : Label) -> Term π α -> Term π (Res l α)  -- Duplicate on read
 
   label : ∀ {l h α} -> (l⊑h : l ⊑ h) -> Term π α -> Term π (Mac l (Labeled h α))
   label∙ : ∀ {l h α} -> (l⊑h : l ⊑ h) -> Term π α -> Term π (Mac l (Labeled h α))
@@ -49,6 +48,7 @@ data Term (π : Context) : Ty -> Set where
   -- Here terms are supposed to be variables
   -- We use terms to avoid complicating the substitution lemma.
   #[_] : ∀ {τ} -> Term π τ -> Term π (Addr τ)
+  #[_]ᴰ : ∀ {τ} -> Term π τ -> Term π (Addr τ)  -- Duplicate on read
 
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
@@ -59,6 +59,7 @@ data Term (π : Context) : Ty -> Set where
   ∙ : ∀ {{τ}} -> Term π τ
 
 infixl 3 #[_]
+infixl 3 #[_]ᴰ
 
 -- The proof that a certain term is a value
 data Value {π : Context} : ∀ {τ} -> Term π τ -> Set where
@@ -69,8 +70,8 @@ data Value {π : Context} : ∀ {τ} -> Term π τ -> Set where
   Id : ∀ {τ} (t : Term π τ) -> Value (Id t)
   Mac : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Mac l t)
   Res : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Res l t)
-  Resᴰ : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Resᴰ l t)
   #[_] : ∀ {τ} -> (t : Term π τ) -> Value #[ t ]
+  #[_]ᴰ : ∀ {τ} -> (t : Term π τ) -> Value #[ t ]ᴰ
 
 --------------------------------------------------------------------------------
 
@@ -89,7 +90,6 @@ wken (Return l t) p = Return l (wken t p)
 wken (t >>= t₁) p = (wken t p) >>= (wken t₁ p)
 wken (Mac l t) p = Mac l (wken t p)
 wken (Res l t) p = Res l (wken t p)
-wken (Resᴰ l t) p = Resᴰ l (wken t p)
 wken (label x t) p = label x (wken t p)
 wken (label∙ x t) p = label∙ x (wken t p)
 wken (unlabel x t) p = unlabel x (wken t p)
@@ -97,6 +97,7 @@ wken (read x t) p = read x (wken t p)
 wken (write x t t₁) p = write x (wken t p) (wken t₁ p)
 wken (new x t) p = new x (wken t p)
 wken (#[ t ]) p = #[ wken t p ]
+wken (#[ t ]ᴰ) p = #[ wken t p ]ᴰ
 wken (fork x t) p = fork x (wken t p)
 wken (deepDup x) p = deepDup (wken x p)
 wken ∙ p = ∙
@@ -126,7 +127,6 @@ tm-subst Δ₁ Δ₂ v (Return l t) = Return l (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (t >>= t₁) = (tm-subst Δ₁ Δ₂ v t) >>= (tm-subst Δ₁ Δ₂ v t₁)
 tm-subst Δ₁ Δ₂ v (Mac l t) = Mac l (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (Res l t) = Res l (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (Resᴰ l t) = Resᴰ l (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (label x t) = label x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (label∙ x t) = label∙ x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (unlabel x t) = unlabel x (tm-subst Δ₁ Δ₂ v t)
@@ -134,6 +134,7 @@ tm-subst Δ₁ Δ₂ v (read x t) = read x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (write x t t₁) = write x (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
 tm-subst Δ₁ Δ₂ v (new x t) = new x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (#[ t ]) = #[ tm-subst Δ₁ Δ₂ v t ]
+tm-subst Δ₁ Δ₂ v (#[ t ]ᴰ) = #[ tm-subst Δ₁ Δ₂ v t ]ᴰ
 tm-subst Δ₁ Δ₂ v (fork x t) = fork x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (deepDup x) = deepDup (tm-subst Δ₁ Δ₂ v x)
 tm-subst Δ₁ Δ₂ v ∙ = ∙
@@ -298,15 +299,15 @@ dup-ufv vs (If t Then t₁ Else t₂) = If (dup-ufv vs t) Then (dup-ufv vs t₁)
 dup-ufv vs (Return l t) = Return l (dup-ufv vs t)
 dup-ufv vs (t >>= t₁) = (dup-ufv vs t) >>= (dup-ufv vs t₁)
 dup-ufv vs (Mac l t) = Mac l (dup-ufv vs t)
-dup-ufv vs (Res l t) = Resᴰ l t  -- TODO should I duplicate t?
-dup-ufv vs (Resᴰ l t) = Resᴰ l t -- We do not duplicate further
+dup-ufv vs (Res l t) = Res l (dup-ufv vs t)  -- TODO must duplicate
 dup-ufv vs (label l⊑h t) = label l⊑h (dup-ufv vs t)
 dup-ufv vs (label∙ l⊑h t) = label∙ l⊑h (dup-ufv vs t)
 dup-ufv vs (unlabel l⊑h t) = unlabel l⊑h (dup-ufv vs t)
 dup-ufv vs(read l⊑h t) = read l⊑h (dup-ufv vs t)
 dup-ufv vs (write l⊑h t₁ t₂) = write l⊑h (dup-ufv vs t₁) (dup-ufv vs t₂)
 dup-ufv vs (new l⊑h t) = new l⊑h (dup-ufv vs t)
-dup-ufv vs (#[ x ]) = #[ x ]  -- The variable inside will be duplicated by the wrapping Res
+dup-ufv vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!  -- TODO remove
+dup-ufv vs (#[ n ]ᴰ) = #[ n ]ᴰ
 dup-ufv vs (fork l⊑h t) = fork l⊑h (dup-ufv vs t)
 dup-ufv vs (deepDup t) = deepDup t  -- deepDup (deepDup t) is semantically equal to deepDup t
 dup-ufv vs ∙ = ∙

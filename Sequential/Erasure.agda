@@ -57,13 +57,9 @@ open import Data.Product
 εᵗ (Return l t) = Return l (εᵗ t)
 εᵗ (t >>= t₁) = (εᵗ t) >>= (εᵗ t₁)
 εᵗ (Mac l t) = Mac l (εᵗ t)
--- TODO can we actually get away only using • primitives?
 εᵗ (Res l t) with l ⊑? A
 εᵗ (Res l t) | yes p = Res l (εᵗ t)
 εᵗ (Res l t) | no ¬p = Res l ∙
-εᵗ (Resᴰ l t) with l ⊑? A
-εᵗ (Resᴰ l t) | yes p = Resᴰ l (εᵗ t)
-εᵗ (Resᴰ l t) | no ¬p = Resᴰ l ∙
 εᵗ (label {h = H} l⊑h t) with H ⊑? A
 εᵗ (label l⊑h t) | yes p = label l⊑h (εᵗ t)
 εᵗ (label l⊑h t) | no ¬p = label∙ l⊑h (εᵗ t)
@@ -73,6 +69,7 @@ open import Data.Product
 εᵗ (read l⊑h t) = read l⊑h (εᵗ t)
 εᵗ (write l⊑h t₁ t₂) = write l⊑h (εᵗ t₁) (εᵗ t₂)
 εᵗ (#[ t ]) = #[ (εᵗ t) ]
+εᵗ (#[ t ]ᴰ) = #[ (εᵗ t) ]ᴰ
 εᵗ (fork l⊑h t) = fork l⊑h (εᵗ t)
 εᵗ (deepDup t) = deepDup (εᵗ t)
 εᵗ ∙ = ∙
@@ -94,7 +91,6 @@ open import Data.Product
 εᵀ¬Val {t = t >>= t₁} ¬val ()
 εᵀ¬Val {t = Mac l t} ¬val val-ε = ¬val (Mac t)
 εᵀ¬Val {t = Res l t} ¬val val-ε = ¬val (Res t)
-εᵀ¬Val {t = Resᴰ l t} ¬val val-ε = ¬val (Resᴰ t)
 εᵀ¬Val {t = label {h = H} l⊑h t} ¬val val-ε with H ⊑? A
 εᵀ¬Val {π} {._} {label l⊑h t} ¬val () | yes p
 εᵀ¬Val {π} {._} {label l⊑h t} ¬val () | no ¬p
@@ -104,6 +100,7 @@ open import Data.Product
 εᵀ¬Val {t = read l⊑h t} ¬val ()
 εᵀ¬Val {t = write l⊑h t₁ t₂} ¬val ()
 εᵀ¬Val {t = #[ t ]} ¬val val-ε = ¬val #[ t ]
+εᵀ¬Val {t = #[ t ]ᴰ} ¬val val-ε = ¬val #[ t ]ᴰ
 εᵀ¬Val {t = fork l⊑h t} ¬val ()
 εᵀ¬Val {t = deepDup t} ¬val ()
 εᵀ¬Val {t = ∙} ¬val ()
@@ -118,10 +115,8 @@ open import Data.Product
 εᵀ-Val {Res l τ} (Res t) with l ⊑? A
 εᵀ-Val {Res l τ} (Res t) | yes p = Res (εᵗ t)
 εᵀ-Val {Res l τ} (Res t) | no ¬p = Res ∙
-εᵀ-Val {Res l τ} (Resᴰ t) with l ⊑? A
-εᵀ-Val {Res l τ} (Resᴰ t) | yes p = Resᴰ (εᵗ t)
-εᵀ-Val {Res l τ} (Resᴰ t) | no ¬p = Resᴰ ∙
 εᵀ-Val (#[ t ]) = #[ εᵗ t ]
+εᵀ-Val (#[ t ]ᴰ) = #[ εᵗ t ]ᴰ
 
 εᵗ¬Var : ∀ {π τ} {t : Term π τ} -> ¬ IsVar t -> ¬ (IsVar (εᵗ t))
 εᵗ¬Var {t = （）} ¬var var-ε = ¬var var-ε
@@ -139,9 +134,6 @@ open import Data.Product
 εᵗ¬Var {t = Res l t} ¬var var-ε with l ⊑? A
 εᵗ¬Var {π} {._} {Res l t} ¬var () | yes p
 εᵗ¬Var {π} {._} {Res l t} ¬var () | no ¬p
-εᵗ¬Var {t = Resᴰ l t} ¬var var-ε with l ⊑? A
-εᵗ¬Var {π} {._} {Resᴰ l t} ¬var () | yes p
-εᵗ¬Var {π} {._} {Resᴰ l t} ¬var () | no ¬p
 εᵗ¬Var {t = label {h = H} l⊑h t} ¬var var-ε with H ⊑? A
 εᵗ¬Var {π} {._} {label l⊑h t} ¬var () | yes p
 εᵗ¬Var {π} {._} {label l⊑h t} ¬var () | no ¬p
@@ -151,6 +143,7 @@ open import Data.Product
 εᵗ¬Var {t = read l⊑h t} ¬var ()
 εᵗ¬Var {t = write l⊑h t₁ t₂} ¬var ()
 εᵗ¬Var {t = #[ t ]} ¬var ()
+εᵗ¬Var {t = #[ t ]ᴰ} ¬var ()
 εᵗ¬Var {t = fork l⊑h t} ¬var ()
 εᵗ¬Var {t = deepDup t} ¬var ()
 εᵗ¬Var {t = ∙} ¬var ()
@@ -224,9 +217,6 @@ open import Function
 ε-wken (Res l t) p with l ⊑? A
 ... | no _ = refl
 ... | yes _ rewrite ε-wken t p = refl
-ε-wken (Resᴰ l t) p with l ⊑? A
-... | no _ = refl
-... | yes _ rewrite ε-wken t p = refl
 ε-wken (label {h = H} l⊑h t) p with H ⊑? A
 ... | no ¬p rewrite ε-wken t p = refl
 ... | yes _ rewrite ε-wken t p = refl
@@ -236,6 +226,7 @@ open import Function
 ε-wken (write x t t₁) p rewrite ε-wken t p | ε-wken t₁ p = refl
 ε-wken (new x t) p rewrite ε-wken t p = refl
 ε-wken #[ t ] p rewrite ε-wken t p = refl
+ε-wken #[ t ]ᴰ p rewrite ε-wken t p = refl
 ε-wken (fork l⊑h t) p rewrite ε-wken t p = refl
 ε-wken (deepDup t) p rewrite ε-wken t p = refl
 ε-wken ∙ p = refl
@@ -270,9 +261,6 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ (Res l t₂) with l ⊑? A
         ε-tm-subst π₁ π₂ t₁ (Res l t₂) | yes p rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (Res l t₂) | no ¬p = refl
-        ε-tm-subst π₁ π₂ t₁ (Resᴰ l t₂) with l ⊑? A
-        ε-tm-subst π₁ π₂ t₁ (Resᴰ l t₂) | yes p rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
-        ε-tm-subst π₁ π₂ t₁ (Resᴰ l t₂) | no ¬p = refl
         ε-tm-subst π₁ π₂ t₁ (label {h = H} l⊑h t₂) with H ⊑? A
         ε-tm-subst π₁ π₂ t₁ (label l⊑h t₂) | yes p rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (label l⊑h t₂) | no ¬p rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
@@ -283,6 +271,7 @@ open import Function
           rewrite ε-tm-subst π₁ π₂ t₁ t₂ | ε-tm-subst π₁ π₂ t₁ t₃ = refl
         ε-tm-subst π₁ π₂ t₁ (new x t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ #[ t₂ ] rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
+        ε-tm-subst π₁ π₂ t₁ #[ t₂ ]ᴰ rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (fork l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (deepDup t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ ∙ = refl
@@ -314,9 +303,6 @@ open import Function
         εᵗ-dup-ufv-≡ vs (Res l t) with l ⊑? A
         εᵗ-dup-ufv-≡ vs (Res l t) | yes p rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (Res l t) | no ¬p = refl
-        εᵗ-dup-ufv-≡ vs (Resᴰ l t) with l ⊑? A
-        εᵗ-dup-ufv-≡ vs (Resᴰ l t) | yes p rewrite εᵗ-dup-ufv-≡ vs t = refl
-        εᵗ-dup-ufv-≡ vs (Resᴰ l t) | no ¬p = refl
         εᵗ-dup-ufv-≡ vs (label {h = H} l⊑h t) with H ⊑? A
         εᵗ-dup-ufv-≡ vs (label l⊑h t) | yes p rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (label l⊑h t) | no ¬p rewrite εᵗ-dup-ufv-≡ vs t = refl
@@ -326,6 +312,7 @@ open import Function
         εᵗ-dup-ufv-≡ vs (write x t t₁) rewrite εᵗ-dup-ufv-≡ vs t |  εᵗ-dup-ufv-≡ vs t₁ = refl
         εᵗ-dup-ufv-≡ vs (new x t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs #[ t ] rewrite εᵗ-dup-ufv-≡ vs t = refl
+        εᵗ-dup-ufv-≡ vs #[ t ]ᴰ rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (fork l⊑h t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs (deepDup t) rewrite εᵗ-dup-ufv-≡ vs t = refl
         εᵗ-dup-ufv-≡ vs ∙ = refl
