@@ -84,16 +84,23 @@ determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Fork p)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup _ _ _ _)
 determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup' _ _ _)
 determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) (New Δ∈Γ₁ x)
+determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) New∙
 determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) (Write₁ _ _)
+determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) Write∙₁
 determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) Read₁
 determinism (New Δ∈Γ x) (Var₂ Δ∈Γ₁ τ∈π () uᴱ uᴴ)
+determinism New∙ (Var₂ Δ∈Γ₁ τ∈π () uᴱ uᴴ)
 determinism (New Δ∈Γ uᴴ) (New Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
+determinism New∙ New∙ = refl
 determinism (Write₁ _ _) (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ)
+determinism Write∙₁ (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ)
 determinism (Write₁ Δ∈Γ uᴴ) (Write₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
+determinism Write∙₁ Write∙₁ = refl
 determinism (Write₂ Δ∈Γ uᴱ uᴴ) (Write₂ Δ∈Γ₁ uᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
+determinism Write∙₂ Write∙₂ = refl
 determinism (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) (Writeᴰ₂ Δ∈Γ₁ uᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
 ... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
 determinism Read₁ (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ)
