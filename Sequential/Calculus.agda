@@ -52,8 +52,8 @@ data Term (π : Context) : Ty -> Set where
 
   -- Here terms are supposed to be variables
   -- We use terms to avoid complicating the substitution lemma.
-  #[_] : ∀ {τ} -> Term π τ -> Term π (Addr τ)
-  #[_]ᴰ : ∀ {τ} -> Term π τ -> Term π (Addr τ)  -- Duplicate on read
+  #[_] :  ℕ -> Term π Addr
+  #[_]ᴰ : ℕ -> Term π Addr  -- Duplicate on read
 
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
@@ -77,8 +77,8 @@ data Value {π : Context} : ∀ {τ} -> Term π τ -> Set where
   Id : ∀ {τ} (t : Term π τ) -> Value (Id t)
   Mac : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Mac l t)
   Res : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Res l t)
-  #[_] : ∀ {τ} -> (t : Term π τ) -> Value #[ t ]
-  #[_]ᴰ : ∀ {τ} -> (t : Term π τ) -> Value #[ t ]ᴰ
+  #[_] : (n : ℕ) -> Value #[ n ]
+  #[_]ᴰ : (n : ℕ) -> Value #[ n ]ᴰ
 
 --------------------------------------------------------------------------------
 
@@ -105,8 +105,8 @@ wken (write x t t₁) p = write x (wken t p) (wken t₁ p)
 wken (write∙ x t t₁) p = write∙ x (wken t p) (wken t₁ p)
 wken (new x t) p = new x (wken t p)
 wken (new∙ x t) p = new∙ x (wken t p)
-wken (#[ t ]) p = #[ wken t p ]
-wken (#[ t ]ᴰ) p = #[ wken t p ]ᴰ
+wken (#[ n ]) p = #[ n ]
+wken (#[ n ]ᴰ) p = #[ n ]ᴰ
 wken (fork x t) p = fork x (wken t p)
 wken (deepDup l x) p = deepDup l (wken x p)
 wken ∙ p = ∙
@@ -144,8 +144,8 @@ tm-subst Δ₁ Δ₂ v (write x t t₁) = write x (tm-subst Δ₁ Δ₂ v t) (tm
 tm-subst Δ₁ Δ₂ v (write∙ x t t₁) = write∙ x (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
 tm-subst Δ₁ Δ₂ v (new x t) = new x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (new∙ x t) = new∙ x (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (#[ t ]) = #[ tm-subst Δ₁ Δ₂ v t ]
-tm-subst Δ₁ Δ₂ v (#[ t ]ᴰ) = #[ tm-subst Δ₁ Δ₂ v t ]ᴰ
+tm-subst Δ₁ Δ₂ v (#[ n ]) = #[ n ]
+tm-subst Δ₁ Δ₂ v (#[ n ]ᴰ) = #[ n ]ᴰ
 tm-subst Δ₁ Δ₂ v (fork x t) = fork x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (deepDup l x) = deepDup l (tm-subst Δ₁ Δ₂ v x)
 tm-subst Δ₁ Δ₂ v ∙ = ∙
@@ -165,8 +165,8 @@ data Cont (l : Label) : Ty -> Ty -> Set where
  Bind :  ∀ {τ₁ τ₂} {π : Context} -> Term π (τ₁ => Mac l τ₂) -> Cont l (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Cont l (Labeled l' τ) (Mac l τ)
  unId : ∀ {τ} -> Cont l (Id τ) τ
- write : ∀ {τ H} {{π : Context}} -> l ⊑ H -> (τ∈π : τ ∈ π) -> Cont l (Ref H τ) (Mac l （）)
- write∙ : ∀ {τ H} {{π : Context}} -> l ⊑ H -> (τ∈π : τ ∈ π) -> Cont l (Ref H τ) (Mac l （）)
+ write : ∀ {τ H} {π : Context} -> l ⊑ H -> Term π τ -> Cont l (Ref H τ) (Mac l （）)
+ write∙ : ∀ {τ H} {π : Context} -> l ⊑ H -> Term π τ -> Cont l (Ref H τ) (Mac l （）)
  read : ∀ {τ L} -> L ⊑ l -> Cont l (Ref L τ) (Mac l τ)
 
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
@@ -208,35 +208,6 @@ x ↦ t ∈ᴱ Δ = Memberᴱ (just t) (∈ᴿ-∈ x) Δ
 
 --------------------------------------------------------------------------------
 
-open import Data.List.All
-
-Unique : Label -> List Label -> Set
-Unique l₁ ls = All (λ l₂ → ¬ (l₁ ≡ l₂)) ls
-
-∈-not-unique : ∀ {l ls} -> l ∈ ls -> Unique l ls -> ⊥
-∈-not-unique here (px ∷ q) = ⊥-elim (px refl)
-∈-not-unique (there p) (px ∷ q) = ∈-not-unique p q
-
-data Heap : List Label -> Set where
-  [] : Heap []
-  _∷_ : ∀ {l ls π} {{u : Unique l ls}} -> Env l π -> Heap ls -> Heap (l ∷ ls)
-
-data Member {l} {π} (Δ : Env l π) : ∀ {ls} -> Heap ls -> Set where
-  here : ∀ {ls} {u : Unique l ls} {Γ : Heap ls} -> Member Δ (Δ ∷ Γ)
-  there : ∀ {ls l' π'} {u : Unique l' ls} {Γ : Heap ls} {Δ' : Env l' π'} -> Member Δ Γ -> Member Δ (Δ' ∷ Γ)
-
-_↦_∈ᴴ_ : ∀ {ls π} -> (l : Label) -> Env l π -> Heap ls -> Set
-l ↦ Δ ∈ᴴ Γ = Member Δ Γ
-
-data Update {l} {π} (Δ : Env l π) : ∀ {ls} -> Heap ls -> Heap ls -> Set where
-  here : ∀ {ls π'} {u : Unique l ls} {Γ : Heap ls} {Δ' : Env l π'} -> Update Δ (Δ' ∷ Γ) (Δ ∷ Γ)
-  there : ∀ {ls l' π'} {u : Unique l' ls} {Γ Γ' : Heap ls} {Δ' : Env l' π'} -> Update Δ Γ Γ' -> Update Δ (Δ' ∷ Γ) (Δ' ∷ Γ')
-
-_≔_[_↦_]ᴴ : ∀ {π ls} -> Heap ls -> Heap ls -> (l : Label) -> Env l π -> Set
-Γ' ≔ Γ [ l ↦ Δ ]ᴴ = Update Δ Γ Γ'
-
---------------------------------------------------------------------------------
-
 -- I don't think I need to store pointers to the heap (τ ∈ π)
 -- if I keep separate the store from the heap
 data Memory (l : Label) : Set where
@@ -259,6 +230,46 @@ data Writeᴹ {l π τ} (t : Term π τ) : ℕ -> Memory l -> Memory l -> Set wh
 _≔_[_↦_]ᴹ : ∀ {π l τ} -> Memory l -> Memory l -> ℕ -> Term π τ -> Set
 M' ≔ M [ n ↦ t ]ᴹ = Writeᴹ t n M M'
 
+newᴹ : ∀ {l π τ} -> Term π τ -> Memory l -> Memory l
+newᴹ t [] = t ∷ []
+newᴹ t (t₁ ∷ M) = t₁ ∷ newᴹ t M
+newᴹ t ∙ = ∙
+
+lengthᴹ : ∀ {l} -> Memory l -> ℕ
+lengthᴹ [] = 0
+lengthᴹ (t ∷ M) = suc (lengthᴹ M)
+lengthᴹ ∙ = 0  -- We don't care when the memory is collapsed
+
+--------------------------------------------------------------------------------
+-- A heap pairs together labeled memories and environment
+
+open import Data.List.All
+
+Unique : Label -> List Label -> Set
+Unique l₁ ls = All (λ l₂ → ¬ (l₁ ≡ l₂)) ls
+
+∈-not-unique : ∀ {l ls} -> l ∈ ls -> Unique l ls -> ⊥
+∈-not-unique here (px ∷ q) = ⊥-elim (px refl)
+∈-not-unique (there p) (px ∷ q) = ∈-not-unique p q
+
+data Heap : List Label -> Set where
+  [] : Heap []
+  _∷_ : ∀ {l ls π} {{u : Unique l ls}} -> Memory l × Env l π -> Heap ls -> Heap (l ∷ ls)
+
+data Member {l} {π} (x : Memory l × Env l π) : ∀ {ls} -> Heap ls -> Set where
+  here : ∀ {ls} {u : Unique l ls} {Γ : Heap ls} -> Member x (x ∷ Γ)
+  there : ∀ {ls l' π'} {u : Unique l' ls} {Γ : Heap ls} {y : Memory l' × Env l' π'} -> Member x Γ -> Member x (y ∷ Γ)
+
+_↦_∈ᴴ_ : ∀ {ls π} -> (l : Label) -> Memory l × Env l π -> Heap ls -> Set
+l ↦ x ∈ᴴ Γ = Member x Γ
+
+data Update {l} {π} (x : Memory l × Env l π) : ∀ {ls} -> Heap ls -> Heap ls -> Set where
+  here : ∀ {ls π'} {u : Unique l ls} {Γ : Heap ls} {x' : Memory l × Env l π'} -> Update x (x' ∷ Γ) (x ∷ Γ)
+  there : ∀ {ls l' π'} {u : Unique l' ls} {Γ Γ' : Heap ls} {y : Memory l' × Env l' π'} -> Update x Γ Γ' -> Update x (y ∷ Γ) (y ∷ Γ')
+
+_≔_[_↦_]ᴴ : ∀ {π ls} -> Heap ls -> Heap ls -> (l : Label) -> Memory l × Env l π -> Set
+Γ' ≔ Γ [ l ↦ x ]ᴴ = Update x Γ Γ'
+
 --------------------------------------------------------------------------------
 
 -- Sestoft's Abstract Lazy Machine State
@@ -270,8 +281,8 @@ data State (l : Label) (τ : Ty) : Set where
   ∙ : State l τ
 
 -- Adds labeled memory and heap to a term and stack
-data Program (ls : List Label) (l : Label) (τ : Ty) : Set where
-  ⟨_,_,_,_⟩ : ∀ {π τ'} -> {!!} -> Heap ls -> Term π τ -> Stack l τ' τ -> Program ls l τ
+data Program (l : Label) (ls : List Label) (τ : Ty) : Set where
+  ⟨_,_,_⟩ : ∀ {π τ'} -> Heap ls -> Term π τ' -> Stack l τ' τ -> Program l ls τ
 
 --------------------------------------------------------------------------------
 -- DeepDup
