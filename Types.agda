@@ -145,7 +145,7 @@ rev-rev-≡ : ∀ π -> reverse (reverse π) ≡ π
 rev-rev-≡ [] = refl
 rev-rev-≡ (x ∷ π) = cong (_∷_ x) (rev-rev-≡ π)
 
-{-# REWRITE  rev-rev-≡ #-}
+{-# REWRITE rev-rev-≡ #-}
 
 ∈ᴿ-∈ : ∀ {τ π} -> τ ∈ᴿ π -> τ ∈ π
 ∈ᴿ-∈ {τ} {π} x = ∈-∈ᴿ x
