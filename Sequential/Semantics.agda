@@ -21,9 +21,7 @@ open import Relation.Nullary.Decidable using (⌊_⌋)
 data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
  App₁ : ∀ {τ₁ τ₂ τ₃ π} {Δ : Env l π} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
-          -- TODO if we can write subst to work with only variables then we can even
-          -- use restricted syntax
-          ⟨ Δ , App t₁ t₂ , S ⟩ ⇝ ⟨ just t₂ ∷ Δ , wken t₁ (drop refl-⊆ˡ) , (Var {{π = τ₁ ∷ π}} hereᴿ) ∷ S ⟩
+          ⟨ Δ , App t₁ t₂ , S ⟩ ⇝ ⟨ just t₂ ∷ Δ ,  wken t₁ (drop refl-⊆ˡ) , (Var {{π = τ₁ ∷ π}} hereᴿ) ∷ S ⟩
 
  App₂ : ∀ {β α τ'} {π : Context} {Δ : Env l π} {S : Stack l β τ'} {t : Term (α ∷ π) β}
             -> (α∈π : α ∈ᴿ π) ->
@@ -143,21 +141,19 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
  Hole : ∀ {τ} -> ∙ {τ = τ} ⇝ ∙
 
---  -- deepDupᵀ t takes care of replacing unguarded free variables with deepDup.
---  -- Note that deepDupᵀ (deepDup t) = deepDup t, so also in case of
---  -- nested deepDup (e.g. deepDup (deepDup t)) we make progress.
---  DeepDup : ∀ {Γ Γ' π τ τ'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'}
---                  -> (τ∈π : τ ∈ᴿ π)
---                  -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
---                  -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
---                  -> (uᴴ : Γ' ≔ Γ [ l ↦ insert (deepDupᵀ t) Δ ]ᴴ)
---                  -> ⟨ Γ , deepDup (Var {π = π} τ∈π) , S ⟩ ⇝ ⟨ Γ' , Var {π = τ ∷ π} hereᴿ , S ⟩
+ -- deepDupᵀ t takes care of replacing unguarded free variables with deepDup.
+ -- Note that deepDupᵀ (deepDup t) = deepDup t, so also in case of
+ -- nested deepDup (e.g. deepDup (deepDup t)) we make progress.
+ DeepDup : ∀ {π τ τ' l'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'}
+             -> (τ∈π : τ ∈ᴿ π)
+             -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
+             -- Note that this term is stuck if τ∈π ↦ t ∉ Δ
+             -- in this case we can find the term in the environment labeled with l'
+             -> ⟨ Δ , deepDup l' (Var {π = π} τ∈π) , S ⟩ ⇝ ⟨ just (deepDupᵀ l' t) ∷ Δ , Var {π = τ ∷ π} hereᴿ , S ⟩
 
 
---  -- If the argument to deepDup is not a variable we introduce a new fresh variable (similarly to
---  -- so that next rule DeepDup will apply.
---  DeepDup' : ∀ {Γ Γ' π τ τ'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'}
---               -> (¬var : ¬ (IsVar t))
---               -> (Δ∈Γ : l ↦ Δ ∈ᴴ Γ)
---               -> (uᴴ : Γ' ≔ Γ [ l ↦ insert t Δ ]ᴴ)
---               -> ⟨ Γ , deepDup t , S ⟩ ⇝ ⟨ Γ' , deepDup (Var {π = τ ∷ π} hereᴿ) , S ⟩
+ -- If the argument to deepDup is not a variable we introduce a new fresh variable (similarly to
+ -- so that next rule DeepDup will apply.
+ DeepDup' : ∀ {π τ τ' l'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'}
+            -> (¬var : ¬ (IsVar t))
+            -> ⟨ Δ , deepDup l' t , S ⟩ ⇝ ⟨ just t ∷ Δ , deepDup l' (Var {π = τ ∷ π} hereᴿ) , S ⟩

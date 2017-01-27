@@ -76,6 +76,8 @@ determinism (Var₂ τ∈π () uᴱ) (Label'∙ p)
 determinism (Var₂ τ∈π () uᴱ) (Unlabel₁ p)
 determinism (Var₂ τ∈π () uᴱ) UnId₁
 determinism (Var₂ τ∈π () uᴱ) (Fork p)
+determinism (Var₂ τ∈π () uᴱ) (DeepDup τ∈π' t∈Δ)
+determinism (Var₂ τ∈π () uᴱ) (DeepDup' ¬var)
 determinism If (Var₂ τ∈π () uᴱ)
 determinism If If = refl
 determinism IfTrue IfTrue = refl
@@ -97,100 +99,11 @@ determinism UnId₁ UnId₁ = refl
 determinism UnId₂ UnId₂ = refl
 determinism (Fork p) (Var₂ τ∈π () uᴱ)
 determinism (Fork p) (Fork .p) = refl
+determinism (DeepDup τ∈π t∈Δ) (DeepDup .τ∈π t∈Δ₁) with memberᴱ-≅ᵀ τ∈π t∈Δ t∈Δ₁
+... | refl = refl
+determinism (DeepDup τ∈π t∈Δ) (DeepDup' ¬var) = ⊥-elim (¬var (Var τ∈π))
+determinism (DeepDup τ∈π t∈Δ) (Var₂ _ () _)
+determinism (DeepDup' ¬var) (DeepDup' ¬var') = refl
+determinism (DeepDup' ¬var) (Var₂ τ∈π () _)
+determinism (DeepDup' ¬var) (DeepDup τ∈π t∈Δ) = ⊥-elim (¬var (Var _))
 determinism Hole Hole = refl
-
--- determinism (App₁ Δ∈Γ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
--- determinism (App₁ Δ∈Γ uᴴ) (Var₂ Δ∈Γ₁ x∈π () uᴱ₁ uᴴ₁)
--- determinism (App₂ y∈π) (App₂ .y∈π) = refl
--- determinism (Var₁ {π = π} {π'} Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁ {π' = π''} Δ∈Γ₁ .x∈π t∈Δ₁ ¬val₁ rᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl with memberᴱ-≅ᵀ {π = π} {π'} {π''} x∈π t∈Δ t∈Δ₁
--- determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁ Δ∈Γ₁ .x∈π t∈Δ₁ ¬val₁ rᴱ₁ uᴴ₁) | refl | refl
---   rewrite updateᴱ-≡ rᴱ rᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
--- determinism (Var₁ {π = π} {π'} Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁' Δ∈Γ₁ .x∈π v∈Δ val) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl with memberᴱ-≅ᵀ x∈π t∈Δ v∈Δ
--- determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₁' Δ∈Γ₁ .x∈π v∈Δ val) | refl | refl = ⊥-elim (¬val val)
--- determinism (Var₁ Δ∈Γ x∈π t∈Δ ¬val rᴱ uᴴ) (Var₂ Δ∈Γ₁ x∈π₁ () uᴱ uᴴ₁)
--- determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁ Δ∈Γ₁ .x∈π t∈Δ ¬val rᴱ uᴴ) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl with memberᴱ-≅ᵀ x∈π t∈Δ v∈Δ
--- ... | refl = ⊥-elim (¬val val)
--- determinism (Var₁' Δ∈Γ x∈π v∈Δ val) (Var₁' Δ∈Γ₁ .x∈π v∈Δ₁ val₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl with memberᴱ-≅ᵀ x∈π v∈Δ v∈Δ₁
--- ... | refl = refl
--- determinism (Var₁' Δ∈Γ x∈π v∈Δ v) (Var₂ Δ∈Γ₁ x∈π₁ () uᴱ uᴴ)
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (App₁ Δ∈Γ₁ uᴴ₁)
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Var₁ Δ∈Γ₁ x∈π₁ t∈Δ ¬val rᴱ uᴴ₁)
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Var₁' Δ∈Γ₁ x∈π₁ v∈Δ val₁)
--- determinism (Var₂ Δ∈Γ x∈π val uᴱ uᴴ) (Var₂ Δ∈Γ₁ .x∈π val₁ uᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) If
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) Return
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) Bind₁
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Label' p)
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Label'∙ p)
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Unlabel₁ p)
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) UnId₁
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (Fork p)
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup _ _ _ _)
--- determinism (Var₂ Δ∈Γ x∈π () uᴱ uᴴ) (DeepDup' _ _ _)
--- determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) (New Δ∈Γ₁ x)
--- determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) New∙
--- determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) (Write₁ _ _)
--- determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) Write∙₁
--- determinism (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ) Read₁
--- determinism (New Δ∈Γ x) (Var₂ Δ∈Γ₁ τ∈π () uᴱ uᴴ)
--- determinism New∙ (Var₂ Δ∈Γ₁ τ∈π () uᴱ uᴴ)
--- determinism (New Δ∈Γ uᴴ) (New Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
--- determinism New∙ New∙ = refl
--- determinism (Write₁ _ _) (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ)
--- determinism Write∙₁ (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ)
--- determinism (Write₁ Δ∈Γ uᴴ) (Write₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
--- determinism Write∙₁ Write∙₁ = refl
--- determinism (Write₂ Δ∈Γ uᴱ uᴴ) (Write₂ Δ∈Γ₁ uᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
--- determinism Write∙₂ Write∙₂ = refl
--- determinism (Writeᴰ₂ Δ∈Γ uᴱ uᴴ) (Writeᴰ₂ Δ∈Γ₁ uᴱ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
--- determinism Read₁ (Var₂ Δ∈Γ τ∈π () uᴱ uᴴ)
--- determinism Read₁ Read₁ = refl
--- determinism (Read₂ τ∈π Δ∈Γ t∈Δ) (Read₂ .τ∈π Δ∈Γ₁ t∈Δ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl with memberᴱ-≅ᵀ τ∈π t∈Δ t∈Δ₁
--- ... | refl = refl
--- determinism (Readᴰ₂ τ∈π Δ∈Γ t∈Δ) (Readᴰ₂ .τ∈π Δ∈Γ₁ t∈Δ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl with memberᴱ-≅ᵀ τ∈π t∈Δ t∈Δ₁
--- ... | refl = refl
--- determinism If (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
--- determinism If If = refl
--- determinism IfTrue IfTrue = refl
--- determinism IfFalse IfFalse = refl
--- determinism Return (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
--- determinism Return Return = refl
--- determinism Bind₁ (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
--- determinism Bind₁ Bind₁ = refl
--- determinism Bind₂ Bind₂ = refl
--- determinism (Label' p) (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
--- determinism (Label' p) (Label' .p) = refl
--- determinism (Label'∙ p) (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
--- determinism (Label'∙ p) (Label'∙ .p) = refl
--- determinism (Unlabel₁ p) (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
--- determinism (Unlabel₁ p) (Unlabel₁ .p) = refl
--- determinism (Unlabel₂ p) (Unlabel₂ .p) = refl
--- determinism UnId₁ (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
--- determinism UnId₁ UnId₁ = refl
--- determinism UnId₂ UnId₂ = refl
--- determinism (Fork p) (Var₂ Δ∈Γ x∈π () uᴱ uᴴ)
--- determinism (Fork p) (Fork .p) = refl
--- determinism (DeepDup τ∈π Δ∈Γ t∈Δ uᴴ) (Var₂ Δ∈Γ₁ τ∈π₁ () uᴱ uᴴ₁)
--- determinism (DeepDup τ∈π Δ∈Γ t∈Δ uᴴ) (DeepDup .τ∈π Δ∈Γ₁ t∈Δ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl with memberᴱ-≅ᵀ τ∈π t∈Δ t∈Δ₁
--- ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
--- determinism (DeepDup τ∈π Δ∈Γ t∈Δ uᴴ) (DeepDup' ¬var Δ∈Γ₁ uᴴ₁) = ⊥-elim (¬var (Var _))
--- determinism (DeepDup' ¬var Δ∈Γ uᴴ) (Var₂ Δ∈Γ₁ τ∈π () uᴱ uᴴ₁)
--- determinism (DeepDup' ¬var Δ∈Γ uᴴ) (DeepDup τ∈π Δ∈Γ₁ t∈Δ uᴴ₁) = ⊥-elim (¬var (Var _))
--- determinism (DeepDup' ¬var Δ∈Γ uᴴ) (DeepDup' ¬var₁ Δ∈Γ₁ uᴴ₁) with memberᴴ-≅ Δ∈Γ Δ∈Γ₁
--- ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
--- -- Morally they are the same, however the context π is chosen non deterministically
--- -- I wonder if this can be made to work using π = ∙ or if it is pushing it too much.
--- determinism Hole Hole = {!!} -- π₁ ≠ π₂

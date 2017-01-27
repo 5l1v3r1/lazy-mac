@@ -78,7 +78,7 @@ open import Data.Product
 εᵀ (#[ t ]) = #[ (εᵀ t) ]
 εᵀ (#[ t ]ᴰ) = #[ (εᵀ t) ]ᴰ
 εᵀ (fork l⊑h t) = fork l⊑h (εᵀ t)
-εᵀ (deepDup t) = deepDup (εᵀ t)
+εᵀ (deepDup l t) = deepDup l (εᵀ t)
 εᵀ ∙ = ∙
 
 εᵀ¬Val : ∀ {π τ} {t : Term π τ} -> ¬ Value t -> ¬ (Value (εᵀ t))
@@ -108,7 +108,7 @@ open import Data.Product
 εᵀ¬Val {t = #[ t ]} ¬val val-ε = ¬val #[ t ]
 εᵀ¬Val {t = #[ t ]ᴰ} ¬val val-ε = ¬val #[ t ]ᴰ
 εᵀ¬Val {t = fork l⊑h t} ¬val ()
-εᵀ¬Val {t = deepDup t} ¬val ()
+εᵀ¬Val {t = deepDup l t} ¬val ()
 εᵀ¬Val {t = ∙} ¬val ()
 
 εᵀ-Val : ∀ {τ π} {v : Term π τ} -> Value v -> Value (εᵀ v)
@@ -153,7 +153,7 @@ open import Data.Product
 εᵀ¬Var {t = #[ t ]} ¬var ()
 εᵀ¬Var {t = #[ t ]ᴰ} ¬var ()
 εᵀ¬Var {t = fork l⊑h t} ¬var ()
-εᵀ¬Var {t = deepDup t} ¬var ()
+εᵀ¬Var {t = deepDup l t} ¬var ()
 εᵀ¬Var {t = ∙} ¬var ()
 
 open import Data.Product as P
@@ -250,7 +250,7 @@ open import Function
 ε-wken #[ t ] p rewrite ε-wken t p = refl
 ε-wken #[ t ]ᴰ p rewrite ε-wken t p = refl
 ε-wken (fork l⊑h t) p rewrite ε-wken t p = refl
-ε-wken (deepDup t) p rewrite ε-wken t p = refl
+ε-wken (deepDup l t) p rewrite ε-wken t p = refl
 ε-wken ∙ p = refl
 
 {-# REWRITE ε-wken #-}
@@ -303,15 +303,15 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ #[ t₂ ] rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ #[ t₂ ]ᴰ rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (fork l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
-        ε-tm-subst π₁ π₂ t₁ (deepDup t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
+        ε-tm-subst π₁ π₂ t₁ (deepDup l t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ ∙ = refl
 
 
 {-# REWRITE ε-subst #-}
 
-ε-deepDupᵀ-≡ : ∀ {π τ} -> (t : Term π τ) ->  εᵀ (deepDupᵀ t) ≡ deepDupᵀ (εᵀ t)
-ε-deepDupᵀ-≡ = εᵀ-dup-ufv-≡ []
-  where εᵀ-dup-ufv-≡ : ∀ {π τ} -> (vs : Vars π) (t : Term π τ) ->  εᵀ (dup-ufv vs t) ≡ dup-ufv vs (εᵀ t)
+ε-deepDupᵀ-≡ : ∀ {l π τ} -> (t : Term π τ) ->  εᵀ (deepDupᵀ l t) ≡ deepDupᵀ l (εᵀ t)
+ε-deepDupᵀ-≡ {l} = εᵀ-dup-ufv-≡ []
+  where εᵀ-dup-ufv-≡ : ∀ {π τ} -> (vs : Vars π) (t : Term π τ) ->  εᵀ (dup-ufv l vs t) ≡ dup-ufv l vs (εᵀ t)
         εᵀ-dup-ufv-≡ vs （） = refl
         εᵀ-dup-ufv-≡ vs True = refl
         εᵀ-dup-ufv-≡ vs False = refl
@@ -352,7 +352,7 @@ open import Function
         εᵀ-dup-ufv-≡ vs #[ t ] rewrite εᵀ-dup-ufv-≡ vs t = refl
         εᵀ-dup-ufv-≡ vs #[ t ]ᴰ rewrite εᵀ-dup-ufv-≡ vs t = refl
         εᵀ-dup-ufv-≡ vs (fork l⊑h t) rewrite εᵀ-dup-ufv-≡ vs t = refl
-        εᵀ-dup-ufv-≡ vs (deepDup t) rewrite εᵀ-dup-ufv-≡ vs t = refl
+        εᵀ-dup-ufv-≡ vs (deepDup l' t) rewrite εᵀ-dup-ufv-≡ vs t = refl
         εᵀ-dup-ufv-≡ vs ∙ = refl
 
 {-# REWRITE ε-deepDupᵀ-≡ #-}
@@ -453,4 +453,6 @@ updateᴱ ∙ = ∙
 ε-sim (yes y) UnId₁ = UnId₁
 ε-sim (yes y) UnId₂ = UnId₂
 ε-sim (yes y) (Fork p) = Fork p
+ε-sim (yes y) (DeepDup τ∈π t∈Δ) = DeepDup τ∈π (memberᴱ τ∈π t∈Δ)
+ε-sim (yes y) (DeepDup' ¬var) = DeepDup' (εᵀ¬Var ¬var)
 ε-sim (yes y) Hole = Hole

@@ -15,6 +15,7 @@ open import Function
 
 -- The basic Term π τ is a term that has type τ in the context π
 data Term (π : Context) : Ty -> Set where
+
   （） : Term π （）
 
   True : Term π Bool
@@ -57,7 +58,9 @@ data Term (π : Context) : Ty -> Set where
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
-  deepDup : ∀ {τ} -> Term π τ -> Term π τ
+  -- The label represents in which labeled environment
+  -- a free variable should be looked up in.
+  deepDup : ∀ {τ} -> (l : Label) -> Term π τ -> Term π τ
 
   -- Represent sensitive information that has been erased.
   ∙ : ∀ {{τ}} -> Term π τ
@@ -105,7 +108,7 @@ wken (new∙ x t) p = new∙ x (wken t p)
 wken (#[ t ]) p = #[ wken t p ]
 wken (#[ t ]ᴰ) p = #[ wken t p ]ᴰ
 wken (fork x t) p = fork x (wken t p)
-wken (deepDup x) p = deepDup (wken x p)
+wken (deepDup l x) p = deepDup l (wken x p)
 wken ∙ p = ∙
 
 _↑¹ : ∀ {α β} {Δ : Context} -> Term Δ α -> Term (β ∷ Δ) α
@@ -144,7 +147,7 @@ tm-subst Δ₁ Δ₂ v (new∙ x t) = new∙ x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (#[ t ]) = #[ tm-subst Δ₁ Δ₂ v t ]
 tm-subst Δ₁ Δ₂ v (#[ t ]ᴰ) = #[ tm-subst Δ₁ Δ₂ v t ]ᴰ
 tm-subst Δ₁ Δ₂ v (fork x t) = fork x (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (deepDup x) = deepDup (tm-subst Δ₁ Δ₂ v x)
+tm-subst Δ₁ Δ₂ v (deepDup l x) = deepDup l (tm-subst Δ₁ Δ₂ v x)
 tm-subst Δ₁ Δ₂ v ∙ = ∙
 
 subst : ∀ {α β} {Δ : Context} -> Term Δ α -> Term (α ∷ Δ) β -> Term Δ β
@@ -295,38 +298,44 @@ mapⱽ f (τ∈π ∷ vs) = (f τ∈π) ∷ (mapⱽ f vs)
 -- it puts deepDup x for every free variable x, that is not in the scope of vs.
 -- We keep track of the variables introduced by lambda-abstraction.
 -- We do not duplicate terms that are already inside a deepDup.
-dup-ufv : ∀ {π τ} -> Vars π -> Term π τ -> Term π τ
-dup-ufv vs （） = （）
-dup-ufv vs True = True
-dup-ufv vs False = False
-dup-ufv vs (Id t) = Id (dup-ufv vs t)
-dup-ufv vs (unId t) = unId (dup-ufv vs t)
-dup-ufv vs (Var τ∈π) with memberⱽ (∈ᴿ-∈ τ∈π) vs
-dup-ufv vs (Var τ∈π) | yes p = Var τ∈π  -- In scope
-dup-ufv vs (Var τ∈π) | no ¬p = deepDup (Var τ∈π) -- Free
-dup-ufv vs (Abs t) = Abs (dup-ufv (here ∷ mapⱽ there vs) t)
-dup-ufv vs (App t t₁) = App (dup-ufv vs t) (dup-ufv vs t₁)
-dup-ufv vs (If t Then t₁ Else t₂) = If (dup-ufv vs t) Then (dup-ufv vs t₁) Else (dup-ufv vs t₂)
-dup-ufv vs (Return l t) = Return l (dup-ufv vs t)
-dup-ufv vs (t >>= t₁) = (dup-ufv vs t) >>= (dup-ufv vs t₁)
-dup-ufv vs (Mac l t) = Mac l (dup-ufv vs t)
-dup-ufv vs (Res l t) = Res l (dup-ufv vs t)
-dup-ufv vs (label l⊑h t) = label l⊑h (dup-ufv vs t)
-dup-ufv vs (label∙ l⊑h t) = label∙ l⊑h (dup-ufv vs t)
-dup-ufv vs (unlabel l⊑h t) = unlabel l⊑h (dup-ufv vs t)
-dup-ufv vs(read l⊑h t) = read l⊑h (dup-ufv vs t)
-dup-ufv vs (write l⊑h t₁ t₂) = write l⊑h (dup-ufv vs t₁) (dup-ufv vs t₂)
-dup-ufv vs (write∙ l⊑h t₁ t₂) = write∙ l⊑h (dup-ufv vs t₁) (dup-ufv vs t₂)
-dup-ufv vs (new l⊑h t) = new l⊑h (dup-ufv vs t)
-dup-ufv vs (new∙ l⊑h t) = new∙ l⊑h (dup-ufv vs t)
-dup-ufv vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!
-dup-ufv vs (#[ n ]ᴰ) = #[ n ]ᴰ
-dup-ufv vs (fork l⊑h t) = fork l⊑h (dup-ufv vs t)
-dup-ufv vs (deepDup t) = deepDup t  -- deepDup (deepDup t) is semantically equal to deepDup t
-dup-ufv vs ∙ = ∙
+dup-ufv : ∀ {π τ} -> Label -> Vars π -> Term π τ -> Term π τ
+dup-ufv l vs （） = （）
+dup-ufv l vs True = True
+dup-ufv l vs False = False
+dup-ufv l vs (Id t) = Id (dup-ufv l vs t)
+dup-ufv l vs (unId t) = unId (dup-ufv l vs t)
+dup-ufv l vs (Var τ∈π) with memberⱽ (∈ᴿ-∈ τ∈π) vs
+dup-ufv l vs (Var τ∈π) | yes p = Var τ∈π  -- In scope
+dup-ufv l vs (Var τ∈π) | no ¬p = deepDup l (Var τ∈π) -- Free
+dup-ufv l vs (Abs t) = Abs (dup-ufv l (here ∷ mapⱽ there vs) t)
+dup-ufv l vs (App t t₁) = App (dup-ufv l vs t) (dup-ufv l vs t₁)
+dup-ufv l vs (If t Then t₁ Else t₂) = If (dup-ufv l vs t) Then (dup-ufv l vs t₁) Else (dup-ufv l vs t₂)
+dup-ufv l' vs (Return l t) = Return l (dup-ufv l' vs t)
+dup-ufv l vs (t >>= t₁) = (dup-ufv l vs t) >>= (dup-ufv l vs t₁)
+dup-ufv l' vs (Mac l t) = Mac l (dup-ufv l' vs t)
+dup-ufv l' vs (Res l t) = Res l (dup-ufv l' vs t)
+dup-ufv l vs (label l⊑h t) = label l⊑h (dup-ufv l vs t)
+dup-ufv l vs (label∙ l⊑h t) = label∙ l⊑h (dup-ufv l vs t)
+dup-ufv l vs (unlabel l⊑h t) = unlabel l⊑h (dup-ufv l vs t)
+dup-ufv l vs(read l⊑h t) = read l⊑h (dup-ufv l vs t)
+dup-ufv l vs (write l⊑h t₁ t₂) = write l⊑h (dup-ufv l vs t₁) (dup-ufv l vs t₂)
+dup-ufv l vs (write∙ l⊑h t₁ t₂) = write∙ l⊑h (dup-ufv l vs t₁) (dup-ufv l vs t₂)
+dup-ufv l vs (new l⊑h t) = new l⊑h (dup-ufv l vs t)
+dup-ufv l vs (new∙ l⊑h t) = new∙ l⊑h (dup-ufv l vs t)
+dup-ufv l vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!
+dup-ufv l vs (#[ n ]ᴰ) = #[ n ]ᴰ
+dup-ufv l vs (fork l⊑h t) = fork l⊑h (dup-ufv l vs t)
+-- Note that here the label represents in which environment
+-- we will find a variable, in this case we
+-- use l' (the lower one).
+-- This can happen if a low thread (L) spwans a medium one (M)
+-- which spawns a high one (H), if H access a variable defined
+-- in L, but not evaluated (yet) in M.
+dup-ufv l vs (deepDup l' t) = deepDup l' t  -- deepDup (deepDup t) is semantically equal to deepDup t
+dup-ufv l vs ∙ = ∙
 
-deepDupᵀ : ∀ {τ π} -> Term π τ -> Term π τ
-deepDupᵀ t = dup-ufv [] t
+deepDupᵀ : ∀ {τ π} -> Label -> Term π τ -> Term π τ
+deepDupᵀ l t = dup-ufv l [] t
 
 -- The proof that a term is a variable
 data IsVar {π} {τ} : Term π τ -> Set where
