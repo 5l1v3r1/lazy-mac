@@ -175,7 +175,7 @@ data Cont (l : Label) : Ty -> Ty -> Set where
 data Stack (l : Label) : Ty -> Ty -> Set where
  [] : ∀ {τ} -> Stack l τ τ
  _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont l τ₁ τ₂ -> Stack l τ₂ τ₃ -> Stack l τ₁ τ₃
-
+ ∙ : ∀ {τ} -> Stack l τ τ
 --------------------------------------------------------------------------------
 
 -- Note: at the moment in Env l π, π contains only variables labeled with l.
@@ -185,12 +185,11 @@ data Stack (l : Label) : Ty -> Ty -> Set where
 data Env (l : Label) : Context -> Set where
   [] : Env l []
   _∷_ : ∀ {π τ} -> (t : Maybe (Term π τ)) -> Env l π -> Env l (τ ∷ π)
-  ∙ : ∀ {π} -> Env l π
+  ∙ : Env l []  -- We fix the context to empty to avoid non-determinism issues
 
 data Updateᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈ π' -> Env l π' -> Env l π' -> Set where
   here : ∀ {Δ : Env l π} {mt' : Maybe (Term _ τ)} -> Updateᴱ mt here (mt' ∷ Δ) (mt ∷ Δ)
   there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ Δ' : Env l π'} {mt' : Maybe (Term _ τ')} -> Updateᴱ mt τ∈π' Δ Δ' -> Updateᴱ mt (there τ∈π') (mt' ∷ Δ) (mt' ∷ Δ')
-  ∙ : ∀ {π'} {τ∈π' : τ ∈ π'} -> Updateᴱ mt τ∈π' ∙ ∙
 
 _≔_[_↦_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈ᴿ π' -> Term π τ -> Set
 Δ' ≔ Δ [ τ∈π' ↦ t ]ᴱ = Updateᴱ (just t) (∈ᴿ-∈ τ∈π') Δ Δ'
@@ -203,17 +202,9 @@ _≔_[_↛_]ᴱ {π = π} Δ' Δ x t = Updateᴱ {π = π} nothing (∈ᴿ-∈ x
 data Memberᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈ π' -> Env l π' -> Set where
   here : ∀ {Δ : Env l π} -> Memberᴱ mt here (mt ∷ Δ)
   there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ mt τ∈π' Δ -> Memberᴱ mt (there τ∈π') (mt' ∷ Δ)
-  -- TODO add x ↦ just ∙ ∈ ∙
 
 _↦_∈ᴱ_ : ∀ {l τ} {π π' : Context} -> τ ∈ᴿ π' -> Term π τ -> Env l π' -> Set
 x ↦ t ∈ᴱ Δ = Memberᴱ (just t) (∈ᴿ-∈ x) Δ
-
-
--- TODO remove
--- Extends the environment with a new binding
-insert : ∀ {l τ π} -> Term π τ -> Env l π -> Env l (τ ∷ π)
-insert t ∙ = ∙
-insert t Δ = just t ∷ Δ
 
 --------------------------------------------------------------------------------
 
@@ -246,6 +237,30 @@ _≔_[_↦_]ᴴ : ∀ {π ls} -> Heap ls -> Heap ls -> (l : Label) -> Env l π -
 
 --------------------------------------------------------------------------------
 
+-- I don't think I need to store pointers to the heap (τ ∈ π)
+-- if I keep separate the store from the heap
+data Memory (l : Label) : Set where
+  [] : Memory l
+  _∷_ : ∀ {π τ} -> (t : Term π τ) (M : Memory l) -> Memory l
+  ∙ : Memory l
+
+data Memberᴹ {l π τ} (t : Term π τ) : ℕ -> Memory l -> Set where
+  here : ∀ {M} -> Memberᴹ t 0 (t ∷ M)
+  there : ∀ {M n π' τ'} {t' : Term π' τ'} -> Memberᴹ t n M -> Memberᴹ t (suc n) (t' ∷ M)
+--  ∙ : ∀ {n} -> Memberᴹ ∙ n ∙ -- Not sure if we will need this.  (then t must be an index)
+
+_↦_∈ᴹ_ : ∀ {π l τ} -> ℕ -> Term π τ -> Memory l -> Set
+n ↦ t ∈ᴹ M = Memberᴹ t n M
+
+data Writeᴹ {l π τ} (t : Term π τ) : ℕ -> Memory l -> Memory l -> Set where
+  here : ∀ {M π' τ} {t' : Term π' τ} -> Writeᴹ t 0 (t' ∷ M) (t ∷  M)
+  there : ∀ {M M' π' τ' n} {t' : Term π' τ'} -> Writeᴹ t n M M' -> Writeᴹ t (suc n) (t' ∷ M) (t' ∷ M')
+
+_≔_[_↦_]ᴹ : ∀ {π l τ} -> Memory l -> Memory l -> ℕ -> Term π τ -> Set
+M' ≔ M [ n ↦ t ]ᴹ = Writeᴹ t n M M'
+
+--------------------------------------------------------------------------------
+
 -- Sestoft's Abstract Lazy Machine State
 -- The state is labeled to keep track of the security level of the
 -- term (thread) executed.
@@ -253,6 +268,10 @@ _≔_[_↦_]ᴴ : ∀ {π ls} -> Heap ls -> Heap ls -> (l : Label) -> Env l π -
 data State (l : Label) (τ : Ty) : Set where
   ⟨_,_,_⟩ : ∀ {τ'} {π : Context} -> (Δ : Env l π) (t : Term π τ') (S : Stack l τ' τ) -> State l τ
   ∙ : State l τ
+
+-- Adds labeled memory and heap to a term and stack
+data Program (ls : List Label) (l : Label) (τ : Ty) : Set where
+  ⟨_,_,_,_⟩ : ∀ {π τ'} -> {!!} -> Heap ls -> Term π τ -> Stack l τ' τ -> Program ls l τ
 
 --------------------------------------------------------------------------------
 -- DeepDup

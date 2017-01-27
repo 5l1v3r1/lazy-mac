@@ -372,7 +372,6 @@ memberᴱ {l} τ∈π = aux (∈ᴿ-∈ τ∈π)
 updateᴱ : ∀ {l π π' τ} {Δ Δ' : Env l π} {mt : Maybe (Term π' τ)} {τ∈π : τ ∈ π} -> Updateᴱ mt τ∈π Δ Δ' -> Updateᴱ (M.map εᵀ mt) τ∈π (εᴱ Δ) (εᴱ Δ')
 updateᴱ here = here
 updateᴱ (there x) = there (updateᴱ x)
-updateᴱ ∙ = ∙
 
 --------------------------------------------------------------------------------
 -- Heap Lemmas
@@ -453,6 +452,6 @@ updateᴱ ∙ = ∙
 ε-sim (yes y) UnId₁ = UnId₁
 ε-sim (yes y) UnId₂ = UnId₂
 ε-sim (yes y) (Fork p) = Fork p
-ε-sim (yes y) (DeepDup τ∈π t∈Δ) = DeepDup τ∈π (memberᴱ τ∈π t∈Δ)
+ε-sim (yes y) (DeepDup τ∈π t∈Δ) = DeepDup' τ∈π (memberᴱ τ∈π t∈Δ)
 ε-sim (yes y) (DeepDup' ¬var) = DeepDup' (εᵀ¬Var ¬var)
 ε-sim (yes y) Hole = Hole

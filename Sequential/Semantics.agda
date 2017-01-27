@@ -139,7 +139,8 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
  --         -- (No need to introduce a fresh copy)
  --         ⟨ Γ , Res L #[ (Var {π = π} τ∈π) ]ᴰ , read L⊑l ∷ S ⟩ ⇝ ⟨ Γ , Return l (deepDup t) , S ⟩
 
- Hole : ∀ {τ} -> ∙ {τ = τ} ⇝ ∙
+ Hole₁ : ∀ {τ} -> ∙ {τ = τ} ⇝ ∙
+ Hole₂ : ∀ {τ} -> ⟨ ∙ , ∙ {{τ}} , ∙ ⟩ ⇝ ⟨ ∙ , ∙ , ∙ ⟩
 
  -- deepDupᵀ t takes care of replacing unguarded free variables with deepDup.
  -- Note that deepDupᵀ (deepDup t) = deepDup t, so also in case of

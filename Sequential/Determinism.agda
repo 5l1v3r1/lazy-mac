@@ -15,7 +15,6 @@ updateᴱ-≡ : ∀ {π π' τ l} {mt : Maybe (Term π' τ)} {Δ Δ₁ Δ₂ : E
            -> Updateᴱ mt τ∈π Δ Δ₁ -> Updateᴱ mt τ∈π Δ Δ₂ -> Δ₁ ≡ Δ₂
 updateᴱ-≡ here here = refl
 updateᴱ-≡ (there a) (there b) rewrite updateᴱ-≡ a b = refl
-updateᴱ-≡ ∙ ∙ = refl
 
 -- My own heterogeneous equality for terms to ease unification
 data _≅ᵀ_ {π τ} (t : Term π τ) : ∀ {π'} -> Term π' τ -> Set where
@@ -106,4 +105,5 @@ determinism (DeepDup τ∈π t∈Δ) (Var₂ _ () _)
 determinism (DeepDup' ¬var) (DeepDup' ¬var') = refl
 determinism (DeepDup' ¬var) (Var₂ τ∈π () _)
 determinism (DeepDup' ¬var) (DeepDup τ∈π t∈Δ) = ⊥-elim (¬var (Var _))
-determinism Hole Hole = refl
+determinism Hole₁ Hole₁ = refl
+determinism Hole₂ Hole₂ = refl
