@@ -29,12 +29,12 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
             -> (α∈π : α ∈ᴿ π) ->
           ⟨ Δ , Abs t , Var α∈π ∷ S ⟩ ⇝ ⟨ Δ , subst (Var α∈π) t , S ⟩
 
- Var₁ : ∀ {τ τ'} {π π' : Context} {Δ Δ' : Env l π}  {S : Stack l τ τ'} {t : Term π τ}
+ Var₁ : ∀ {τ τ'} {π : Context} {Δ Δ' : Env l π}  {S : Stack l τ τ'} {t : Term π τ}
         -> (τ∈π : τ ∈ᴿ π)
         -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
         -> (¬val :  ¬ (Value t))
         -> (rᴱ : Δ' ≔ Δ [ τ∈π ↛ t ]ᴱ)
-        -> ⟨ Δ , Var {π = π} τ∈π , S ⟩ ⇝ ⟨ Δ'  , t , (# τ∈π) ∷ S ⟩   -- t
+        -> ⟨ Δ , Var {π = π} τ∈π , S ⟩ ⇝ ⟨ Δ'  , t , (# τ∈π) ∷ S ⟩
 
  Var₁' : ∀ {τ τ'} {π : Context} {Δ : Env l π} {S : Stack l τ τ'} {v : Term π τ}
          -> (τ∈π : τ ∈ᴿ π)
