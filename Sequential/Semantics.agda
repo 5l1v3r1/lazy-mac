@@ -1,8 +1,9 @@
-open import Lattice
-
 module Sequential.Semantics {- (𝓛 : Lattice) -} where
 
 open import Types
+import Lattice
+open Lattice.Lattice 𝓛 renaming (_≟_ to _≟ᴸ_)
+
 open import Sequential.Calculus
 open import Data.Maybe
 open import Data.Product
@@ -12,142 +13,162 @@ open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 -- DeepDup helper functions and data types
 
 open import Data.Bool using (not)
-open import Data.List using (filter)
+open import Data.List using (filter ; length)
 open import Relation.Nullary.Decidable using (⌊_⌋)
-
--- Unguarded free variables
--- It should be a set, but there is no simple standard implementation of sets,
--- therefore I will start with a simple list and see where this takes us.
-ufv : Term -> List Variable
-ufv （） = []
-ufv True = []
-ufv False = []
-ufv (Id t) = ufv t
-ufv (unId t) = ufv t
-ufv (Var x) = x ∷ []
-ufv (Abs n t) = filter (λ m → not ⌊ n ≟ⱽ m ⌋) (ufv t)
-ufv (App t t₁) = ufv t ++ ufv t₁
-ufv (If t Then t₁ Else t₂) = ufv t ++ ufv t₁ ++ ufv t₂
-ufv (Return l t) = ufv t
-ufv (Bind l t t₁) = ufv t ++ ufv t₁
-ufv (Mac l t) = ufv t
-ufv (Res l t) = ufv t
-ufv (label l⊑h t) = ufv t
-ufv (label∙ l⊑h t) = ufv t
-ufv (unlabel l⊑h t) = ufv t
-ufv (fork l⊑h t) = ufv t
-ufv (deepDup x) = [] -- Unguarded
-ufv ∙ = []
-
--- Unguareded Free Variables (we might need this as a data type)
-data UFV : Term -> List ℕ -> Set where
--- ...
-
--- DeepDupHeap l Γ ns ns' Γ' corresponds to Γ' = Γ[ n' ↦ deepDup n | (n , n') <- zip ns ns']
--- data DeepDupHeap (l : Label) : Heap -> List ℕ -> List ℕ -> Heap -> Set where
---   done : ∀ {Γ} -> DeepDupHeap l Γ [] [] Γ
---   addNext : ∀ {Γ₁ Γ₂ Γ₃ n n' ns ns'} -> Γ₂ ≔ᴬ Γ₁ [ n' ↦ (l , deepDup n) ]
---                                      -> DeepDupHeap l Γ₂ ns ns' Γ₃
---                                      -> DeepDupHeap l Γ₁ (n ∷ ns) (n' ∷ ns') Γ₃
-
--- Syntatic Sugar for DeepDupHeap
--- _≔ᴰ_[_↦_] : Heap -> Heap -> List ℕ -> Label × List ℕ -> Set
--- Γ' ≔ᴰ Γ [ ns' ↦ (l , ns) ] = DeepDupHeap l Γ ns ns' Γ'
 
 --------------------------------------------------------------------------------
 
--- Operational Semantics
--- Here since we use the Substs proof we implicitly rule out name clashes in substitutions.
--- Terms that do not comply with this assumption are not reducible according to this semantics,
--- however they could be after α-conversion (we simply don't want to deal with that,
--- and assume they have already been α-converted).
--- Note that stuck terms will be dealt with in the concurrent semantics.
-data _⇝_ {l : Label} : State l -> State l -> Set where
+data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
- App₁ : ∀ {Γ S t₁ t₂ n} -> fresh (l , n) Γ ->
-                         ⟨ Γ , App t₁ t₂ , S ⟩ ⇝ ⟨ Γ [ l , n ↦ just t₂ ] , t₁ , Var (l , n ) ∷ S ⟩
+ App₁ : ∀ {τ₁ τ₂ τ₃ π} {Δ : Env l π} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
+          ⟨ Δ , App t₁ t₂ , S ⟩ ⇝ ⟨ just t₂ ∷ Δ ,  wken t₁ (drop refl-⊆ˡ) , (Var {{π = τ₁ ∷ π}} hereᴿ) ∷ S ⟩
 
- App₂ : ∀ {Γ n m t t' S} -> Subst m (Var n) t t' -> ⟨ Γ , Abs m t , Var n ∷ S ⟩ ⇝ ⟨ Γ , t' , S ⟩
- 
- Var₁ : ∀ {Γ x t S} -> (x∈Γ : x ↦ just t ∈ Γ)
-                    -> (¬val : ¬ (Value t))
-                    -> ⟨ Γ , Var x , S ⟩ ⇝ ⟨ Γ [ x ↦ nothing ] , t , # x ∷ S ⟩ 
+ App₂ : ∀ {β α τ'} {π : Context} {Δ : Env l π} {S : Stack l β τ'} {t : Term (α ∷ π) β}
+            -> (α∈π : α ∈ᴿ π) ->
+          ⟨ Δ , Abs t , Var α∈π ∷ S ⟩ ⇝ ⟨ Δ , subst (Var α∈π) t , S ⟩
 
- Var₁' : ∀ {Γ x v S} -> (val : Value v)
-                     -> (x∈Γ : x ↦ just v ∈ Γ)
-                     -> ⟨ Γ , Var x , S ⟩ ⇝ ⟨ Γ , v , S ⟩
+ Var₁ : ∀ {τ τ'} {π : Context} {Δ Δ' : Env l π}  {S : Stack l τ τ'} {t : Term π τ}
+        -> (τ∈π : τ ∈ᴿ π)
+        -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
+        -> (¬val :  ¬ (Value t))
+        -> (rᴱ : Δ' ≔ Δ [ τ∈π ↛ t ]ᴱ)
+        -> ⟨ Δ , Var {π = π} τ∈π , S ⟩ ⇝ ⟨ Δ'  , t , (# τ∈π) ∷ S ⟩
 
- Var₂ : ∀ {Γ x v S} -> (val : Value v) -> ⟨ Γ , v , # x ∷ S ⟩ ⇝ ⟨ Γ [ x ↦ nothing ] , v , S ⟩
+ Var₁' : ∀ {τ τ'} {π : Context} {Δ : Env l π} {S : Stack l τ τ'} {v : Term π τ}
+         -> (τ∈π : τ ∈ᴿ π)
+         -> (v∈Δ : τ∈π ↦ v ∈ᴱ Δ)
+         -> (val : Value v)
+         -> ⟨ Δ , Var {π = π} τ∈π , S ⟩ ⇝ ⟨ Δ , v , S ⟩
 
- If : ∀ {Γ t₁ t₂ t₃ S} -> ⟨ Γ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Γ , t₁ , (Then t₂ Else t₃) ∷ S ⟩
- IfTrue : ∀ {Γ t₂ t₃ S} -> ⟨ Γ , True , (Then t₂ Else t₃) ∷ S ⟩ ⇝ ⟨ Γ , t₂ , S ⟩
- IfFalse : ∀ {Γ t₂ t₃ S} -> ⟨ Γ , False , (Then t₂ Else t₃) ∷ S ⟩ ⇝ ⟨ Γ , t₃ , S ⟩
+ Var₂ : ∀ {τ τ'} {π : Context} {Δ Δ' : Env l π} {S : Stack l τ τ'} {v : Term π τ}
+        -> (τ∈π : τ ∈ᴿ π)
+        -> (val : Value v)
+        -> (uᴱ : Δ' ≔ Δ [ τ∈π ↦ v ]ᴱ)
+        -> ⟨ Δ , v , (# τ∈π) ∷ S ⟩ ⇝ ⟨  Δ' , v , S ⟩
 
- Return : ∀ {Γ t S} -> ⟨ Γ , Return l t , S ⟩ ⇝ ⟨ Γ , Mac l t , S ⟩
- Bind₁ : ∀ {Γ t₁ t₂ S} -> ⟨ Γ , Bind l t₁ t₂ , S ⟩ ⇝ ⟨ Γ , t₁ , (Bind l t₂ ∷ S ) ⟩
- Bind₂ : ∀ {Γ t₁ t₂ S} -> ⟨ Γ , Mac l t₁ , Bind l t₂ ∷ S ⟩ ⇝ ⟨ Γ , App t₂ t₁ , S  ⟩
+ If : ∀ {π τ τ'} {Δ : Env l π} {S : Stack l τ τ'} {t₁ : Term π Bool} {t₂ t₃ : Term π τ} ->
+        ⟨ Δ , (If t₁ Then t₂ Else t₃) , S ⟩ ⇝ ⟨ Δ , t₁ , (Then t₂ Else t₃) ∷ S ⟩
 
- Label' : ∀ {Γ t S h} -> (p : l ⊑ h) -> ⟨ Γ , label p t , S ⟩ ⇝ ⟨ Γ , (Return l (Res h (Id t))) , S ⟩
+ IfTrue : ∀ {π τ τ'} {Δ : Env l π} {S : Stack l τ τ'} {t₂ t₃ : Term π τ} ->
+            ⟨ Δ , True {π = π}, (Then t₂ Else t₃) ∷ S ⟩ ⇝ ⟨ Δ , t₂ , S ⟩
 
- Unlabel₁ : ∀ {Γ t S l'} -> (p : l' ⊑ l) -> ⟨ Γ , unlabel p t , S ⟩ ⇝ ⟨ Γ , t , unlabel p ∷ S ⟩
- Unlabel₂ : ∀ {Γ t S l'} -> (p : l' ⊑ l) -> ⟨ Γ , Res l' t , unlabel p ∷ S ⟩ ⇝ ⟨ Γ , Return l (unId t) , S ⟩
+ IfFalse : ∀ {π τ τ'} {Δ : Env l π} {S : Stack l τ τ'} {t₂ t₃ : Term π τ} ->
+             ⟨ Δ , False {π = π}, (Then t₂ Else t₃) ∷ S ⟩ ⇝ ⟨ Δ , t₂ , S ⟩
 
- UnId₁ : ∀ {Γ t S} -> ⟨ Γ , unId t , S ⟩ ⇝ ⟨ Γ , t , unId ∷ S ⟩ 
- UnId₂ : ∀ {Γ t S} -> ⟨ Γ , Id t , unId ∷ S ⟩ ⇝ ⟨ Γ , t , S ⟩ 
+ Return : ∀ {π τ τ'} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π τ} ->
+            ⟨ Δ , Return l t , S ⟩ ⇝ ⟨ Δ , Mac l t , S ⟩
 
- Fork : ∀ {Γ t S h} -> (p : l ⊑ h) -> ⟨ Γ , (fork p t) , S ⟩ ⇝ ⟨ Γ , Return l （） , S ⟩ 
+ Bind₁ : ∀ {π α β τ'} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Mac l α)} {t₂ : Term π (α => Mac l β)} ->
+           ⟨ Δ , t₁ >>= t₂ , S ⟩ ⇝ ⟨ Δ , t₁ , (Bind t₂ ∷ S ) ⟩
 
- Hole : ∀ {Γ S} -> ⟨ Γ , ∙ , S ⟩ ⇝ ⟨ Γ , ∙ , S ⟩
+ Bind₂ : ∀ {π α β τ'} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π α} {t₂ : Term π (α => (Mac l β))} ->
+           ⟨ Δ , Mac l t₁ , Bind t₂ ∷ S ⟩ ⇝ ⟨ Δ , App t₂ t₁ , S ⟩
 
- -- DeepDup : ∀ {Γ₁ Γ₂ Γ₃ n n' ns' S l' t t'} -> ? -- n ↦ (l' , t) ∈ Γ₁
- --                                -> Substs t (ufv t) ns' t'
- --                                -> ?Γ₂ ≔ᴰ Γ₁ [ ns' ↦ (l , ufv t) ]
- --                                -> Γ₃ ≔ᴬ Γ₂ [ n' ↦ (l , t') ]
- --                                -> ⟨ Γ₁ , (deepDup n) , S ⟩ ⇝ ⟨ Γ₃ , Var n' , S ⟩
+ Label' : ∀ {π h τ τ'} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π τ} -> (p : l ⊑ h) ->
+            ⟨ Δ , label p t , S ⟩ ⇝ ⟨ Δ , (Return l (Res h (Id t))) , S ⟩
+
+ Label'∙ : ∀ {π h τ τ'} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π τ} -> (p : l ⊑ h) ->
+            ⟨ Δ , label∙ p t , S ⟩ ⇝ ⟨ Δ , (Return l (Res {π = π} h ∙)) , S ⟩
+
+ Unlabel₁ : ∀ {π τ τ' l'} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π (Labeled l' τ)} -> (p : l' ⊑ l) ->
+              ⟨ Δ , unlabel p t , S ⟩ ⇝ ⟨ Δ , t , unlabel p ∷ S ⟩
+
+ Unlabel₂ : ∀ {π τ τ' l'} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π (Id τ)} -> (p : l' ⊑ l) ->
+              ⟨ Δ , Res l' t , unlabel p ∷ S ⟩ ⇝ ⟨ Δ , Return l (unId t) , S ⟩
+
+ UnId₁ : ∀ {π τ τ'} {Δ : Env l π} {S : Stack l τ τ'} {t : Term π (Id τ)} ->
+           ⟨ Δ , unId t , S ⟩ ⇝ ⟨ Δ , t , unId ∷ S ⟩
+
+ UnId₂ : ∀ {π τ τ'} {Δ : Env l π} {S : Stack l τ τ'} {t : Term π τ} ->
+           ⟨ Δ , Id t , unId ∷ S ⟩ ⇝ ⟨ Δ , t , S ⟩
+
+ Fork : ∀ {π τ h} {Δ : Env l π} {S : Stack l _ τ} {t : Term π (Mac h _)} -> (p : l ⊑ h) ->
+          ⟨ Δ , (fork p t) , S ⟩ ⇝ ⟨ Δ , Return {π = π} l （） , S ⟩
+
+ Hole₁ : ∀ {τ} -> ∙ {τ = τ} ⇝ ∙
+
+ Hole₂ : ∀ {τ} -> ⟨ ∙ , ∙ {{τ}} , ∙ ⟩ ⇝ ⟨ ∙ , ∙ , ∙ ⟩
+
+ -- deepDupᵀ t takes care of replacing unguarded free variables with deepDup.
+ -- Note that deepDupᵀ (deepDup t) = deepDup t, so also in case of
+ -- nested deepDup (e.g. deepDup (deepDup t)) we make progress.
+ DeepDup : ∀ {π τ τ' l'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'}
+             -> (τ∈π : τ ∈ᴿ π)
+             -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
+             -- Note that this term is stuck if τ∈π ↦ t ∉ Δ
+             -- in this case we can find the term in the environment labeled with l'
+             -> ⟨ Δ , deepDup l' (Var {π = π} τ∈π) , S ⟩ ⇝ ⟨ just (deepDupᵀ l' t) ∷ Δ , Var {π = τ ∷ π} hereᴿ , S ⟩
 
 
-wken : ∀ {π t x τ₁ τ₂ Γ} -> ⊢ᴴ Γ ∷ π -> π ⊢ t ∷ τ₁ -> fresh x Γ -> π [ x ↦ τ₂ ]ᶜ ⊢ t ∷ τ₁ 
-wken Γ-π （） fx = （）
-wken Γ-π True fx = True
-wken Γ-π False fx = False
-wken Γ-π (If wt-t Then wt-t₁ Else wt-t₂) fx = If (wken Γ-π wt-t fx) Then (wken Γ-π wt-t₁ fx) Else (wken Γ-π wt-t₂ fx)
-wken Γ-π (Id wt-t) fx = {!!}
-wken Γ-π (unId wt-t) fx = {!!}
-wken {x = x} {Γ = Γ} (just x∈Γ t-τ) (Var p) fx with Γ x
-wken (just {lbl , num} x∈Γ t-τ) (Var {._} {lbl₁ , num₁} p) () | just x
-wken (just {lbl , num} x∈Γ t-τ) (Var {._} {lbl₁ , num₁} p) fx | nothing = Var {!p!}
-wken Γ-π (Abs wt-t) fx = {!!}
-wken Γ-π (App wt-t wt-t₁) fx = {!!}
-wken Γ-π (Mac wt-t) fx = {!!}
-wken Γ-π (Return wt-t) fx = {!!}
-wken Γ-π (Bind wt-t wt-t₁) fx = {!!}
-wken Γ-π (Res wt-t) fx = {!!}
-wken Γ-π (label wt-t) fx = {!!}
-wken Γ-π (label∙ wt-t) fx = {!!}
-wken Γ-π (unlabel wt-t) fx = {!!}
-wken Γ-π (fork wt-t) fx = {!!}
-wken Γ-π (deepDup x) fx = {!!}
-wken Γ-π ∙ fx = {!!}
+ -- If the argument to deepDup is not a variable we introduce a new fresh variable (similarly to
+ -- so that next rule DeepDup will apply.
+ DeepDup' : ∀ {π τ τ' l'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'}
+            -> (¬var : ¬ (IsVar t))
+            -> ⟨ Δ , deepDup l' t , S ⟩ ⇝ ⟨ just t ∷ Δ , deepDup l' (Var {π = τ ∷ π} hereᴿ) , S ⟩
 
--- Type preservation
-ty-preservation : ∀ {l τ Γ₁ Γ₂ t₁ t₂} {S₁ S₂ : Stack l} ->
-                   let s₁ = ⟨ Γ₁ , t₁ , S₁ ⟩
-                       s₂ = ⟨ Γ₂ , t₂ , S₂ ⟩ in ⊢ˢ s₁ ∷ τ -> s₁ ⇝ s₂ -> ⊢ˢ s₂ ∷ τ
-ty-preservation ⟨ just x∈Γ t-τ , App t₂ t₄ , S ⟩ (App₁ p) = ⟨ just {!x∈Γ!} {!!} , {!!} , (Var {!!} ∷ S) ⟩
-ty-preservation s (App₂ x) = {!!}
-ty-preservation s (Var₁ x∈Γ ¬val) = {!!}
-ty-preservation s (Var₁' val x∈Γ) = {!!}
-ty-preservation s (Var₂ val) = {!!}
-ty-preservation ⟨ x , If x₂ Then x₃ Else x₄ , x₁ ⟩ If = ⟨ x , x₂ , (Then x₃ Else x₄) ∷ x₁ ⟩
-ty-preservation ⟨ x , True , (Then wt-t₂ Else wt-t₃) ∷ x₂ ⟩ IfTrue = ⟨ x , wt-t₂ , x₂ ⟩
-ty-preservation ⟨ x , False , (Then wt-t₂ Else wt-t₃) ∷ x₂ ⟩ IfFalse = ⟨ x , wt-t₃ , x₂ ⟩
-ty-preservation ⟨ x , Return x₂ , x₁ ⟩ Return = ⟨ x , Mac x₂ , x₁ ⟩
-ty-preservation ⟨ x , Bind x₂ x₃ , x₁ ⟩ Bind₁ = ⟨ x , x₂ , Bind x₃ ∷ x₁ ⟩
-ty-preservation ⟨ x , Mac x₁ , Bind wt-t₂ ∷ x₂ ⟩ Bind₂ = ⟨ x , App wt-t₂ x₁ , x₂ ⟩
-ty-preservation ⟨ x , label x₂ , x₁ ⟩ (Label' p) = ⟨ x , Return (Res (Id x₂)) , x₁ ⟩
-ty-preservation ⟨ x , unlabel x₂ , x₁ ⟩ (Unlabel₁ p) = ⟨ x , x₂ , unlabel p ∷ x₁ ⟩
-ty-preservation ⟨ x , Res x₁ , unlabel p ∷ x₂ ⟩ (Unlabel₂ .p) = ⟨ x , Return (unId x₁) , x₂ ⟩
-ty-preservation ⟨ x , unId x₁ , x₂ ⟩ UnId₁ = ⟨ x , x₁ , unId ∷ x₂ ⟩
-ty-preservation ⟨ x , Id x₁ , unId ∷ x₂ ⟩ UnId₂ = ⟨ x , x₁ , x₂ ⟩
-ty-preservation ⟨ x , fork x₂ , x₁ ⟩ (Fork p) = ⟨ x , Return （） , x₁ ⟩
-ty-preservation ⟨ x , ∙ , x₂ ⟩ Hole = ⟨ x , ∙ , x₂ ⟩
+
+ Write₁ : ∀ {τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
+            ⟨ Δ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Δ , t₁ , (write l⊑H t₂ ∷ S) ⟩
+
+ Write∙₁ : ∀ {τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
+            ⟨ Δ , write∙ l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ Δ , t₁ , write∙ l⊑H t₂ ∷ S ⟩
+
+ Read₁ : ∀ {τ τ' L} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {L⊑l : L ⊑ l} ->
+         ⟨ Δ , read {τ = τ} L⊑l t , S ⟩ ⇝ ⟨ Δ , t , read L⊑l ∷ S ⟩
+
+-- Semantics for stateful operations (with memory)
+data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
+
+  Pure : ∀ {Γ Γ' π₁ π₂ τ₁ τ₂ τ₃} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l τ₁ τ₃} {S₂ : Stack l τ₂ τ₃}
+           {M : Memory l} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂}
+         -> (l∈Γ : l ↦ (M , Δ₁) ∈ᴴ Γ)
+         -> ⟨ Δ₁ , t₁ , S₁ ⟩ ⇝ ⟨ Δ₂ , t₂ , S₂ ⟩
+         -> (uᴴ : Γ' ≔ Γ [ l ↦ (M , Δ₂) ]ᴴ)
+         -> ⟨ Γ , t₁ , S₁ ⟩ ⟼ ⟨ Γ' , t₂ , S₂ ⟩
+
+   -- We have to write the term in the memory segment labeled as the reference (H)
+   -- so that it can be correctly read by threads labeled with H or more.
+   -- Note that if the current thread can also read the reference, then l ≡ H and we
+   -- are still writing in the right memory.
+  New : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {M : Memory H} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ H}
+         -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
+         -> (uᴴ : Γ' ≔ Γ [ H ↦ (newᴹ t M , Δ) ]ᴴ ) ->
+         ⟨ Γ , new l⊑h t , S ⟩ ⟼ ⟨ Γ' , Return l (Res {π = π} H #[ lengthᴹ M ]) , S ⟩
+
+  New∙ : ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ H} ->
+         ⟨ Γ , new∙ l⊑h t , S ⟩ ⟼ ⟨ Γ , Return l (Res {π = π} H ∙) , S ⟩
+
+  Write₂ : ∀ {Γ Γ' τ τ' n π H} {M M' : Memory H} {Δ : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {t : Term π τ}
+          -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
+          -> (uᴹ : M' ≔ M [ n ↦ t ]ᴹ)
+          -> (uᴴ : Γ' ≔ Γ [ H ↦ ( M' , Δ ) ]ᴴ) ->
+         ⟨ Γ , Res {π = π} H #[ n ] , write l⊑H t ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
+
+  Writeᴰ₂ : ∀ {Γ Γ' τ τ' n π H} {M M' : Memory H} {Δ : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {t : Term π τ}
+          -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
+          -> (uᴹ : M' ≔ M [ n ↦ t ]ᴹ)
+          -> (uᴴ : Γ' ≔ Γ [ H ↦ ( M' , Δ ) ]ᴴ) ->
+         ⟨ Γ , Res {π = π} H #[ n ]ᴰ , write l⊑H t ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
+
+  Write∙₂ :  ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {t : Term π Addr} {t' : Term π τ} ->
+            ⟨ Γ , Res {π = π} H t , write∙ l⊑H t' ∷ S ⟩ ⟼ ⟨ Γ , Return {π = π} l （） , S ⟩
+
+  Read₂ : ∀ {Γ τ τ' n L} {π : Context} {M : Memory L} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l}
+         -> (L∈Γ : L ↦ (M , Δ) ∈ᴴ Γ)
+         -> (t∈M : n ↦ t ∈ᴹ M) ->
+           ⟨ Γ , Res {π = π} L #[ n ] , read L⊑l ∷ S ⟩ ⟼ ⟨ Γ , Return l t , S ⟩
+
+  Readᴰ₂ : ∀ {Γ τ τ' n L} {π : Context} {M : Memory L} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l}
+         -> (L∈Γ : L ↦ (M , Δ) ∈ᴴ Γ)
+         -> (t∈M : n ↦ t ∈ᴹ M) ->
+             -- t might contain free variables bound in L context
+           ⟨ Γ , Res {π = π} L #[ n ] , read L⊑l ∷ S ⟩ ⟼ ⟨ Γ , Return l (deepDup L t) , S ⟩
+
+  -- Not ok,
+  -- let x = 42 in (  forkᴹ ( forkᴴ ( ... x ... ) ... x ) ), I would get deepDup M x,
+  -- but x is in L.
+  -- I need to put the label with the variable, e.g. Var l τ∈π
+ -- DeepDupˢ : ∀ {π τ τ' l'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'}
+ --             -> (τ∈π : τ ∈ᴿ π)
+ --             -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
+ --             -> ⟨ Δ , deepDup l' (Var {π = π} τ∈π) , S ⟩ ⟼ ⟨ just (deepDupᵀ l' t) ∷ Δ , Var {π = τ ∷ π} hereᴿ , S ⟩
