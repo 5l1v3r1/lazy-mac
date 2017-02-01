@@ -130,37 +130,37 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
    -- so that it can be correctly read by threads labeled with H or more.
    -- Note that if the current thread can also read the reference, then l ≡ H and we
    -- are still writing in the right memory.
-  New : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {M : Memory H} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ H}
+  New : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {M : Memory H} {S : Stack l _ τ'} {τ∈π : τ ∈ᴿ π} {l⊑h : l ⊑ H}
          -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
-         -> (uᴴ : Γ' ≔ Γ [ H ↦ (newᴹ t M , Δ) ]ᴴ ) ->
-         ⟨ Γ , new l⊑h t , S ⟩ ⟼ ⟨ Γ' , Return l (Res {π = π} H #[ lengthᴹ M ]) , S ⟩
+         -> (uᴴ : Γ' ≔ Γ [ H ↦ (newᴹ τ∈π M , Δ) ]ᴴ ) ->
+         ⟨ Γ , new {π = π} l⊑h (Var τ∈π) , S ⟩ ⟼ ⟨ Γ' , Return l (Res {π = π} H #[ lengthᴹ M ]) , S ⟩ -- TODO we need context rule for non-var terms
 
   New∙ : ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ H} ->
          ⟨ Γ , new∙ l⊑h t , S ⟩ ⟼ ⟨ Γ , Return l (Res {π = π} H ∙) , S ⟩
 
-  Write₂ : ∀ {Γ Γ' τ τ' n π H} {M M' : Memory H} {Δ : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {t : Term π τ}
+  Write₂ : ∀ {Γ Γ' τ τ' n π H} {M M' : Memory H} {Δ : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈ᴿ π}
           -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
-          -> (uᴹ : M' ≔ M [ n ↦ t ]ᴹ)
+          -> (uᴹ : M' ≔ M [ n ↦ τ∈π ]ᴹ)
           -> (uᴴ : Γ' ≔ Γ [ H ↦ ( M' , Δ ) ]ᴴ) ->
-         ⟨ Γ , Res {π = π} H #[ n ] , write l⊑H t ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
+         ⟨ Γ , Res {π = π} H #[ n ] , write {π = π} l⊑H (Var τ∈π) ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩  -- TODO we need context rule for non-var terms
 
-  Writeᴰ₂ : ∀ {Γ Γ' τ τ' n π H} {M M' : Memory H} {Δ : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {t : Term π τ}
+  Writeᴰ₂ : ∀ {Γ Γ' τ τ' n π H} {M M' : Memory H} {Δ : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈ᴿ π}
           -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
-          -> (uᴹ : M' ≔ M [ n ↦ t ]ᴹ)
+          -> (uᴹ : M' ≔ M [ n ↦ τ∈π ]ᴹ)
           -> (uᴴ : Γ' ≔ Γ [ H ↦ ( M' , Δ ) ]ᴴ) ->
-         ⟨ Γ , Res {π = π} H #[ n ]ᴰ , write l⊑H t ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
+         ⟨ Γ , Res {π = π} H #[ n ]ᴰ , write {π = π} l⊑H (Var τ∈π) ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
   Write∙₂ :  ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {t : Term π Addr} {t' : Term π τ} ->
             ⟨ Γ , Res {π = π} H t , write∙ l⊑H t' ∷ S ⟩ ⟼ ⟨ Γ , Return {π = π} l （） , S ⟩
 
-  Read₂ : ∀ {Γ τ τ' n L} {π : Context} {M : Memory L} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l}
+  Read₂ : ∀ {Γ τ τ' n L} {π : Context} {M : Memory L} {Δ : Env L π} {S : Stack l _ τ'} {τ∈π : τ ∈ π} {L⊑l : L ⊑ l}
          -> (L∈Γ : L ↦ (M , Δ) ∈ᴴ Γ)
-         -> (t∈M : n ↦ t ∈ᴹ M) ->
-           ⟨ Γ , Res {π = π} L #[ n ] , read L⊑l ∷ S ⟩ ⟼ ⟨ Γ , Return l t , S ⟩
+         -> (t∈M : n ↦ τ∈π ∈ᴹ M) ->
+           ⟨ Γ , Res {π = π} L #[ n ] , read L⊑l ∷ S ⟩ ⟼ ⟨ Γ , Return {π = π} l (Var {!!}) , S ⟩ -- TODO must reverse variables
 
   Readᴰ₂ : ∀ {Γ τ τ' n L} {π : Context} {M : Memory L} {Δ : Env L π} {S : Stack l _ τ'} {t : Term π τ} {L⊑l : L ⊑ l}
          -> (L∈Γ : L ↦ (M , Δ) ∈ᴴ Γ)
-         -> (t∈M : n ↦ t ∈ᴹ M) ->
+         -> (t∈M : n ↦ {!!} ∈ᴹ M) ->
              -- t might contain free variables bound in L context
            ⟨ Γ , Res {π = π} L #[ n ] , read L⊑l ∷ S ⟩ ⟼ ⟨ Γ , Return l (deepDup L t) , S ⟩
 
