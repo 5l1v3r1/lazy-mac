@@ -11,7 +11,7 @@ open import Relation.Binary.HeterogeneousEquality
 
 open import Types
 
-updateᴱ-≡ : ∀ {π π' τ l} {mt : Maybe (Term π' τ)} {Δ Δ₁ Δ₂ : Env l π} {τ∈π : τ ∈ π}
+updateᴱ-≡ : ∀ {π π' τ l} {mt : Maybe (Term π' τ)} {Δ Δ₁ Δ₂ : Env l π} {τ∈π : τ ∈⟨ l ⟩ π}
            -> Updateᴱ mt τ∈π Δ Δ₁ -> Updateᴱ mt τ∈π Δ Δ₂ -> Δ₁ ≡ Δ₂
 updateᴱ-≡ here here = refl
 updateᴱ-≡ (there a) (there b) rewrite updateᴱ-≡ a b = refl
@@ -20,9 +20,9 @@ updateᴱ-≡ (there a) (there b) rewrite updateᴱ-≡ a b = refl
 data _≅ᵀ_ {π τ} (t : Term π τ) : ∀ {π'} -> Term π' τ -> Set where
   refl : t ≅ᵀ t
 
-memberᴱ-≅ᵀ : ∀ {τ l π π₁ π₂} {Δ : Env l π} {t₁ : Term π₁ τ} {t₂ : Term π₂ τ} (τ∈π : τ ∈ᴿ π) -> τ∈π ↦ t₁ ∈ᴱ Δ -> τ∈π ↦ t₂ ∈ᴱ Δ -> t₁ ≅ᵀ t₂
+memberᴱ-≅ᵀ : ∀ {τ l π π₁ π₂} {Δ : Env l π} {t₁ : Term π₁ τ} {t₂ : Term π₂ τ} (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> τ∈π ↦ t₁ ∈ᴱ Δ -> τ∈π ↦ t₂ ∈ᴱ Δ -> t₁ ≅ᵀ t₂
 memberᴱ-≅ᵀ τ∈π x y = aux x y
-  where aux : ∀ {τ l π π₁ π₂} {Δ : Env l π} {t₁ : Term π₁ τ} {t₂ : Term π₂ τ} {τ∈π : τ ∈ π}
+  where aux : ∀ {τ l π π₁ π₂} {Δ : Env l π} {t₁ : Term π₁ τ} {t₂ : Term π₂ τ} {τ∈π : τ ∈⟨ l ⟩ π}
                    -> Memberᴱ (just t₁) τ∈π Δ -> Memberᴱ (just t₂) τ∈π Δ -> t₁ ≅ᵀ t₂
         aux here here = refl
         aux (there x) (there y) with aux x y
@@ -77,6 +77,11 @@ determinism (Var₂ τ∈π () uᴱ) UnId₁
 determinism (Var₂ τ∈π () uᴱ) (Fork p)
 determinism (Var₂ τ∈π () uᴱ) (DeepDup τ∈π' t∈Δ)
 determinism (Var₂ τ∈π () uᴱ) (DeepDup' ¬var)
+determinism (Var₂ τ∈π () uᴱ) (New₁ ¬var)
+determinism (Var₂ τ∈π () uᴱ) (New∙₁ ¬var)
+determinism (Var₂ τ∈π () uᴱ) Write₁
+determinism (Var₂ τ∈π () uᴱ) Write∙₁
+determinism (Var₂ τ∈π () uᴱ) Read₁
 determinism If (Var₂ τ∈π () uᴱ)
 determinism If If = refl
 determinism IfTrue IfTrue = refl
@@ -105,5 +110,15 @@ determinism (DeepDup τ∈π t∈Δ) (Var₂ _ () _)
 determinism (DeepDup' ¬var) (DeepDup' ¬var') = refl
 determinism (DeepDup' ¬var) (Var₂ τ∈π () _)
 determinism (DeepDup' ¬var) (DeepDup τ∈π t∈Δ) = ⊥-elim (¬var (Var _))
+determinism (New₁ ¬var) (Var₂ τ∈π () uᴱ)
+determinism (New₁ ¬var) (New₁ ¬var₁) = refl
+determinism (New∙₁ ¬var) (Var₂ τ∈π () uᴱ)
+determinism (New∙₁ ¬var) (New∙₁ ¬var₁) = refl
+determinism Write₁ (Var₂ τ∈π () uᴱ)
+determinism Write₁ Write₁ = refl
+determinism Write∙₁ (Var₂ τ∈π () uᴱ)
+determinism Write∙₁ Write∙₁ = refl
+determinism Read₁ (Var₂ τ∈π () uᴱ)
+determinism Read₁ Read₁ = refl
 determinism Hole₁ Hole₁ = refl
 determinism Hole₂ Hole₂ = refl
