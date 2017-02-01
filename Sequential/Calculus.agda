@@ -208,36 +208,35 @@ x ↦ t ∈ᴱ Δ = Memberᴱ (just t) (∈ᴿ-∈ x) Δ
 
 --------------------------------------------------------------------------------
 
--- I don't think I need to store pointers to the heap (τ ∈ π)
--- if I keep separate the store from the heap
+-- A labeled memory keeps pointer to the corrisponding labeled heap
 data Memory (l : Label) : Set where
   [] : Memory l
-  _∷_ : ∀ {π τ} -> (t : Term π τ) (M : Memory l) -> Memory l
+  _∷_ : ∀ {π : Context} {τ : Ty} -> (τ∈π : τ ∈ π) (M : Memory l) -> Memory l
   ∙ : Memory l
 
-data Memberᴹ {l π τ} (t : Term π τ) : ℕ -> Memory l -> Set where
-  here : ∀ {M} -> Memberᴹ t 0 (t ∷ M)
-  there : ∀ {M n π' τ'} {t' : Term π' τ'} -> Memberᴹ t n M -> Memberᴹ t (suc n) (t' ∷ M)
+data Memberᴹ {l π τ} (τ∈π : τ ∈ π) : ℕ -> Memory l -> Set where
+  here : ∀ {M} -> Memberᴹ τ∈π 0 (τ∈π ∷ M)
+  there : ∀ {M n τ'} {π' : Context} {τ∈π' : τ' ∈ π} -> Memberᴹ τ∈π n M -> Memberᴹ τ∈π (suc n) (τ∈π' ∷ M)
 --  ∙ : ∀ {n} -> Memberᴹ ∙ n ∙ -- Not sure if we will need this.  (then t must be an index)
 
-_↦_∈ᴹ_ : ∀ {π l τ} -> ℕ -> Term π τ -> Memory l -> Set
-n ↦ t ∈ᴹ M = Memberᴹ t n M
+_↦_∈ᴹ_ : ∀ {π l τ} -> ℕ -> τ ∈ π -> Memory l -> Set
+n ↦ τ∈π ∈ᴹ M = Memberᴹ τ∈π n M
 
-data Writeᴹ {l π τ} (t : Term π τ) : ℕ -> Memory l -> Memory l -> Set where
-  here : ∀ {M π' τ} {t' : Term π' τ} -> Writeᴹ t 0 (t' ∷ M) (t ∷  M)
-  there : ∀ {M M' π' τ' n} {t' : Term π' τ'} -> Writeᴹ t n M M' -> Writeᴹ t (suc n) (t' ∷ M) (t' ∷ M')
+data Writeᴹ {l π τ} (τ∈π : τ ∈ π) : ℕ -> Memory l -> Memory l -> Set where
+  here : ∀ {M π' τ} {τ∈π' : τ ∈ π'} -> Writeᴹ τ∈π 0 (τ∈π' ∷ M) (τ∈π ∷  M)
+  there : ∀ {M M' π' τ' n} {τ∈π' : τ' ∈ π'} -> Writeᴹ τ∈π n M M' -> Writeᴹ τ∈π (suc n) (τ∈π' ∷ M) (τ∈π' ∷ M')
 
-_≔_[_↦_]ᴹ : ∀ {π l τ} -> Memory l -> Memory l -> ℕ -> Term π τ -> Set
-M' ≔ M [ n ↦ t ]ᴹ = Writeᴹ t n M M'
+_≔_[_↦_]ᴹ : ∀ {π l τ} -> Memory l -> Memory l -> ℕ -> τ ∈ π -> Set
+M' ≔ M [ n ↦ τ∈π ]ᴹ = Writeᴹ τ∈π n M M'
 
-newᴹ : ∀ {l π τ} -> Term π τ -> Memory l -> Memory l
-newᴹ t [] = t ∷ []
-newᴹ t (t₁ ∷ M) = t₁ ∷ newᴹ t M
-newᴹ t ∙ = ∙
+newᴹ : ∀ {l π τ} -> τ ∈ π -> Memory l -> Memory l
+newᴹ τ∈π [] = τ∈π ∷ []
+newᴹ τ∈π (τ∈π₁ ∷ M) = τ∈π₁ ∷ newᴹ τ∈π M
+newᴹ τ∈π ∙ = ∙
 
 lengthᴹ : ∀ {l} -> Memory l -> ℕ
 lengthᴹ [] = 0
-lengthᴹ (t ∷ M) = suc (lengthᴹ M)
+lengthᴹ (τ∈π ∷ M) = suc (lengthᴹ M)
 lengthᴹ ∙ = 0  -- We don't care when the memory is collapsed
 
 --------------------------------------------------------------------------------
