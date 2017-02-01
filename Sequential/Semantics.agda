@@ -131,7 +131,7 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
   Pure : ∀ {Γ Γ' π₁ π₂ τ₁ τ₂ τ₃} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l τ₁ τ₃} {S₂ : Stack l τ₂ τ₃}
            {M : Memory l} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂}
          -> (l∈Γ : l ↦ (M , Δ₁) ∈ᴴ Γ)
-         -> ⟨ Δ₁ , t₁ , S₁ ⟩ ⇝ ⟨ Δ₂ , t₂ , S₂ ⟩
+         -> (step : ⟨ Δ₁ , t₁ , S₁ ⟩ ⇝ ⟨ Δ₂ , t₂ , S₂ ⟩)
          -> (uᴴ : Γ' ≔ Γ [ l ↦ (M , Δ₂) ]ᴴ)
          -> ⟨ Γ , t₁ , S₁ ⟩ ⟼ ⟨ Γ' , t₂ , S₂ ⟩
 
@@ -173,11 +173,11 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
   -- When we read a reference from a possibly lower level we must deepDup that
   Readᴰ₂ : ∀ {Γ τ τ' n L} {π : Context} {M : Memory L} {Δ : Env L π} {S : Stack l _ τ'} {τ∈π : τ ∈⟨ L ⟩ᴿ π} {L⊑l : L ⊑ l}
          -> (L∈Γ : L ↦ (M , Δ) ∈ᴴ Γ)
-         -> (t∈M : n ↦ ∥ (refl-⊑ , τ∈π) ∥ ∈ᴹ M) ->
+         -> (n∈M : n ↦ ∥ (refl-⊑ , τ∈π) ∥ ∈ᴹ M) ->
            ⟨ Γ , Res {π = π} L #[ n ]ᴰ , read L⊑l ∷ S ⟩ ⟼ ⟨ Γ , Return {π = π} l (deepDup (Var τ∈π)) , S ⟩
 
-  -- L ⊑ l
   DeepDupˢ : ∀ {Γ π τ τ' L} {Δ : Env L π} {M : Memory L} {t : Term π τ}{S : Stack l τ τ'}{ τ∈π : τ ∈⟨ L ⟩ᴿ π }
+             -> (L⊏l : L ⊏ l)  -- Probably we need ≢
              -> (L∈Γ : L ↦ (M , Δ) ∈ᴴ Γ)
              -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
              -> ⟨ Γ , deepDup (Var {π = π} τ∈π) , S ⟩ ⟼ ⟨ Γ , deepDup t , S ⟩

@@ -22,11 +22,21 @@ record Lattice : Set₁ where
 
 
   open import Data.Empty
+  open import Data.Product
+  open import Data.Sum
 
   trans-⋢  : ∀ {a b c} -> a ⊑ b -> ¬ (a ⊑ c) -> ¬ (b ⊑ c)
   trans-⋢ a⊑b ¬a⊑c b⊑c = ⊥-elim (¬a⊑c (trans-⊑ a⊑b b⊑c))
 
   _⋤_ : Label -> Label -> Set
   l₁ ⋤ l₂ = ¬ (l₁ ⊑ l₂)
+
+  _⊏_ : Label -> Label -> Set
+  l₁ ⊏ l₂ = l₁ ⊑ l₂ × l₁ ≢ l₂
+
+  strict? : ∀ {l₁ l₂} -> l₁ ⊑ l₂ -> l₁ ≡ l₂ ⊎ l₁ ⊏ l₂
+  strict? {l₁} {l₂} x with l₁ ≟ l₂
+  strict? x | yes refl = inj₁ refl
+  strict? x | no ¬p = inj₂ (x , ¬p)
 
 open Lattice public
