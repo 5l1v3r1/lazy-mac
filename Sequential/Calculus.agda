@@ -24,7 +24,10 @@ data Term (π : Context) : Ty -> Set where
   Id : ∀ {τ} -> Term π τ -> Term π (Id τ)
   unId : ∀ {τ} -> Term π (Id τ) -> Term π τ
 
-  Var : ∀ {τ} -> (τ∈π : τ ∈ᴿ π) -> Term π τ
+  -- The label represents in which (labeled) environment the variable points to
+  -- The user is not supposed to give explicit labels, rather the semantics
+  -- takes care of adding them as needed.
+  Var : ∀ {{l}} {τ} ->  (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Term π τ
   Abs : ∀ {α β} -> Term (α ∷ π) β -> Term π (α => β)
   App : ∀ {α β} -> Term π (α => β) -> Term π α -> Term π β
 
@@ -58,9 +61,7 @@ data Term (π : Context) : Ty -> Set where
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
-  -- The label represents in which labeled environment
-  -- a free variable should be looked up in.
-  deepDup : ∀ {τ} -> (l : Label) -> Term π τ -> Term π τ
+  deepDup : ∀ {τ} -> Term π τ -> Term π τ
 
   -- Represent sensitive information that has been erased.
   ∙ : ∀ {{τ}} -> Term π τ
@@ -89,7 +90,7 @@ wken True p = True
 wken False p = False
 wken (Id t) p = Id (wken t p)
 wken (unId t) p = unId (wken t p)
-wken (Var x) p = Var (wken-∈ᴿ p x)
+wken (Var ⟪ τ∈π ⟫) p = Var ⟪ wken-∈ᴿ p τ∈π ⟫
 wken (Abs t) p = Abs (wken t (cons p))
 wken (App t t₁) p = App (wken t p) (wken t₁ p)
 wken (If t Then t₁ Else t₂) p = If (wken t p) Then (wken t₁ p) Else (wken t₂ p)
@@ -108,19 +109,19 @@ wken (new∙ x t) p = new∙ x (wken t p)
 wken (#[ n ]) p = #[ n ]
 wken (#[ n ]ᴰ) p = #[ n ]ᴰ
 wken (fork x t) p = fork x (wken t p)
-wken (deepDup l x) p = deepDup l (wken x p)
+wken (deepDup x) p = deepDup (wken x p)
 wken ∙ p = ∙
 
 _↑¹ : ∀ {α β} {Δ : Context} -> Term Δ α -> Term (β ∷ Δ) α
 t ↑¹ = wken t (drop refl-⊆ˡ)
 
 -- Performs the variable-term substitution.
-var-subst : ∀ {α β} (Δ₁ : Context) (Δ₂ : Context)
-            -> Term Δ₂ β -> α ∈ (Δ₁ ++ [ β ] ++ Δ₂) -> Term (Δ₁ ++ Δ₂) α
-var-subst [] Δ₂ v here = v
-var-subst [] Δ₂ v (there p) = Var (∈-∈ᴿ p)
-var-subst {α} (._ ∷ Δ₁) Δ₂ v here = Var (∈-∈ᴿ {α} {α ∷ Δ₁ ++ Δ₂} here)
-var-subst (x ∷ Δ₁) Δ₂ v (there p) = (var-subst Δ₁ Δ₂ v p) ↑¹
+var-subst : ∀ {α β} {{l}} (Δ₁ : Context) (Δ₂ : Context)
+            -> Term Δ₂ β -> α ∈⟨ l ⟩ (Δ₁ ++ [ β ] ++ Δ₂) -> Term (Δ₁ ++ Δ₂) α
+var-subst [] Δ₂ v ⟪ here ⟫ = v
+var-subst [] Δ₂ v ⟪ there p ⟫ = Var ⟪ ∈-∈ᴿ p ⟫
+var-subst {α} (._ ∷ Δ₁) Δ₂ v ⟪ here ⟫ = Var ⟪ ∈-∈ᴿ {α} {α ∷ Δ₁ ++ Δ₂} here ⟫
+var-subst (x ∷ Δ₁) Δ₂ v ⟪ there p ⟫ = (var-subst Δ₁ Δ₂ v ⟪ p ⟫) ↑¹
 
 tm-subst : ∀ {τ α} (Δ₁ : Context) (Δ₂ : Context)-> Term Δ₂ α -> Term (Δ₁ ++ [ α ] ++ Δ₂) τ -> Term (Δ₁ ++ Δ₂) τ
 tm-subst Δ₁ Δ₂ v （） = （）
@@ -128,7 +129,7 @@ tm-subst Δ₁ Δ₂ v True = True
 tm-subst Δ₁ Δ₂ v False = False
 tm-subst Δ₁ Δ₂ v (Id t) = Id (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (unId t) = unId (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (Var y∈π) = var-subst Δ₁ Δ₂ v (∈ᴿ-∈ y∈π)
+tm-subst Δ₁ Δ₂ v (Var ⟪ y∈π ⟫) = var-subst Δ₁ Δ₂ v ⟪ ∈ᴿ-∈ y∈π ⟫
 tm-subst Δ₁ Δ₂ v (Abs t) = Abs (tm-subst (_ ∷ Δ₁) Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (App t t₁) = App (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
 tm-subst Δ₁ Δ₂ v (If t Then t₁ Else t₂) = If (tm-subst Δ₁ Δ₂ v t) Then (tm-subst Δ₁ Δ₂ v t₁) Else (tm-subst Δ₁ Δ₂ v t₂)
@@ -147,7 +148,7 @@ tm-subst Δ₁ Δ₂ v (new∙ x t) = new∙ x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (#[ n ]) = #[ n ]
 tm-subst Δ₁ Δ₂ v (#[ n ]ᴰ) = #[ n ]ᴰ
 tm-subst Δ₁ Δ₂ v (fork x t) = fork x (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (deepDup l x) = deepDup l (tm-subst Δ₁ Δ₂ v x)
+tm-subst Δ₁ Δ₂ v (deepDup x) = deepDup (tm-subst Δ₁ Δ₂ v x)
 tm-subst Δ₁ Δ₂ v ∙ = ∙
 
 subst : ∀ {α β} {Δ : Context} -> Term Δ α -> Term (α ∷ Δ) β -> Term Δ β
@@ -159,14 +160,14 @@ subst {Δ = Δ} v t = tm-subst [] Δ v t
 -- transform the input type (first indexed) in the output type (second
 -- index).
 data Cont (l : Label) : Ty -> Ty -> Set where
- Var : ∀ {τ₁ τ₂} {{π : Context}} -> (τ∈π : τ₁ ∈ᴿ π) -> Cont l (τ₁ => τ₂) τ₂
- # : ∀ {τ} {{π : Context}} -> (τ∈π : τ ∈ᴿ π)  -> Cont l τ τ
+ Var : ∀ {τ₁ τ₂} {{π : Context}} -> (τ∈π : τ₁ ∈⟨ l ⟩ᴿ π) -> Cont l (τ₁ => τ₂) τ₂
+ # : ∀ {τ} {{π : Context}} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π)  -> Cont l τ τ
  Then_Else_ : ∀ {τ} {π : Context} -> Term π τ -> Term π τ -> Cont l Bool τ
  Bind :  ∀ {τ₁ τ₂} {π : Context} -> Term π (τ₁ => Mac l τ₂) -> Cont l (Mac l τ₁) (Mac l τ₂)
  unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Cont l (Labeled l' τ) (Mac l τ)
  unId : ∀ {τ} -> Cont l (Id τ) τ
- write : ∀ {τ H} {π : Context} -> l ⊑ H -> Term π τ -> Cont l (Ref H τ) (Mac l （）)
- write∙ : ∀ {τ H} {π : Context} -> l ⊑ H -> Term π τ -> Cont l (Ref H τ) (Mac l （）)
+ write : ∀ {τ H} {π : Context} -> l ⊑ H -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Cont l (Ref H τ) (Mac l （）)
+ write∙ : ∀ {τ H} {π : Context} -> l ⊑ H -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Cont l (Ref H τ) (Mac l （）)
  read : ∀ {τ L} -> L ⊑ l -> Cont l (Ref L τ) (Mac l τ)
 
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
@@ -178,65 +179,66 @@ data Stack (l : Label) : Ty -> Ty -> Set where
  ∙ : ∀ {τ} -> Stack l τ τ
 --------------------------------------------------------------------------------
 
--- Note: at the moment in Env l π, π contains only variables labeled with l.
--- however in Term π, context π may contain variables with different labels.
--- I think this is still fine, because those variables are not mapped in
--- this environment (⟨ n , τ, l ⟩ ↦ nothing), but in their own.
 data Env (l : Label) : Context -> Set where
   [] : Env l []
   _∷_ : ∀ {π τ} -> (t : Maybe (Term π τ)) -> Env l π -> Env l (τ ∷ π)
-  ∙ : Env l []  -- We fix the context to empty to avoid non-determinism issues
+  ∙ : Env l []  -- We fix the context to empty to avoid non-determinism issues -- TODO probably we don't need this!
 
-data Updateᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈ π' -> Env l π' -> Env l π' -> Set where
-  here : ∀ {Δ : Env l π} {mt' : Maybe (Term _ τ)} -> Updateᴱ mt here (mt' ∷ Δ) (mt ∷ Δ)
-  there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ Δ' : Env l π'} {mt' : Maybe (Term _ τ')} -> Updateᴱ mt τ∈π' Δ Δ' -> Updateᴱ mt (there τ∈π') (mt' ∷ Δ) (mt' ∷ Δ')
+data Updateᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈⟨ l ⟩ π' -> Env l π' -> Env l π' -> Set where
+  here : ∀ {Δ : Env l π} {mt' : Maybe (Term _ τ)} -> Updateᴱ mt (⟪ here ⟫) (mt' ∷ Δ) (mt ∷ Δ)
+  there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ Δ' : Env l π'} {mt' : Maybe (Term _ τ')} -> Updateᴱ mt (⟪ τ∈π' ⟫) Δ Δ' ->
+            Updateᴱ mt (⟪ there τ∈π' ⟫) (mt' ∷ Δ) (mt' ∷ Δ')
 
-_≔_[_↦_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈ᴿ π' -> Term π τ -> Set
-Δ' ≔ Δ [ τ∈π' ↦ t ]ᴱ = Updateᴱ (just t) (∈ᴿ-∈ τ∈π') Δ Δ'
+_≔_[_↦_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈⟨ l ⟩ᴿ π' -> Term π τ -> Set
+Δ' ≔ Δ [ ⟪ τ∈π' ⟫ ↦ t ]ᴱ = Updateᴱ (just t) (⟪ ∈ᴿ-∈ τ∈π' ⟫) Δ Δ'
 
 -- Syntatic sugar for removing a term from the environment.
 -- The term is used only to fix its context π and avoid unsolved metas.
-_≔_[_↛_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈ᴿ π' -> Term π τ -> Set
-_≔_[_↛_]ᴱ {π = π} Δ' Δ x t = Updateᴱ {π = π} nothing (∈ᴿ-∈ x) Δ Δ'
+_≔_[_↛_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈⟨ l ⟩ᴿ π' -> Term π τ -> Set
+_≔_[_↛_]ᴱ {π = π} Δ' Δ ⟪ x ⟫ t = Updateᴱ {π = π} nothing (⟪ ∈ᴿ-∈ x ⟫) Δ Δ'
 
-data Memberᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈ π' -> Env l π' -> Set where
-  here : ∀ {Δ : Env l π} -> Memberᴱ mt here (mt ∷ Δ)
-  there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ mt τ∈π' Δ -> Memberᴱ mt (there τ∈π') (mt' ∷ Δ)
+data Memberᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈⟨ l ⟩ π' -> Env l π' -> Set where
+  here : ∀ {Δ : Env l π} -> Memberᴱ mt (⟪ here ⟫) (mt ∷ Δ)
+  there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ mt (⟪ τ∈π' ⟫) Δ -> Memberᴱ mt (⟪ there τ∈π' ⟫) (mt' ∷ Δ)
 
-_↦_∈ᴱ_ : ∀ {l τ} {π π' : Context} -> τ ∈ᴿ π' -> Term π τ -> Env l π' -> Set
-x ↦ t ∈ᴱ Δ = Memberᴱ (just t) (∈ᴿ-∈ x) Δ
+_↦_∈ᴱ_ : ∀ {l τ} {π π' : Context} -> τ ∈⟨ l ⟩ᴿ π' -> Term π τ -> Env l π' -> Set
+⟪ x ⟫ ↦ t ∈ᴱ Δ = Memberᴱ (just t) (⟪ ∈ᴿ-∈ x ⟫) Δ
 
 --------------------------------------------------------------------------------
 
--- A labeled memory keeps pointer to the corrisponding labeled heap
+-- A labeled-typed memory cell, containing a pointer
+-- at most at level l
+data Cell (l : Label) (τ : Ty) : Set where
+  ∥_∥  : ∀ {L π} -> L ⊑ l × τ ∈⟨ L ⟩ᴿ π -> Cell l τ
+
+-- A labeled memory keeps pointer to no more sensitive heaps
 data Memory (l : Label) : Set where
   [] : Memory l
-  _∷_ : ∀ {π : Context} {τ : Ty} -> (τ∈π : τ ∈ π) (M : Memory l) -> Memory l
+  _∷_ : ∀ {τ} -> (cᴸ : Cell l τ) (M : Memory l) -> Memory l
   ∙ : Memory l
 
-data Memberᴹ {l π τ} (τ∈π : τ ∈ π) : ℕ -> Memory l -> Set where
-  here : ∀ {M} -> Memberᴹ τ∈π 0 (τ∈π ∷ M)
-  there : ∀ {M n τ'} {π' : Context} {τ∈π' : τ' ∈ π} -> Memberᴹ τ∈π n M -> Memberᴹ τ∈π (suc n) (τ∈π' ∷ M)
---  ∙ : ∀ {n} -> Memberᴹ ∙ n ∙ -- Not sure if we will need this.  (then t must be an index)
+data Memberᴹ {l τ} (cᴸ : Cell l τ) : ℕ -> Memory l -> Set where
+  here : ∀ {M} -> Memberᴹ cᴸ 0 (cᴸ ∷ M)
+  there : ∀ {M n τ'} {c₁ᴸ : Cell l τ'} -> Memberᴹ cᴸ n M -> Memberᴹ cᴸ (suc n) (c₁ᴸ ∷ M)
 
-_↦_∈ᴹ_ : ∀ {π l τ} -> ℕ -> τ ∈ π -> Memory l -> Set
-n ↦ τ∈π ∈ᴹ M = Memberᴹ τ∈π n M
+_↦_∈ᴹ_ : ∀ {l τ} -> ℕ -> Cell l τ -> Memory l -> Set
+_↦_∈ᴹ_ n c M = Memberᴹ c n M
 
-data Writeᴹ {l π τ} (τ∈π : τ ∈ π) : ℕ -> Memory l -> Memory l -> Set where
-  here : ∀ {M π' τ} {τ∈π' : τ ∈ π'} -> Writeᴹ τ∈π 0 (τ∈π' ∷ M) (τ∈π ∷  M)
-  there : ∀ {M M' π' τ' n} {τ∈π' : τ' ∈ π'} -> Writeᴹ τ∈π n M M' -> Writeᴹ τ∈π (suc n) (τ∈π' ∷ M) (τ∈π' ∷ M')
+data Writeᴹ {l τ} (cᴸ : Cell l τ) : ℕ -> Memory l -> Memory l -> Set where
+  here : ∀ {M} {c₁ᴸ : Cell l τ} -> Writeᴹ cᴸ 0 (c₁ᴸ ∷ M) (cᴸ ∷  M)
+  there : ∀ {M M' τ' n} {c₁ᴸ : Cell l τ'} -> Writeᴹ cᴸ n M M' -> Writeᴹ cᴸ (suc n) (c₁ᴸ ∷ M) (c₁ᴸ ∷ M')
 
-_≔_[_↦_]ᴹ : ∀ {π l τ} -> Memory l -> Memory l -> ℕ -> τ ∈ π -> Set
-M' ≔ M [ n ↦ τ∈π ]ᴹ = Writeᴹ τ∈π n M M'
+_≔_[_↦_]ᴹ : ∀ {l τ} -> Memory l -> Memory l -> ℕ -> Cell l τ -> Set
+_≔_[_↦_]ᴹ M' M n c = Writeᴹ c n M M'
 
-newᴹ : ∀ {l π τ} -> τ ∈ π -> Memory l -> Memory l
-newᴹ τ∈π [] = τ∈π ∷ []
-newᴹ τ∈π (τ∈π₁ ∷ M) = τ∈π₁ ∷ newᴹ τ∈π M
-newᴹ τ∈π ∙ = ∙
+newᴹ : ∀ {l τ} -> Cell l τ -> Memory l -> Memory l
+newᴹ x [] = x ∷ []
+newᴹ x (x₁ ∷ M) = x₁ ∷ newᴹ x M
+newᴹ x ∙ = ∙
 
 lengthᴹ : ∀ {l} -> Memory l -> ℕ
 lengthᴹ [] = 0
-lengthᴹ (τ∈π ∷ M) = suc (lengthᴹ M)
+lengthᴹ (x ∷ M) = suc (lengthᴹ M)
 lengthᴹ ∙ = 0  -- We don't care when the memory is collapsed
 
 --------------------------------------------------------------------------------
@@ -327,45 +329,39 @@ mapⱽ f (τ∈π ∷ vs) = (f τ∈π) ∷ (mapⱽ f vs)
 -- it puts deepDup x for every free variable x, that is not in the scope of vs.
 -- We keep track of the variables introduced by lambda-abstraction.
 -- We do not duplicate terms that are already inside a deepDup.
-dup-ufv : ∀ {π τ} -> Label -> Vars π -> Term π τ -> Term π τ
-dup-ufv l vs （） = （）
-dup-ufv l vs True = True
-dup-ufv l vs False = False
-dup-ufv l vs (Id t) = Id (dup-ufv l vs t)
-dup-ufv l vs (unId t) = unId (dup-ufv l vs t)
-dup-ufv l vs (Var τ∈π) with memberⱽ (∈ᴿ-∈ τ∈π) vs
-dup-ufv l vs (Var τ∈π) | yes p = Var τ∈π  -- In scope
-dup-ufv l vs (Var τ∈π) | no ¬p = deepDup l (Var τ∈π) -- Free
-dup-ufv l vs (Abs t) = Abs (dup-ufv l (here ∷ mapⱽ there vs) t)
-dup-ufv l vs (App t t₁) = App (dup-ufv l vs t) (dup-ufv l vs t₁)
-dup-ufv l vs (If t Then t₁ Else t₂) = If (dup-ufv l vs t) Then (dup-ufv l vs t₁) Else (dup-ufv l vs t₂)
-dup-ufv l' vs (Return l t) = Return l (dup-ufv l' vs t)
-dup-ufv l vs (t >>= t₁) = (dup-ufv l vs t) >>= (dup-ufv l vs t₁)
-dup-ufv l' vs (Mac l t) = Mac l (dup-ufv l' vs t)
-dup-ufv l' vs (Res l t) = Res l (dup-ufv l' vs t)
-dup-ufv l vs (label l⊑h t) = label l⊑h (dup-ufv l vs t)
-dup-ufv l vs (label∙ l⊑h t) = label∙ l⊑h (dup-ufv l vs t)
-dup-ufv l vs (unlabel l⊑h t) = unlabel l⊑h (dup-ufv l vs t)
-dup-ufv l vs(read l⊑h t) = read l⊑h (dup-ufv l vs t)
-dup-ufv l vs (write l⊑h t₁ t₂) = write l⊑h (dup-ufv l vs t₁) (dup-ufv l vs t₂)
-dup-ufv l vs (write∙ l⊑h t₁ t₂) = write∙ l⊑h (dup-ufv l vs t₁) (dup-ufv l vs t₂)
-dup-ufv l vs (new l⊑h t) = new l⊑h (dup-ufv l vs t)
-dup-ufv l vs (new∙ l⊑h t) = new∙ l⊑h (dup-ufv l vs t)
-dup-ufv l vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!
-dup-ufv l vs (#[ n ]ᴰ) = #[ n ]ᴰ
-dup-ufv l vs (fork l⊑h t) = fork l⊑h (dup-ufv l vs t)
--- Note that here the label represents in which environment
--- we will find a variable, in this case we
--- use l' (the lower one).
--- This can happen if a low thread (L) spwans a medium one (M)
--- which spawns a high one (H), if H access a variable defined
--- in L, but not evaluated (yet) in M.
-dup-ufv l vs (deepDup l' t) = deepDup l' t  -- deepDup (deepDup t) is semantically equal to deepDup t
-dup-ufv l vs ∙ = ∙
+dup-ufv : ∀ {π τ} -> Vars π -> Term π τ -> Term π τ
+dup-ufv vs （） = （）
+dup-ufv vs True = True
+dup-ufv vs False = False
+dup-ufv vs (Id t) = Id (dup-ufv vs t)
+dup-ufv vs (unId t) = unId (dup-ufv vs t)
+dup-ufv vs (Var ⟪ τ∈π ⟫) with memberⱽ (∈ᴿ-∈ τ∈π) vs
+dup-ufv vs (Var ⟪ τ∈π ⟫) | yes p = Var ⟪ τ∈π ⟫  -- In scope
+dup-ufv vs (Var ⟪ τ∈π ⟫) | no ¬p = deepDup (Var ⟪ τ∈π ⟫) -- Free
+dup-ufv vs (Abs t) = Abs (dup-ufv (here ∷ mapⱽ there vs) t)
+dup-ufv vs (App t t₁) = App (dup-ufv vs t) (dup-ufv vs t₁)
+dup-ufv vs (If t Then t₁ Else t₂) = If (dup-ufv vs t) Then (dup-ufv vs t₁) Else (dup-ufv vs t₂)
+dup-ufv vs (Return l t) = Return l (dup-ufv vs t)
+dup-ufv vs (t >>= t₁) = (dup-ufv vs t) >>= (dup-ufv vs t₁)
+dup-ufv vs (Mac l t) = Mac l (dup-ufv vs t)
+dup-ufv vs (Res l t) = Res l (dup-ufv vs t)
+dup-ufv vs (label l⊑h t) = label l⊑h (dup-ufv vs t)
+dup-ufv vs (label∙ l⊑h t) = label∙ l⊑h (dup-ufv vs t)
+dup-ufv vs (unlabel l⊑h t) = unlabel l⊑h (dup-ufv vs t)
+dup-ufv vs(read l⊑h t) = read l⊑h (dup-ufv vs t)
+dup-ufv vs (write l⊑h t₁ t₂) = write l⊑h (dup-ufv vs t₁) (dup-ufv vs t₂)
+dup-ufv vs (write∙ l⊑h t₁ t₂) = write∙ l⊑h (dup-ufv vs t₁) (dup-ufv vs t₂)
+dup-ufv vs (new l⊑h t) = new l⊑h (dup-ufv vs t)
+dup-ufv vs (new∙ l⊑h t) = new∙ l⊑h (dup-ufv vs t)
+dup-ufv vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!
+dup-ufv vs (#[ n ]ᴰ) = #[ n ]ᴰ
+dup-ufv vs (fork l⊑h t) = fork l⊑h (dup-ufv vs t)
+dup-ufv vs (deepDup t) = deepDup t  -- deepDup (deepDup t) is semantically equal to deepDup t
+dup-ufv vs ∙ = ∙
 
-deepDupᵀ : ∀ {τ π} -> Label -> Term π τ -> Term π τ
-deepDupᵀ l t = dup-ufv l [] t
+deepDupᵀ : ∀ {τ π} -> Term π τ -> Term π τ
+deepDupᵀ t = dup-ufv [] t
 
 -- The proof that a term is a variable
 data IsVar {π} {τ} : Term π τ -> Set where
-  Var : (τ∈π : τ ∈ᴿ π) -> IsVar (Var τ∈π)
+  Var : ∀ {l} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> IsVar (Var τ∈π)

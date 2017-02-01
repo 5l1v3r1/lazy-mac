@@ -78,16 +78,12 @@ reverse : Context -> Context
 reverse [] = []
 reverse (x ∷ π) = reverse π ++ [ x ]
 
-
 data _∈_ {A : Set} (τ : A) : List A -> Set where
  here : ∀ {π} -> τ ∈ (τ ∷ π)
  there : ∀ {τ' π} -> τ ∈ π -> τ ∈ (τ' ∷ π)
 
 _∈ᴿ_ : Ty -> Context -> Set
 τ ∈ᴿ π = τ ∈ (reverse π)
-
--- data _∈ᴿ_ (τ : Ty) (π : Context) : Set where
---   rev : τ ∈ reverse π -> τ ∈ᴿ π
 
 -- Subset relation
 data _⊆ˡ_ : Context -> Context -> Set where
@@ -155,5 +151,16 @@ wken-∈ᴿ x p = wken-∈ (rev-⊆ˡ x) p
 
 hereᴿ : ∀ {{π}} {τ} -> τ ∈ᴿ (τ ∷ π)
 hereᴿ {{π}} {τ} = snoc-∈ τ (reverse π)
+
+--------------------------------------------------------------------------------
+
+record _∈⟨_⟩_ (τ : Ty) (l : Label) (π : Context) : Set where
+  constructor ⟪_⟫
+  field τ∈π : τ ∈ π
+
+infixl 2 ⟪_⟫
+
+_∈⟨_⟩ᴿ_  : Ty -> Label -> Context -> Set
+τ ∈⟨ l ⟩ᴿ π = τ ∈⟨ l ⟩ (reverse π)
 
 --------------------------------------------------------------------------------
