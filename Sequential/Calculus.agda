@@ -209,7 +209,7 @@ _↦_∈ᴱ_ : ∀ {l τ} {π π' : Context} -> τ ∈⟨ l ⟩ᴿ π' -> Term �
 -- A labeled-typed memory cell, containing a pointer
 -- at most at level l
 data Cell (l : Label) (τ : Ty) : Set where
-  ∥_∥  : ∀ {L π} -> L ⊑ l × τ ∈⟨ L ⟩ᴿ π -> Cell l τ
+  ∥_∥  : ∀ {L} {{π}} -> L ⊑ l × τ ∈⟨ L ⟩ᴿ π -> Cell l τ
 
 -- A labeled memory keeps pointer to no more sensitive heaps
 data Memory (l : Label) : Set where
