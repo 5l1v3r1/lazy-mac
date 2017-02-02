@@ -102,14 +102,6 @@ determinism Read₁ Read₁ = refl
 determinism Hole₁ Hole₁ = refl
 determinism Hole₂ Hole₂ = refl
 
-member-∈ : ∀ {l ls π} {x : Memory l × Env l π} {Γ : Heap ls} -> l ↦ x ∈ᴴ Γ -> l ∈ ls
-member-∈ here = here
-member-∈ (there x) = there (member-∈ x)
-
-update-∈ : ∀ {l ls π} {x : Memory l × Env l π} {Γ Γ' : Heap ls} -> Γ' ≔ Γ [ l ↦ x ]ᴴ -> l ∈ ls
-update-∈ here = here
-update-∈ (there x) = there (update-∈ x)
-
 memberᴴ-≅ : ∀ {l π₁ π₂ ls} {Γ : Heap ls} {x : Memory l × Env l π₁} {y : Memory l × Env l π₂} ->
             l ↦ x ∈ᴴ Γ -> l ↦ y ∈ᴴ Γ -> x ≅ y
 memberᴴ-≅ here here = refl
@@ -176,3 +168,4 @@ determinism⟼ (DeepDupˢ L⊏l L∈Γ t∈Δ) (Pure l∈Γ (DeepDup' ¬var) u�
 determinism⟼ (DeepDupˢ {τ∈π = τ∈π} L⊏l L∈Γ t∈Δ) (DeepDupˢ L⊏l' L∈Γ₁ t∈Δ₁) with memberᴴ-≅ L∈Γ L∈Γ₁
 ... | refl with memberᴱ-≅ᵀ τ∈π t∈Δ t∈Δ₁
 ... | refl = refl
+determinism⟼ Hole Hole = refl

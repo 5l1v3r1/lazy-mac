@@ -271,6 +271,14 @@ data Update {l} {π} (x : Memory l × Env l π) : ∀ {ls} -> Heap ls -> Heap ls
 _≔_[_↦_]ᴴ : ∀ {π ls} -> Heap ls -> Heap ls -> (l : Label) -> Memory l × Env l π -> Set
 Γ' ≔ Γ [ l ↦ x ]ᴴ = Update x Γ Γ'
 
+member-∈ : ∀ {l ls π} {x : Memory l × Env l π} {Γ : Heap ls} -> l ↦ x ∈ᴴ Γ -> l ∈ ls
+member-∈ here = here
+member-∈ (there x) = there (member-∈ x)
+
+update-∈ : ∀ {l ls π} {x : Memory l × Env l π} {Γ Γ' : Heap ls} -> Γ' ≔ Γ [ l ↦ x ]ᴴ -> l ∈ ls
+update-∈ here = here
+update-∈ (there x) = there (update-∈ x)
+
 --------------------------------------------------------------------------------
 
 -- Sestoft's Abstract Lazy Machine State
@@ -284,6 +292,7 @@ data State (l : Label) (τ : Ty) : Set where
 -- Adds labeled memory and heap to a term and stack
 data Program (l : Label) (ls : List Label) (τ : Ty) : Set where
   ⟨_,_,_⟩ : ∀ {π} {τ'} -> (Γ : Heap ls) (t : Term π τ') (S : Stack l τ' τ) -> Program l ls τ
+  ∙ : Program l ls τ
 
 --------------------------------------------------------------------------------
 -- DeepDup

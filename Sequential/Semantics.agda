@@ -181,3 +181,5 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
              -> (L∈Γ : L ↦ (M , Δ) ∈ᴴ Γ)
              -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
              -> ⟨ Γ , deepDup (Var {π = π} τ∈π) , S ⟩ ⟼ ⟨ Γ , deepDup t , S ⟩
+
+  Hole : ∀ {τ} -> ∙ {τ = τ} ⟼ ∙
