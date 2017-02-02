@@ -117,10 +117,10 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
          ⟨ Δ , new∙ {π = π} l⊑h t , S ⟩ ⇝ ⟨ just t ∷ Δ , new∙ l⊑h (Var {π = τ ∷ π} {{l}} ⟪ hereᴿ ⟫) , S ⟩
 
  Write₁ : ∀ {τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
-            ⟨ Δ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ (just t₂ ∷ Δ) , wken t₁ (drop refl-⊆ˡ) , write {π = τ ∷ π} l⊑H ⟪ hereᴿ ⟫ ∷ S ⟩
+            ⟨ Δ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ (just t₂ ∷ Δ) , wken t₁ (drop refl-⊆ˡ) , write {{π = τ ∷ π}} l⊑H ⟪ hereᴿ ⟫ ∷ S ⟩
 
  Write∙₁ : ∀ {τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
-             ⟨ Δ , write∙ l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ just t₂ ∷ Δ , wken t₁ (drop refl-⊆ˡ) , write∙ {π = τ ∷ π} l⊑H ⟪ hereᴿ ⟫ ∷ S ⟩
+             ⟨ Δ , write∙ l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ just t₂ ∷ Δ , wken t₁ (drop refl-⊆ˡ) , write∙ {{π = τ ∷ π}} l⊑H ⟪ hereᴿ ⟫ ∷ S ⟩
 
  Read₁ : ∀ {τ τ' L} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {L⊑l : L ⊑ l} ->
          ⟨ Δ , read {τ = τ} L⊑l t , S ⟩ ⇝ ⟨ Δ , t , read L⊑l ∷ S ⟩
@@ -151,16 +151,16 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
           -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
           -> (uᴹ : M' ≔ M [ n ↦ ∥ (l⊑H , τ∈π) ∥ ]ᴹ)
           -> (uᴴ : Γ' ≔ Γ [ H ↦ ( M' , Δ ) ]ᴴ) ->
-         ⟨ Γ , Res {π = π} H #[ n ] , write {π = π} l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
+         ⟨ Γ , Res {π = π} H #[ n ] , write l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
   Writeᴰ₂ : ∀ {Γ Γ' τ τ' n π H} {M M' : Memory H} {Δ : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
           -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
           -> (uᴹ : M' ≔ M [ n ↦ ∥ (l⊑H , τ∈π) ∥ ]ᴹ)
           -> (uᴴ : Γ' ≔ Γ [ H ↦ ( M' , Δ ) ]ᴴ) ->
-         ⟨ Γ , Res {π = π} H #[ n ]ᴰ , write {π = π} l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
+         ⟨ Γ , Res {π = π} H #[ n ]ᴰ , write l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
   Write∙₂ :  ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {t : Term π Addr} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
-            ⟨ Γ , Res {π = π} H t , write∙ {π = π} l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Γ , Return {π = π} l （） , S ⟩
+            ⟨ Γ , Res {π = π} H t , write∙ l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Γ , Return {π = π} l （） , S ⟩
 
   -- If we read without duplicating it must be from the same level, otherwise we are leaking
   -- (We could write this using different L and l and from the inequalities L ⊑ l and l ⊑ L conclude the same,

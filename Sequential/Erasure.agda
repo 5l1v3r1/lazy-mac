@@ -22,7 +22,7 @@ data Public : Ty -> Set where
   Bool : Public Bool
   Id : ∀ {τ} ->  Public (Id τ)
   Fun : ∀ {α β} -> Public (α => β)
-  Addr : ∀ {τ} -> Public (Addr τ)
+  Addr : Public Addr
 
 -- Secret and insensitive are mutually exclusive
 secretNotPublic : ∀ {τ} -> Secret τ -> Public τ -> ⊥
@@ -40,7 +40,7 @@ isSecret? (Mac l τ) | yes p = inj₂ (Macᴸ p)
 isSecret? (Mac l τ) | no ¬p = inj₁ (Macᴴ ¬p)
 isSecret? (Res l τ) = inj₂ (Res (l ⊑? A))
 isSecret? (Id τ) = inj₂ Id
-isSecret? (Addr _) = inj₂ Addr
+isSecret? Addr = inj₂ Addr
 --------------------------------------------------------------------------------
 
 open import Data.Product
@@ -75,10 +75,10 @@ open import Data.Product
 ... | yes p = write l⊑h (εᵀ t₁) (εᵀ t₂)
 ... | no ¬p = write∙ l⊑h (εᵀ t₁) (εᵀ t₂)
 εᵀ (write∙ l⊑h t₁ t₂) = write∙ l⊑h (εᵀ t₁) (εᵀ t₂)
-εᵀ (#[ t ]) = #[ (εᵀ t) ]
-εᵀ (#[ t ]ᴰ) = #[ (εᵀ t) ]ᴰ
+εᵀ (#[ n ]) = #[ n ]
+εᵀ (#[ n ]ᴰ) = #[ n ]ᴰ
 εᵀ (fork l⊑h t) = fork l⊑h (εᵀ t)
-εᵀ (deepDup l t) = deepDup l (εᵀ t)
+εᵀ (deepDup t) = deepDup (εᵀ t)
 εᵀ ∙ = ∙
 
 εᵀ¬Val : ∀ {π τ} {t : Term π τ} -> ¬ Value t -> ¬ (Value (εᵀ t))
@@ -100,15 +100,19 @@ open import Data.Product
 εᵀ¬Val {π} {._} {label l⊑h t} ¬val () | no ¬p
 εᵀ¬Val {t = label∙ l⊑h t} ¬val ()
 εᵀ¬Val {t = unlabel l⊑h t} ¬val ()
-εᵀ¬Val {t = new l⊑h t} ¬val val-ε = {!!} -- ()
+εᵀ¬Val {t = new {h = H} l⊑h t} ¬val val-ε with H ⊑? A
+εᵀ¬Val {π} {._} {new l⊑h t} ¬val () | yes p
+εᵀ¬Val {π} {._} {new l⊑h t} ¬val () | no ¬p
 εᵀ¬Val {t = new∙ l⊑h t} ¬val ()
 εᵀ¬Val {t = read l⊑h t} ¬val ()
-εᵀ¬Val {t = write l⊑h t₁ t₂} ¬val val-ε = {!!} -- ()
+εᵀ¬Val {t = write {h = H} l⊑h t₁ t₂} ¬val val-ε with H ⊑? A
+εᵀ¬Val {π} {._} {write l⊑h t₁ t₂} ¬val () | yes p
+εᵀ¬Val {π} {._} {write l⊑h t₁ t₂} ¬val () | no ¬p
 εᵀ¬Val {t = write∙ l⊑h t₁ t₂} ¬val ()
 εᵀ¬Val {t = #[ t ]} ¬val val-ε = ¬val #[ t ]
 εᵀ¬Val {t = #[ t ]ᴰ} ¬val val-ε = ¬val #[ t ]ᴰ
 εᵀ¬Val {t = fork l⊑h t} ¬val ()
-εᵀ¬Val {t = deepDup l t} ¬val ()
+εᵀ¬Val {t = deepDup t} ¬val ()
 εᵀ¬Val {t = ∙} ¬val ()
 
 εᵀ-Val : ∀ {τ π} {v : Term π τ} -> Value v -> Value (εᵀ v)
@@ -121,8 +125,8 @@ open import Data.Product
 εᵀ-Val {Res l τ} (Res t) with l ⊑? A
 εᵀ-Val {Res l τ} (Res t) | yes p = Res (εᵀ t)
 εᵀ-Val {Res l τ} (Res t) | no ¬p = Res ∙
-εᵀ-Val (#[ t ]) = #[ εᵀ t ]
-εᵀ-Val (#[ t ]ᴰ) = #[ εᵀ t ]ᴰ
+εᵀ-Val (#[ n ]) = #[ n ]
+εᵀ-Val (#[ n ]ᴰ) = #[ n ]ᴰ
 
 εᵀ¬Var : ∀ {π τ} {t : Term π τ} -> ¬ IsVar t -> ¬ (IsVar (εᵀ t))
 εᵀ¬Var {t = （）} ¬var var-ε = ¬var var-ε
@@ -145,15 +149,19 @@ open import Data.Product
 εᵀ¬Var {π} {._} {label l⊑h t} ¬var () | no ¬p
 εᵀ¬Var {t = label∙ l⊑h t} ¬var ()
 εᵀ¬Var {t = unlabel l⊑h t} ¬var ()
-εᵀ¬Var {t = new l⊑h t} ¬var val-ε = {!!} -- ()
+εᵀ¬Var {t = new {h = H} l⊑h t} ¬var val-ε with H ⊑? A
+εᵀ¬Var {π} {._} {new l⊑h t} ¬var () | yes p
+εᵀ¬Var {π} {._} {new l⊑h t} ¬var () | no ¬p
 εᵀ¬Var {t = new∙ l⊑h t} ¬var ()
 εᵀ¬Var {t = read l⊑h t} ¬var ()
-εᵀ¬Var {t = write l⊑h t₁ t₂} ¬var val-ε = {!!} -- ()
+εᵀ¬Var {t = write {h = H} l⊑h t₁ t₂} ¬var val-ε with H ⊑? A
+εᵀ¬Var {π} {._} {write l⊑h t₁ t₂} ¬var () | yes p
+εᵀ¬Var {π} {._} {write l⊑h t₁ t₂} ¬var () | no ¬p
 εᵀ¬Var {t = write∙ l⊑h t₁ t₂} ¬var ()
 εᵀ¬Var {t = #[ t ]} ¬var ()
 εᵀ¬Var {t = #[ t ]ᴰ} ¬var ()
 εᵀ¬Var {t = fork l⊑h t} ¬var ()
-εᵀ¬Var {t = deepDup l t} ¬var ()
+εᵀ¬Var {t = deepDup t} ¬var ()
 εᵀ¬Var {t = ∙} ¬var ()
 
 open import Data.Product as P
@@ -193,7 +201,7 @@ open import Function
 εᶜ {τ₂ = τ₂} (Then t₁ Else t₂) = Then (εᵀ t₁) Else εᵀ t₂
 εᶜ {τ₁ = Mac .l α} {τ₂ = Mac l β} (Bind t) = Bind (εᵀ t)
 εᶜ (unlabel {τ = τ} p) = unlabel p
-εᶜ (write {H = H} l⊑h τ∈π) with H ⊑? A
+εᶜ (write {H = H}  l⊑h τ∈π) with H ⊑? A
 ... | yes p = write l⊑h τ∈π
 ... | no ¬p = write∙ l⊑h τ∈π
 εᶜ (write∙ l⊑h τ∈π) = write∙ l⊑h τ∈π
@@ -204,6 +212,7 @@ open import Function
 εˢ : ∀ {τ₁ τ₂ l} -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
 εˢ [] = []
 εˢ (c ∷ S) = (εᶜ c) ∷ εˢ S
+εˢ ∙ = ∙
 
 --------------------------------------------------------------------------------
 
@@ -247,23 +256,23 @@ open import Function
 ... | yes _  rewrite ε-wken t p = refl
 ... | no _ rewrite ε-wken t p = refl
 ε-wken (new∙ x t) p rewrite ε-wken t p = refl
-ε-wken #[ t ] p rewrite ε-wken t p = refl
-ε-wken #[ t ]ᴰ p rewrite ε-wken t p = refl
+ε-wken #[ n ] p = refl
+ε-wken #[ n ]ᴰ p = refl
 ε-wken (fork l⊑h t) p rewrite ε-wken t p = refl
-ε-wken (deepDup l t) p rewrite ε-wken t p = refl
+ε-wken (deepDup t) p rewrite ε-wken t p = refl
 ε-wken ∙ p = refl
 
 {-# REWRITE ε-wken #-}
 
 ε-subst : ∀ {τ τ' π} (t₁ : Term π τ') (t₂ : Term (τ' ∷ π) τ) -> εᵀ (subst t₁ t₂) ≡ subst (εᵀ t₁) (εᵀ t₂)
 ε-subst = ε-tm-subst [] _
-  where ε-var-subst  :  ∀ {α β} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ α) (β∈π : β ∈ (π₁ ++ [ α ] ++ π₂))
+  where ε-var-subst  :  ∀ {{l}} {α β} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ α) (β∈π : β ∈⟨ l ⟩ (π₁ ++ [ α ] ++ π₂))
                       ->  εᵀ (var-subst π₁ π₂ t₁ β∈π) ≡ var-subst π₁ π₂ (εᵀ t₁) β∈π
-        ε-var-subst [] π₂ t₁ here = refl
-        ε-var-subst [] π₁ t₁ (there β∈π) = refl
-        ε-var-subst (β ∷ π₁) π₂ t₁ here = refl
-        ε-var-subst (τ ∷ π₁) π₂ t₁ (there β∈π)
-          rewrite ε-wken (var-subst π₁ π₂ t₁ β∈π) (drop {τ} refl-⊆ˡ) | ε-var-subst π₁ π₂ t₁ β∈π = refl
+        ε-var-subst [] π₂ t₁ ⟪ here ⟫ = refl
+        ε-var-subst [] π₁ t₁ (⟪ there β∈π ⟫) = refl
+        ε-var-subst (β ∷ π₁) π₂ t₁ ⟪ here ⟫ = refl
+        ε-var-subst {{l}} (τ ∷ π₁) π₂ t₁ (⟪ there β∈π ⟫)
+          rewrite ε-wken (var-subst π₁ π₂ t₁ ⟪ β∈π ⟫) (drop {τ} refl-⊆ˡ) | ε-var-subst {{l}} π₁ π₂ t₁ ⟪ β∈π ⟫ = refl
 
         ε-tm-subst : ∀ {τ τ'} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ τ') (t₂ : Term (π₁ ++ [ τ' ] ++ π₂) τ)
                    ->  εᵀ (tm-subst π₁ π₂ t₁ t₂) ≡ tm-subst π₁ π₂ (εᵀ t₁) (εᵀ t₂)
@@ -272,7 +281,7 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ False = refl
         ε-tm-subst π₁ π₂ t₁ (Id t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (unId t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
-        ε-tm-subst π₁ π₂ t₁ (Var τ∈π) rewrite ε-var-subst π₁ π₂ t₁ (∈ᴿ-∈ τ∈π) = refl
+        ε-tm-subst π₁ π₂ t₁ (Var {{l}} ⟪ τ∈π ⟫) rewrite ε-var-subst {{l}} π₁ π₂ t₁ (⟪ ∈ᴿ-∈  τ∈π ⟫) = refl
         ε-tm-subst π₁ π₂ t₁ (Abs t₂)  rewrite ε-tm-subst (_ ∷ π₁) π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (App t₂ t₃)
           rewrite ε-tm-subst π₁ π₂ t₁ t₂ | ε-tm-subst π₁ π₂ t₁ t₃ = refl
@@ -300,18 +309,18 @@ open import Function
         ... | yes _ rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ... | no _ rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (new∙ x t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
-        ε-tm-subst π₁ π₂ t₁ #[ t₂ ] rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
-        ε-tm-subst π₁ π₂ t₁ #[ t₂ ]ᴰ rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
+        ε-tm-subst π₁ π₂ t₁ #[ n ] = refl
+        ε-tm-subst π₁ π₂ t₁ #[ n ]ᴰ = refl
         ε-tm-subst π₁ π₂ t₁ (fork l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
-        ε-tm-subst π₁ π₂ t₁ (deepDup l t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
+        ε-tm-subst π₁ π₂ t₁ (deepDup t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ ∙ = refl
 
 
 {-# REWRITE ε-subst #-}
 
-ε-deepDupᵀ-≡ : ∀ {l π τ} -> (t : Term π τ) ->  εᵀ (deepDupᵀ l t) ≡ deepDupᵀ l (εᵀ t)
-ε-deepDupᵀ-≡ {l} = εᵀ-dup-ufv-≡ []
-  where εᵀ-dup-ufv-≡ : ∀ {π τ} -> (vs : Vars π) (t : Term π τ) ->  εᵀ (dup-ufv l vs t) ≡ dup-ufv l vs (εᵀ t)
+ε-deepDupᵀ-≡ : ∀ {π τ} -> (t : Term π τ) ->  εᵀ (deepDupᵀ t) ≡ deepDupᵀ (εᵀ t)
+ε-deepDupᵀ-≡ = εᵀ-dup-ufv-≡ []
+  where εᵀ-dup-ufv-≡ : ∀ {π τ} -> (vs : Vars π) (t : Term π τ) ->  εᵀ (dup-ufv vs t) ≡ dup-ufv vs (εᵀ t)
         εᵀ-dup-ufv-≡ vs （） = refl
         εᵀ-dup-ufv-≡ vs True = refl
         εᵀ-dup-ufv-≡ vs False = refl
@@ -319,9 +328,9 @@ open import Function
           rewrite εᵀ-dup-ufv-≡ vs t = refl
         εᵀ-dup-ufv-≡ vs (unId t)
           rewrite εᵀ-dup-ufv-≡ vs t = refl
-        εᵀ-dup-ufv-≡ vs (Var τ∈π) with memberⱽ (∈ᴿ-∈ τ∈π) vs
-        εᵀ-dup-ufv-≡ vs (Var τ∈π) | yes p = refl
-        εᵀ-dup-ufv-≡ vs (Var τ∈π) | no ¬p = refl
+        εᵀ-dup-ufv-≡ vs (Var ⟪ τ∈π ⟫) with memberⱽ (∈ᴿ-∈ τ∈π) vs
+        εᵀ-dup-ufv-≡ vs (Var ⟪ τ∈π ⟫) | yes p = refl
+        εᵀ-dup-ufv-≡ vs (Var ⟪ τ∈π ⟫) | no ¬p = refl
         εᵀ-dup-ufv-≡ vs (Abs t)
           rewrite εᵀ-dup-ufv-≡ (here ∷ (mapⱽ there vs)) t = refl
         εᵀ-dup-ufv-≡ vs (App t t₁)
@@ -349,10 +358,10 @@ open import Function
         ... | yes _ rewrite εᵀ-dup-ufv-≡ vs t = refl
         ... | no _ rewrite εᵀ-dup-ufv-≡ vs t = refl
         εᵀ-dup-ufv-≡ vs (new∙ x t) rewrite εᵀ-dup-ufv-≡ vs t = refl
-        εᵀ-dup-ufv-≡ vs #[ t ] rewrite εᵀ-dup-ufv-≡ vs t = refl
-        εᵀ-dup-ufv-≡ vs #[ t ]ᴰ rewrite εᵀ-dup-ufv-≡ vs t = refl
+        εᵀ-dup-ufv-≡ vs #[ n ] = refl
+        εᵀ-dup-ufv-≡ vs #[ n ]ᴰ = refl
         εᵀ-dup-ufv-≡ vs (fork l⊑h t) rewrite εᵀ-dup-ufv-≡ vs t = refl
-        εᵀ-dup-ufv-≡ vs (deepDup l' t) rewrite εᵀ-dup-ufv-≡ vs t = refl
+        εᵀ-dup-ufv-≡ vs (deepDup t) rewrite εᵀ-dup-ufv-≡ vs t = refl
         εᵀ-dup-ufv-≡ vs ∙ = refl
 
 {-# REWRITE ε-deepDupᵀ-≡ #-}
@@ -361,15 +370,15 @@ open import Function
 --------------------------------------------------------------------------------
 -- Env lemmas
 
-memberᴱ : ∀ {l π π' τ} {Δ : Env l π} {t : Term π' τ} (τ∈π : τ ∈ᴿ π) ->
+memberᴱ : ∀ {l π π' τ} {Δ : Env l π} {t : Term π' τ} (τ∈π : τ ∈⟨ l ⟩ᴿ π) ->
            τ∈π ↦ t ∈ᴱ Δ -> τ∈π ↦ (εᵀ t) ∈ᴱ (εᴱ Δ)
-memberᴱ {l} τ∈π = aux (∈ᴿ-∈ τ∈π)
-  where aux : ∀ {π π' τ} {Δ : Env l π} {t : Term π' τ} (τ∈π : τ ∈ π)
+memberᴱ {l} ⟪ τ∈π ⟫ = aux ⟪ (∈ᴿ-∈ τ∈π) ⟫
+  where aux : ∀ {π π' τ} {Δ : Env l π} {t : Term π' τ} (τ∈π : τ ∈⟨ l ⟩ π)
             -> Memberᴱ (just t) τ∈π Δ -> Memberᴱ (just (εᵀ t)) τ∈π (εᴱ Δ)
-        aux .here here = here
-        aux (there τ∈π') (there x) = there (aux τ∈π' x)
+        aux (⟪ here ⟫) here = here
+        aux (⟪ there τ∈π' ⟫) (there x) = there (aux ⟪ τ∈π' ⟫ x)
 
-updateᴱ : ∀ {l π π' τ} {Δ Δ' : Env l π} {mt : Maybe (Term π' τ)} {τ∈π : τ ∈ π} -> Updateᴱ mt τ∈π Δ Δ' -> Updateᴱ (M.map εᵀ mt) τ∈π (εᴱ Δ) (εᴱ Δ')
+updateᴱ : ∀ {l π π' τ} {Δ Δ' : Env l π} {mt : Maybe (Term π' τ)} {τ∈π : τ ∈⟨ l ⟩ π} -> Updateᴱ mt τ∈π Δ Δ' -> Updateᴱ (M.map εᵀ mt) τ∈π (εᴱ Δ) (εᴱ Δ')
 updateᴱ here = here
 updateᴱ (there x) = there (updateᴱ x)
 
@@ -426,7 +435,7 @@ updateᴱ (there x) = there (updateᴱ x)
 -- is still sufficiently general.
 ε-sim : ∀ {l τ} {s₁ s₂ : State l τ} (x : Dec (l ⊑ A)) -> s₁ ⇝ s₂ -> ε x s₁ ⇝ ε x s₂
 -- High-Computations
-ε-sim (no x) s = Hole
+ε-sim (no x) s = Hole₁
 -- Low-Computations
 ε-sim (yes y) App₁ = App₁
 ε-sim (yes y) (App₂ α∈π) = App₂ α∈π
@@ -452,6 +461,16 @@ updateᴱ (there x) = there (updateᴱ x)
 ε-sim (yes y) UnId₁ = UnId₁
 ε-sim (yes y) UnId₂ = UnId₂
 ε-sim (yes y) (Fork p) = Fork p
-ε-sim (yes y) (DeepDup τ∈π t∈Δ) = DeepDup' τ∈π (memberᴱ τ∈π t∈Δ)
+ε-sim (yes y) (DeepDup τ∈π t∈Δ) = DeepDup τ∈π (memberᴱ τ∈π t∈Δ)
 ε-sim (yes y) (DeepDup' ¬var) = DeepDup' (εᵀ¬Var ¬var)
-ε-sim (yes y) Hole = Hole
+ε-sim (yes y) (New₁ {H = H} ¬var) with H ⊑? A
+ε-sim (yes y) (New₁ ¬var) | yes p = New₁ (εᵀ¬Var ¬var)
+ε-sim (yes y) (New₁ ¬var) | no ¬p = New∙₁ (εᵀ¬Var ¬var)
+ε-sim (yes y) (New∙₁ ¬var) = New∙₁ (εᵀ¬Var ¬var)
+ε-sim (yes y) Read₁ = Read₁
+ε-sim (yes y) (Write₁ {H = H}) with H ⊑? A
+ε-sim (yes y) Write₁ | yes p = Write₁
+ε-sim (yes y) Write₁ | no ¬p = Write∙₁
+ε-sim (yes y) Write∙₁ = Write∙₁
+ε-sim (yes y) Hole₁ = Hole₁
+ε-sim (yes y) Hole₂ = Hole₂
