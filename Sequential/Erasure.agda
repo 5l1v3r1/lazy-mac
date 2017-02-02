@@ -486,10 +486,10 @@ updateᴱ (there x) = there (updateᴱ x)
 εᴴ (x ∷ Γ) = εᴹ (_ ⊑? A) x ∷ εᴴ Γ
 
 -- Erasure for Programs
-εᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) -> Program l ls τ -> Program l ls τ
-εᴾ (yes p) ⟨ Γ , t , S ⟩ = ⟨ (εᴴ Γ) , (εᵀ t) , (εˢ S) ⟩
-εᴾ (yes p) ∙ = ∙
-εᴾ {l} {ls} {τ} (no ¬p) _ = ∙
+ε₁ᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) -> Program l ls τ -> Program l ls τ
+ε₁ᴾ (yes p) ⟨ Γ , t , S ⟩ = ⟨ (εᴴ Γ) , (εᵀ t) , (εˢ S) ⟩
+ε₁ᴾ (yes p) ∙ = ∙
+ε₁ᴾ {l} {ls} {τ} (no ¬p) _ = ∙
 
 member∙ᴴ : ∀ {l π ls} {Γ : Heap ls} {M : Memory l} {Δ : Env l π} -> l ⋤ A -> l ↦ M , Δ ∈ᴴ Γ -> l ↦ ∙ , (∙ {{π}}) ∈ᴴ (εᴴ Γ)
 member∙ᴴ {l} ¬p here with l ⊑? A
@@ -523,32 +523,38 @@ updateᴴ {l} l⊑A here with l ⊑? A
 ... | no ¬p = ⊥-elim (¬p l⊑A)
 updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 
-εᴾ-sim : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (x : Dec (l ⊑ A)) -> p₁ ⟼ p₂ -> εᴾ x p₁ ⟼ εᴾ x p₂
-εᴾ-sim (yes p) (Pure l∈Γ step uᴴ) = Pure (memberᴴ p l∈Γ) (ε-sim (yes p) step) (updateᴴ p uᴴ)
-εᴾ-sim (yes p) (New {H = H} H∈Γ uᴴ) with H ⊑? A
-εᴾ-sim (yes p₁) (New H∈Γ uᴴ) | yes p = New (memberᴴ p H∈Γ) (updateᴴ p uᴴ)
-εᴾ-sim (yes p) (New {Δ = Δ} {M = M} {τ∈π = ⟪ τ∈π ⟫} {l⊑h = l⊑h}  H∈Γ uᴴ) | no ¬p
+ε₁ᴾ-sim : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (x : Dec (l ⊑ A)) -> p₁ ⟼ p₂ -> ε₁ᴾ x p₁ ⟼ ε₁ᴾ x p₂
+ε₁ᴾ-sim (yes p) (Pure l∈Γ step uᴴ) = Pure (memberᴴ p l∈Γ) (ε-sim (yes p) step) (updateᴴ p uᴴ)
+ε₁ᴾ-sim (yes p) (New {H = H} H∈Γ uᴴ) with H ⊑? A
+ε₁ᴾ-sim (yes p₁) (New H∈Γ uᴴ) | yes p = New (memberᴴ p H∈Γ) (updateᴴ p uᴴ)
+ε₁ᴾ-sim (yes p) (New {Δ = Δ} {M = M} {τ∈π = ⟪ τ∈π ⟫} {l⊑h = l⊑h}  H∈Γ uᴴ) | no ¬p
   rewrite writeᴹ∙-≡ ¬p H∈Γ uᴴ = New∙
-εᴾ-sim (yes p) (New∙ {H = H}) with H ⊑? A
-εᴾ-sim (yes p₁) New∙ | yes p = New∙
-εᴾ-sim (yes p) New∙ | no ¬p = New∙
-εᴾ-sim (yes p) (Write₂ {H = H} H∈Γ uᴹ uᴴ) with H ⊑? A
-εᴾ-sim (yes p₁) (Write₂ H∈Γ uᴹ uᴴ) | yes p = Write₂ (memberᴴ p H∈Γ) uᴹ (updateᴴ p uᴴ)
-εᴾ-sim (yes p) (Write₂ {l⊑H = l⊑H} H∈Γ uᴹ uᴴ) | no ¬p
+ε₁ᴾ-sim (yes p) (New∙ {H = H}) with H ⊑? A
+ε₁ᴾ-sim (yes p₁) New∙ | yes p = New∙
+ε₁ᴾ-sim (yes p) New∙ | no ¬p = New∙
+ε₁ᴾ-sim (yes p) (Write₂ {H = H} H∈Γ uᴹ uᴴ) with H ⊑? A
+ε₁ᴾ-sim (yes p₁) (Write₂ H∈Γ uᴹ uᴴ) | yes p = Write₂ (memberᴴ p H∈Γ) uᴹ (updateᴴ p uᴴ)
+ε₁ᴾ-sim (yes p) (Write₂ {l⊑H = l⊑H} H∈Γ uᴹ uᴴ) | no ¬p
   rewrite writeᴹ∙-≡ ¬p H∈Γ uᴴ = Write∙₂
-εᴾ-sim (yes p) (Writeᴰ₂ {H = H} H∈Γ uᴹ uᴴ) with H ⊑? A
-εᴾ-sim (yes p₁) (Writeᴰ₂ H∈Γ uᴹ uᴴ) | yes p = Writeᴰ₂ (memberᴴ p H∈Γ) uᴹ (updateᴴ p uᴴ)
-εᴾ-sim (yes p) (Writeᴰ₂ {l⊑H = l⊑H} H∈Γ uᴹ uᴴ) | no ¬p
+ε₁ᴾ-sim (yes p) (Writeᴰ₂ {H = H} H∈Γ uᴹ uᴴ) with H ⊑? A
+ε₁ᴾ-sim (yes p₁) (Writeᴰ₂ H∈Γ uᴹ uᴴ) | yes p = Writeᴰ₂ (memberᴴ p H∈Γ) uᴹ (updateᴴ p uᴴ)
+ε₁ᴾ-sim (yes p) (Writeᴰ₂ {l⊑H = l⊑H} H∈Γ uᴹ uᴴ) | no ¬p
   rewrite writeᴹ∙-≡ ¬p H∈Γ uᴴ = Write∙₂
-εᴾ-sim (yes p) (Write∙₂ {H = H}) with H ⊑? A
-εᴾ-sim (yes p₁) Write∙₂ | yes p = Write∙₂
-εᴾ-sim (yes p) Write∙₂ | no ¬p = Write∙₂
-εᴾ-sim {l} (yes p) (Read₂ l∈Γ n∈M) with l ⊑? A
-εᴾ-sim (yes p₁) (Read₂ l∈Γ n∈M) | yes p = Read₂ (memberᴴ p₁ l∈Γ) n∈M
-εᴾ-sim (yes p) (Read₂ l∈Γ n∈M) | no ¬p = ⊥-elim (¬p p)
-εᴾ-sim {l} (yes p') (Readᴰ₂ {L = L} {L⊑l = L⊑l} L∈Γ n∈M) with L ⊑? A
+ε₁ᴾ-sim (yes p) (Write∙₂ {H = H}) with H ⊑? A
+ε₁ᴾ-sim (yes p₁) Write∙₂ | yes p = Write∙₂
+ε₁ᴾ-sim (yes p) Write∙₂ | no ¬p = Write∙₂
+ε₁ᴾ-sim {l} (yes p) (Read₂ l∈Γ n∈M) with l ⊑? A
+ε₁ᴾ-sim (yes p₁) (Read₂ l∈Γ n∈M) | yes p = Read₂ (memberᴴ p₁ l∈Γ) n∈M
+ε₁ᴾ-sim (yes p) (Read₂ l∈Γ n∈M) | no ¬p = ⊥-elim (¬p p)
+ε₁ᴾ-sim {l} (yes p') (Readᴰ₂ {L = L} {L⊑l = L⊑l} L∈Γ n∈M) with L ⊑? A
 ... | yes p = Readᴰ₂ (memberᴴ p L∈Γ) n∈M
 ... | no ¬p = ⊥-elim (¬p (trans-⊑ L⊑l p'))
-εᴾ-sim (yes p) (DeepDupˢ {τ∈π = τ∈π} L⊏l L∈Γ t∈Δ) = DeepDupˢ L⊏l (memberᴴ (trans-⊑ (proj₁ L⊏l) p) L∈Γ) (memberᴱ τ∈π t∈Δ)
-εᴾ-sim (yes p) Hole = Hole
-εᴾ-sim (no ¬p) x = Hole
+ε₁ᴾ-sim (yes p) (DeepDupˢ {τ∈π = τ∈π} L⊏l L∈Γ t∈Δ) = DeepDupˢ L⊏l (memberᴴ (trans-⊑ (proj₁ L⊏l) p) L∈Γ) (memberᴱ τ∈π t∈Δ)
+ε₁ᴾ-sim (yes p) Hole = Hole
+ε₁ᴾ-sim (no ¬p) x = Hole
+
+εᴾ : ∀ {l ls τ} -> Program l ls τ -> Program l ls τ
+εᴾ {l} = ε₁ᴾ (l ⊑? A)
+
+εᴾ-sim : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} -> p₁ ⟼ p₂ -> εᴾ p₁ ⟼ εᴾ p₂
+εᴾ-sim {l} = ε₁ᴾ-sim (l ⊑? A)
