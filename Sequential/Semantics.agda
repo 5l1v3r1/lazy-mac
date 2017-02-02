@@ -90,7 +90,7 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
  Hole₁ : ∀ {τ} -> ∙ {τ = τ} ⇝ ∙
 
- Hole₂ : ∀ {τ} -> ⟨ ∙ , ∙ {{τ}} , ∙ ⟩ ⇝ ⟨ ∙ , ∙ , ∙ ⟩
+ Hole₂ : ∀ {τ} {π} -> ⟨ ∙ {{π}} , ∙ {{τ}} , ∙ ⟩ ⇝ ⟨ ∙ {{π}} , ∙ , ∙ ⟩
 
  -- deepDupᵀ t takes care of replacing unguarded free variables with deepDup.
  -- Note that deepDupᵀ (deepDup t) = deepDup t, so also in case of
@@ -144,7 +144,7 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
          -> (uᴴ : Γ' ≔ Γ [ H ↦ (newᴹ ∥ l⊑h , τ∈π ∥ M , Δ) ]ᴴ ) ->
          ⟨ Γ , new {π = π} l⊑h (Var τ∈π) , S ⟩ ⟼ ⟨ Γ' , Return l (Res {π = π} H #[ lengthᴹ M ]) , S ⟩
 
-  New∙ : ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {t : Term π τ} {l⊑h : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
+  New∙ : ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {l⊑h : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
          ⟨ Γ , new∙ {π = π} l⊑h (Var τ∈π) , S ⟩ ⟼ ⟨ Γ , Return l (Res {π = π} H ∙) , S ⟩
 
   Write₂ : ∀ {Γ Γ' τ τ' n π H} {M M' : Memory H} {Δ : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}

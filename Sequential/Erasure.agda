@@ -474,3 +474,87 @@ updateᴱ (there x) = there (updateᴱ x)
 ε-sim (yes y) Write∙₁ = Write∙₁
 ε-sim (yes y) Hole₁ = Hole₁
 ε-sim (yes y) Hole₂ = Hole₂
+
+--------------------------------------------------------------------------------
+
+εᴹ : ∀ {l π} -> Dec (l ⊑ A) -> Memory l × Env l π -> Memory l × Env l π
+εᴹ (yes p) (M , Δ) = M , (εᴱ Δ)  -- Memory contains only pointers to Δ, so nothing to erase there
+εᴹ (no ¬p) _ = ∙ , ∙
+
+εᴴ : ∀ {ls} -> Heap ls -> Heap ls
+εᴴ [] = []
+εᴴ (x ∷ Γ) = εᴹ (_ ⊑? A) x ∷ εᴴ Γ
+
+-- Erasure for Programs
+εᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) -> Program l ls τ -> Program l ls τ
+εᴾ (yes p) ⟨ Γ , t , S ⟩ = ⟨ (εᴴ Γ) , (εᵀ t) , (εˢ S) ⟩
+εᴾ {l} {ls} {τ} (no ¬p) (⟨_,_,_⟩ {π} Γ t S ) = ⟨ εᴴ Γ , ∙ {π} {{τ}} , ∙ ⟩
+
+
+member∙ᴴ : ∀ {l π ls} {Γ : Heap ls} {M : Memory l} {Δ : Env l π} -> l ⋤ A -> l ↦ M , Δ ∈ᴴ Γ -> l ↦ ∙ , (∙ {{π}}) ∈ᴴ (εᴴ Γ)
+member∙ᴴ {l} ¬p here with l ⊑? A
+member∙ᴴ ¬p here | yes p = ⊥-elim (¬p p)
+member∙ᴴ ¬p₁ here | no ¬p = here
+member∙ᴴ ¬p (there x) = there (member∙ᴴ ¬p x)
+
+update∙ᴴ : ∀ {l π ls} {Γ Γ' : Heap ls} {M : Memory l} {Δ : Env l π} -> l ⋤ A -> Γ' ≔ Γ [ l ↦ M , Δ ]ᴴ -> (εᴴ Γ') ≔ (εᴴ Γ) [ l ↦ ∙ , (∙ {{π}}) ]ᴴ
+update∙ᴴ {l} ¬p here with l ⊑? A
+update∙ᴴ ¬p here | yes p = ⊥-elim (¬p p)
+update∙ᴴ ¬p₁ here | no ¬p = here
+update∙ᴴ ¬p (there x) = there (update∙ᴴ ¬p x)
+
+newᴹ∙-≡ : ∀ {H π ls} {Γ₁ Γ₂ : Heap ls} {x : Memory H × Env H π} -> H ⋤ A -> Γ₂ ≔ Γ₁ [ H ↦ x ]ᴴ -> (εᴴ Γ₂) ≡ (εᴴ Γ₁)
+newᴹ∙-≡ {H} H⋢A here with H ⊑? A
+... | r = {!!}
+newᴹ∙-≡ H⋢A (there x) = {!!}
+
+
+memberᴴ : ∀ {l π ls} {Γ : Heap ls} {M : Memory l} {Δ : Env l π} -> l ⊑ A -> l ↦ M , Δ ∈ᴴ Γ -> l ↦ M , (εᴱ Δ) ∈ᴴ (εᴴ Γ)
+memberᴴ {l} l⊑A here with l ⊑? A
+... | yes _ = here
+... | no ¬p = ⊥-elim (¬p l⊑A)
+memberᴴ l⊑A (there x) = there (memberᴴ l⊑A x)
+
+updateᴴ : ∀ {l π ls} {Γ Γ' : Heap ls} {M : Memory l} {Δ : Env l π} -> l ⊑ A -> Γ' ≔ Γ [ l ↦ M , Δ ]ᴴ -> (εᴴ Γ') ≔ (εᴴ Γ) [ l ↦ M , (εᴱ Δ) ]ᴴ
+updateᴴ {l} l⊑A here with l ⊑? A
+... | yes _ = here
+... | no ¬p = ⊥-elim (¬p l⊑A)
+updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
+
+εᴾ-sim : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (x : Dec (l ⊑ A)) -> p₁ ⟼ p₂ -> εᴾ x p₁ ⟼ εᴾ x p₂
+εᴾ-sim (yes p) (Pure l∈Γ step uᴴ) = Pure (memberᴴ p l∈Γ) (ε-sim (yes p) step) (updateᴴ p uᴴ)
+εᴾ-sim (yes p) (New {H = H} H∈Γ uᴴ) with H ⊑? A
+εᴾ-sim (yes p₁) (New H∈Γ uᴴ) | yes p = New (memberᴴ p H∈Γ) (updateᴴ p uᴴ)
+εᴾ-sim (yes p) (New {Δ = Δ} {M = M} {τ∈π = ⟪ τ∈π ⟫} {l⊑h = l⊑h}  H∈Γ uᴴ) | no ¬p
+  rewrite newᴹ∙-≡ {x = (newᴹ ∥ (l⊑h , ⟪ τ∈π ⟫) ∥ M) , Δ} ¬p uᴴ = New∙
+εᴾ-sim (yes p) (New∙ {H = H}) with H ⊑? A
+εᴾ-sim (yes p₁) New∙ | yes p = New∙
+εᴾ-sim (yes p) New∙ | no ¬p = New∙
+εᴾ-sim (yes p) (Write₂ {H = H} H∈Γ uᴹ uᴴ) with H ⊑? A
+εᴾ-sim (yes p₁) (Write₂ H∈Γ uᴹ uᴴ) | yes p = Write₂ (memberᴴ p H∈Γ) uᴹ (updateᴴ p uᴴ)
+εᴾ-sim (yes p) (Write₂ {l⊑H = l⊑H} H∈Γ uᴹ uᴴ) | no ¬p
+  rewrite newᴹ∙-≡ ¬p uᴴ = Write∙₂
+εᴾ-sim (yes p) (Writeᴰ₂ {H = H} H∈Γ uᴹ uᴴ) with H ⊑? A
+εᴾ-sim (yes p₁) (Writeᴰ₂ H∈Γ uᴹ uᴴ) | yes p = Writeᴰ₂ (memberᴴ p H∈Γ) uᴹ (updateᴴ p uᴴ)
+εᴾ-sim (yes p) (Writeᴰ₂ {l⊑H = l⊑H} H∈Γ uᴹ uᴴ) | no ¬p
+  rewrite newᴹ∙-≡ ¬p uᴴ = Write∙₂
+εᴾ-sim (yes p) (Write∙₂ {H = H}) with H ⊑? A
+εᴾ-sim (yes p₁) Write∙₂ | yes p = Write∙₂
+εᴾ-sim (yes p) Write∙₂ | no ¬p = Write∙₂
+εᴾ-sim {l} (yes p) (Read₂ l∈Γ n∈M) with l ⊑? A
+εᴾ-sim (yes p₁) (Read₂ l∈Γ n∈M) | yes p = Read₂ (memberᴴ p₁ l∈Γ) n∈M
+εᴾ-sim (yes p) (Read₂ l∈Γ n∈M) | no ¬p = ⊥-elim (¬p p)
+εᴾ-sim {l} (yes p') (Readᴰ₂ {L = L} {L⊑l = L⊑l} L∈Γ n∈M) with L ⊑? A
+... | yes p = Readᴰ₂ (memberᴴ p L∈Γ) n∈M
+... | no ¬p = ⊥-elim (¬p (trans-⊑ L⊑l p'))
+εᴾ-sim (yes p) (DeepDupˢ {τ∈π = τ∈π} L⊏l L∈Γ t∈Δ) = DeepDupˢ L⊏l (memberᴴ (trans-⊑ (proj₁ L⊏l) p) L∈Γ) (memberᴱ τ∈π t∈Δ)
+εᴾ-sim (no ¬p) (Pure l∈Γ step uᴴ) = Pure (member∙ᴴ ¬p l∈Γ) {!Hole₂!} (update∙ᴴ ¬p uᴴ) -- Problems with π₁ ≠ π₂
+εᴾ-sim (no ¬p) (New {Δ = Δ} {M = M} {τ∈π = τ∈π} {l⊑h = l⊑H} H∈Γ uᴴ)
+  rewrite newᴹ∙-≡ {x = newᴹ ∥ (l⊑H , τ∈π) ∥ M , Δ} (trans-⋢ l⊑H ¬p) uᴴ = Pure {!!} Hole₂ {!!}
+εᴾ-sim (no ¬p) New∙ = {!Pure!}
+εᴾ-sim (no ¬p) (Write₂ H∈Γ uᴹ uᴴ) = {!!}
+εᴾ-sim (no ¬p) (Writeᴰ₂ H∈Γ uᴹ uᴴ) = {!!}
+εᴾ-sim (no ¬p) Write∙₂ = {!!}
+εᴾ-sim (no ¬p) (Read₂ l∈Γ n∈M) = {!!}
+εᴾ-sim (no ¬p) (Readᴰ₂ L∈Γ n∈M) = {!!}
+εᴾ-sim (no ¬p) (DeepDupˢ L⊏l L∈Γ t∈Δ) = {!!}

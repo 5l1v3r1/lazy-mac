@@ -182,7 +182,7 @@ data Stack (l : Label) : Ty -> Ty -> Set where
 data Env (l : Label) : Context -> Set where
   [] : Env l []
   _∷_ : ∀ {π τ} -> (t : Maybe (Term π τ)) -> Env l π -> Env l (τ ∷ π)
-  ∙ : Env l []  -- We fix the context to empty to avoid non-determinism issues -- TODO probably we don't need this!
+  ∙ : ∀ {{π}} -> Env l π
 
 data Updateᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈⟨ l ⟩ π' -> Env l π' -> Env l π' -> Set where
   here : ∀ {Δ : Env l π} {mt' : Maybe (Term _ τ)} -> Updateᴱ mt (⟪ here ⟫) (mt' ∷ Δ) (mt ∷ Δ)
@@ -283,7 +283,7 @@ data State (l : Label) (τ : Ty) : Set where
 
 -- Adds labeled memory and heap to a term and stack
 data Program (l : Label) (ls : List Label) (τ : Ty) : Set where
-  ⟨_,_,_⟩ : ∀ {π τ'} -> Heap ls -> Term π τ' -> Stack l τ' τ -> Program l ls τ
+  ⟨_,_,_⟩ : ∀ {π} {τ'} -> (Γ : Heap ls) (t : Term π τ') (S : Stack l τ' τ) -> Program l ls τ
 
 --------------------------------------------------------------------------------
 -- DeepDup
