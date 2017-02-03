@@ -4,9 +4,6 @@ module Sequential.Calculus (𝓛 : L.Lattice) where
 
 open import Types 𝓛
 
--- import Lattice
--- open Lattice.Lattice 𝓛 renaming (_≟_ to _≟ᴸ_)
-
 open import Data.Maybe hiding (All)
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 open import Data.Nat using (ℕ ; zero ; suc ; _+_) public

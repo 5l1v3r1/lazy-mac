@@ -21,3 +21,5 @@ record Scheduler : Set₁ where
   field
     State : Set
     _⟶_↑_ : ∀ {l} -> State -> State -> Message l -> Set
+
+open Scheduler public
