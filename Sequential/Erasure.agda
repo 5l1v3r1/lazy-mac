@@ -1,11 +1,12 @@
-open import Types
-import Lattice
-open Lattice.Lattice 𝓛 renaming (_≟_ to _≟ᴸ_)
+import Lattice as L
 
-module Sequential.Erasure (A : Label) where  -- A is the security level of the attacker
+-- A is the security level of the attacker
+module Sequential.Erasure (𝓛 : L.Lattice) (A : L.Label 𝓛) where
 
-open import Sequential.Calculus
-open import Sequential.Semantics
+open import Types 𝓛
+open import Sequential.Calculus 𝓛
+open import Sequential.Semantics 𝓛
+
 open import Data.Sum
 open import Relation.Binary.PropositionalEquality hiding (subst ; [_])
 
@@ -230,7 +231,8 @@ open import Function
 ε-wken (Id t) p rewrite ε-wken t p = refl
 ε-wken (unId t) p rewrite ε-wken t p = refl
 ε-wken (Var τ∈π) p = refl
-ε-wken (Abs t) p rewrite ε-wken t (cons p) = refl
+ε-wken (Abs t) p with ε-wken t (cons p)
+... | x rewrite x = refl
 ε-wken (App t t₁) p
   rewrite ε-wken t p | ε-wken t₁ p = refl
 ε-wken (If t Then t₁ Else t₂) p
@@ -266,13 +268,13 @@ open import Function
 
 ε-subst : ∀ {τ τ' π} (t₁ : Term π τ') (t₂ : Term (τ' ∷ π) τ) -> εᵀ (subst t₁ t₂) ≡ subst (εᵀ t₁) (εᵀ t₂)
 ε-subst = ε-tm-subst [] _
-  where ε-var-subst  :  ∀ {{l}} {α β} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ α) (β∈π : β ∈⟨ l ⟩ (π₁ ++ [ α ] ++ π₂))
+  where ε-var-subst  :  ∀ {l} {α β} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ α) (β∈π : β ∈⟨ l ⟩ (π₁ ++ [ α ] ++ π₂))
                       ->  εᵀ (var-subst π₁ π₂ t₁ β∈π) ≡ var-subst π₁ π₂ (εᵀ t₁) β∈π
         ε-var-subst [] π₂ t₁ ⟪ here ⟫ = refl
         ε-var-subst [] π₁ t₁ (⟪ there β∈π ⟫) = refl
         ε-var-subst (β ∷ π₁) π₂ t₁ ⟪ here ⟫ = refl
-        ε-var-subst {{l}} (τ ∷ π₁) π₂ t₁ (⟪ there β∈π ⟫)
-          rewrite ε-wken (var-subst π₁ π₂ t₁ ⟪ β∈π ⟫) (drop {τ} refl-⊆ˡ) | ε-var-subst {{l}} π₁ π₂ t₁ ⟪ β∈π ⟫ = refl
+        ε-var-subst {l} (τ ∷ π₁) π₂ t₁ (⟪ there β∈π ⟫)
+          rewrite ε-wken (var-subst π₁ π₂ t₁ ⟪ β∈π ⟫) (drop {_} {τ} refl-⊆ˡ) | ε-var-subst {l} π₁ π₂ t₁ ⟪ β∈π ⟫ = refl
 
         ε-tm-subst : ∀ {τ τ'} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ τ') (t₂ : Term (π₁ ++ [ τ' ] ++ π₂) τ)
                    ->  εᵀ (tm-subst π₁ π₂ t₁ t₂) ≡ tm-subst π₁ π₂ (εᵀ t₁) (εᵀ t₂)
@@ -281,7 +283,7 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ False = refl
         ε-tm-subst π₁ π₂ t₁ (Id t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (unId t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
-        ε-tm-subst π₁ π₂ t₁ (Var {{l}} ⟪ τ∈π ⟫) rewrite ε-var-subst {{l}} π₁ π₂ t₁ (⟪ ∈ᴿ-∈  τ∈π ⟫) = refl
+        ε-tm-subst π₁ π₂ t₁ (Var {l} ⟪ τ∈π ⟫) rewrite ε-var-subst {l} π₁ π₂ t₁ (⟪ ∈ᴿ-∈  τ∈π ⟫) = refl
         ε-tm-subst π₁ π₂ t₁ (Abs t₂)  rewrite ε-tm-subst (_ ∷ π₁) π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (App t₂ t₃)
           rewrite ε-tm-subst π₁ π₂ t₁ t₂ | ε-tm-subst π₁ π₂ t₁ t₃ = refl
@@ -366,7 +368,6 @@ open import Function
 
 {-# REWRITE ε-deepDupᵀ-≡ #-}
 
-
 --------------------------------------------------------------------------------
 -- Env lemmas
 
@@ -383,48 +384,6 @@ updateᴱ here = here
 updateᴱ (there x) = there (updateᴱ x)
 
 --------------------------------------------------------------------------------
--- Heap Lemmas
-
--- updateᴴ∙ : ∀ {l ls π} {Δ : Env l π} {Γ Γ' : Heap ls} -> l ⋤ A -> Γ' ≔ Γ [ l ↦ Δ ]ᴴ -> εᴴ Γ' ≡ εᴴ Γ
--- updateᴴ∙ {l} l⋤A here with l ⊑? A
--- updateᴴ∙ l⋤A here | yes p = ⊥-elim (l⋤A p)
--- updateᴴ∙ l⋤A here | no ¬p = {!refl!} -- No because of type-level π
--- updateᴴ∙ l⋤A (there x) rewrite updateᴴ∙ l⋤A x = refl
-
--- insertᴴ∙ : ∀ {l ls τ π} {Δ : Env l π} {Γ Γ' : Heap ls} {t : Term π τ} ->
---           l ⋤ A -> Γ' ≔ Γ [ l ↦ insert t Δ ]ᴴ -> εᴴ Γ' ≡ εᴴ Γ
--- insertᴴ∙ {l} ¬p here with l ⊑? A
--- insertᴴ∙ ¬p here | yes p = ⊥-elim (¬p p)
--- insertᴴ∙ ¬p₁ here | no ¬p = {!refl!} -- No because of type-level π
--- insertᴴ∙ ¬p (there x) rewrite insertᴴ∙ ¬p x = refl
-
--- memberᴴ : ∀ {l ls π} {Γ : Heap ls} {Δ : Env l π} -> (l⊑A : l ⊑ A) -> l ↦ Δ ∈ᴴ Γ -> l ↦ (εᴱ (yes l⊑A) Δ) ∈ᴴ (εᴴ Γ)
--- memberᴴ {l} p here with l ⊑? A
--- memberᴴ {Δ = Δ} p₁ here | yes p rewrite εᴱ-ext (yes p) (yes p₁) Δ = here
--- memberᴴ p here | no ¬p = ⊥-elim (¬p p)
--- memberᴴ p (there x) = there (memberᴴ p x)
-
--- insertᴴ : ∀ {l π τ ls} {Γ Γ' : Heap ls} {Δ : Env l π} {t : Term π τ} (l⊑A : l ⊑ A) ->
---             Γ' ≔ Γ [ l ↦ insert t Δ ]ᴴ -> εᴴ Γ' ≔ (εᴴ Γ) [ l ↦ insert (εᵀ t) (εᴱ (yes l⊑A) Δ) ]ᴴ
--- insertᴴ {l} l⊑A here with l ⊑? A
--- insertᴴ {l} {Δ = []} l⊑A here | yes p = here
--- insertᴴ {l} {Δ = t ∷ Δ} l⊑A here | yes p  rewrite εᴱ-ext (yes p) (yes l⊑A) Δ = here
--- insertᴴ {l} {Δ = ∙} l⊑A here | yes p = here
--- insertᴴ l⊑A here | no ¬p = ⊥-elim (¬p l⊑A)
--- insertᴴ l⊑A (there x) = there (insertᴴ l⊑A x)
-
--- insert₂ᴴ : ∀ {l π τ ls} {Γ Γ' : Heap ls} {Δ : Env l π} (l⊑A : l ⊑ A) (t₁ : Term π τ) (t₂ : Term (τ ∷ π) τ) ->
---             Γ' ≔ Γ [ l ↦ insert t₂ (insert t₁ Δ) ]ᴴ -> εᴴ Γ' ≔ (εᴴ Γ) [ l ↦ insert (εᵀ t₂) (insert (εᵀ t₁) (εᴱ (yes l⊑A) Δ)) ]ᴴ
--- insert₂ᴴ {l} l⊑A t₁ t₂ here with l ⊑? A
--- insert₂ᴴ {l} {Δ = []} l⊑A t₁ t₂ here | yes p = here
--- insert₂ᴴ {l} {Δ = _ ∷ Δ} l⊑A t₁ t₂ here | yes p rewrite εᴱ-ext (yes p) (yes l⊑A) Δ = here
--- insert₂ᴴ {l} {Δ = ∙} l⊑A t₁ t₂ here | yes p = here
--- insert₂ᴴ l⊑A t₁ t₂ here | no ¬p = ⊥-elim (¬p l⊑A)
--- insert₂ᴴ l⊑A t₁ t₂ (there u₁) = there (insert₂ᴴ l⊑A t₁ t₂ u₁)
-
--- updateᴴ : ∀ {l ls π} {Δ : Env l π} {Γ Γ' : Heap ls} -> (l⊑A : l ⊑ A) -> Γ' ≔ Γ [ l ↦ Δ ]ᴴ -> (εᴴ Γ') ≔ (εᴴ Γ) [ l ↦ (εᴱ (yes l⊑A ) Δ) ]ᴴ
--- updateᴴ {l} {Δ = Δ} l⊑A here rewrite εᴱ-ext (yes l⊑A) (l ⊑? A) Δ = here
--- updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 
 -- Simulation Property
 -- Note that I fixed the type of the whole configuration to be Mac l τ, in order

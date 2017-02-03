@@ -1,20 +1,13 @@
-module Sequential.Semantics {- (𝓛 : Lattice) -} where
+import Lattice as L
 
-open import Types
-import Lattice
-open Lattice.Lattice 𝓛 renaming (_≟_ to _≟ᴸ_)
+module Sequential.Semantics (𝓛 : L.Lattice) where
 
-open import Sequential.Calculus
+open import Types 𝓛
+open import Sequential.Calculus 𝓛
+
 open import Data.Maybe
 open import Data.Product
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
-
---------------------------------------------------------------------------------
--- DeepDup helper functions and data types
-
-open import Data.Bool using (not)
-open import Data.List using (filter ; length)
-open import Relation.Nullary.Decidable using (⌊_⌋)
 
 --------------------------------------------------------------------------------
 
@@ -100,21 +93,21 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
              -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
              -- Note that this term is stuck if τ∈π ↦ t ∉ Δ
              -- in this case we can find the term in the environment labeled with l'
-             -> ⟨ Δ , deepDup (Var {π = π} τ∈π) , S ⟩ ⇝ ⟨ just (deepDupᵀ t) ∷ Δ , Var {π = τ ∷ π} ⟪ hereᴿ ⟫ , S ⟩
+             -> ⟨ Δ , deepDup (Var {π = π} τ∈π) , S ⟩ ⇝ ⟨ just (deepDupᵀ t) ∷ Δ , Var {π = τ ∷ π} {l} ⟪ hereᴿ ⟫ , S ⟩
 
  -- If the argument to deepDup is not a variable we introduce a new fresh variable (similarly to
  -- so that next rule DeepDup will apply.
  DeepDup' : ∀ {π τ τ'} {Δ : Env l π} {t : Term π τ} {S : Stack l τ τ'}
             -> (¬var : ¬ (IsVar t))
-            -> ⟨ Δ , deepDup t , S ⟩ ⇝ ⟨ just t ∷ Δ , deepDup (Var {π = τ ∷ π} ⟪ hereᴿ ⟫) , S ⟩
+            -> ⟨ Δ , deepDup t , S ⟩ ⇝ ⟨ just t ∷ Δ , deepDup (Var {π = τ ∷ π} {l} ⟪ hereᴿ ⟫) , S ⟩
 
  New₁ : ∀ {τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {l⊑h : l ⊑ H} {t : Term π τ}
          -> (¬var : ¬ (IsVar t)) ->
-         ⟨ Δ , new {π = π} l⊑h t , S ⟩ ⇝ ⟨ just t ∷ Δ , new l⊑h (Var {π = τ ∷ π} {{l}} ⟪ hereᴿ ⟫) , S ⟩
+         ⟨ Δ , new {π = π} l⊑h t , S ⟩ ⇝ ⟨ just t ∷ Δ , new l⊑h (Var {π = τ ∷ π} {l} ⟪ hereᴿ ⟫) , S ⟩
 
  New∙₁ : ∀ {τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {l⊑h : l ⊑ H} {t : Term π τ}
          -> (¬var : ¬ (IsVar t)) ->
-         ⟨ Δ , new∙ {π = π} l⊑h t , S ⟩ ⇝ ⟨ just t ∷ Δ , new∙ l⊑h (Var {π = τ ∷ π} {{l}} ⟪ hereᴿ ⟫) , S ⟩
+         ⟨ Δ , new∙ {π = π} l⊑h t , S ⟩ ⇝ ⟨ just t ∷ Δ , new∙ l⊑h (Var {π = τ ∷ π} {l} ⟪ hereᴿ ⟫) , S ⟩
 
  Write₁ : ∀ {τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
             ⟨ Δ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ (just t₂ ∷ Δ) , wken t₁ (drop refl-⊆ˡ) , write {{π = τ ∷ π}} l⊑H ⟪ hereᴿ ⟫ ∷ S ⟩

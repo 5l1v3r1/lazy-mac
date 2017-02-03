@@ -1,15 +1,15 @@
-{-# OPTIONS --rewriting #-}
+import Lattice as L
 
-module Sequential.Determinism where
+module Sequential.Determinism (𝓛 : L.Lattice) where
 
-open import Sequential.Calculus
-open import Sequential.Semantics
+open import Types 𝓛
+open import Sequential.Calculus 𝓛
+open import Sequential.Semantics 𝓛
+
 open import Data.Product
 open import Data.Maybe
 open import Relation.Binary.PropositionalEquality
 open import Relation.Binary.HeterogeneousEquality
-
-open import Types
 
 updateᴱ-≡ : ∀ {π π' τ l} {mt : Maybe (Term π' τ)} {Δ Δ₁ Δ₂ : Env l π} {τ∈π : τ ∈⟨ l ⟩ π}
            -> Updateᴱ mt τ∈π Δ Δ₁ -> Updateᴱ mt τ∈π Δ Δ₂ -> Δ₁ ≡ Δ₂

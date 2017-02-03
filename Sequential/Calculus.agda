@@ -1,11 +1,13 @@
---import Lattice
+import Lattice as L
 
-module Sequential.Calculus {- (𝓛 : Lattice) -} where
+module Sequential.Calculus (𝓛 : L.Lattice) where
 
-open import Types
-import Lattice
-open Lattice.Lattice 𝓛 renaming (_≟_ to _≟ᴸ_)
+open import Types 𝓛
 
+-- import Lattice
+-- open Lattice.Lattice 𝓛 renaming (_≟_ to _≟ᴸ_)
+
+open import Data.Maybe hiding (All)
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 open import Data.Nat using (ℕ ; zero ; suc ; _+_) public
 open import Data.Nat renaming ( _≟_ to  _≟ᴺ_ )
@@ -27,7 +29,7 @@ data Term (π : Context) : Ty -> Set where
   -- The label represents in which (labeled) environment the variable points to
   -- The user is not supposed to give explicit labels, rather the semantics
   -- takes care of adding them as needed.
-  Var : ∀ {{l}} {τ} ->  (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Term π τ
+  Var : ∀ {l} {τ} ->  (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Term π τ
   Abs : ∀ {α β} -> Term (α ∷ π) β -> Term π (α => β)
   App : ∀ {α β} -> Term π (α => β) -> Term π α -> Term π β
 
@@ -90,7 +92,7 @@ wken True p = True
 wken False p = False
 wken (Id t) p = Id (wken t p)
 wken (unId t) p = unId (wken t p)
-wken (Var ⟪ τ∈π ⟫) p = Var ⟪ wken-∈ᴿ p τ∈π ⟫
+wken (Var {l = l} ⟪ τ∈π ⟫) p = Var {l = l} ⟪ wken-∈ᴿ p τ∈π ⟫
 wken (Abs t) p = Abs (wken t (cons p))
 wken (App t t₁) p = App (wken t p) (wken t₁ p)
 wken (If t Then t₁ Else t₂) p = If (wken t p) Then (wken t₁ p) Else (wken t₂ p)
@@ -116,12 +118,12 @@ _↑¹ : ∀ {α β} {Δ : Context} -> Term Δ α -> Term (β ∷ Δ) α
 t ↑¹ = wken t (drop refl-⊆ˡ)
 
 -- Performs the variable-term substitution.
-var-subst : ∀ {α β} {{l}} (Δ₁ : Context) (Δ₂ : Context)
+var-subst : ∀ {l α β} (Δ₁ : Context) (Δ₂ : Context)
             -> Term Δ₂ β -> α ∈⟨ l ⟩ (Δ₁ ++ [ β ] ++ Δ₂) -> Term (Δ₁ ++ Δ₂) α
 var-subst [] Δ₂ v ⟪ here ⟫ = v
-var-subst [] Δ₂ v ⟪ there p ⟫ = Var ⟪ ∈-∈ᴿ p ⟫
-var-subst {α} (._ ∷ Δ₁) Δ₂ v ⟪ here ⟫ = Var ⟪ ∈-∈ᴿ {α} {α ∷ Δ₁ ++ Δ₂} here ⟫
-var-subst (x ∷ Δ₁) Δ₂ v ⟪ there p ⟫ = (var-subst Δ₁ Δ₂ v ⟪ p ⟫) ↑¹
+var-subst {l} [] Δ₂ v ⟪ there p ⟫ = Var {l = l} ⟪ ∈-∈ᴿ p ⟫
+var-subst {l} {α} (._ ∷ Δ₁) Δ₂ v ⟪ here ⟫ = Var {l = l} ⟪ ∈-∈ᴿ {_} {α} {α ∷ Δ₁ ++ Δ₂} here ⟫
+var-subst {l} (x ∷ Δ₁) Δ₂ v ⟪ there p ⟫ = (var-subst {l} Δ₁ Δ₂ v ⟪ p ⟫) ↑¹
 
 tm-subst : ∀ {τ α} (Δ₁ : Context) (Δ₂ : Context)-> Term Δ₂ α -> Term (Δ₁ ++ [ α ] ++ Δ₂) τ -> Term (Δ₁ ++ Δ₂) τ
 tm-subst Δ₁ Δ₂ v （） = （）
@@ -129,7 +131,7 @@ tm-subst Δ₁ Δ₂ v True = True
 tm-subst Δ₁ Δ₂ v False = False
 tm-subst Δ₁ Δ₂ v (Id t) = Id (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (unId t) = unId (tm-subst Δ₁ Δ₂ v t)
-tm-subst Δ₁ Δ₂ v (Var ⟪ y∈π ⟫) = var-subst Δ₁ Δ₂ v ⟪ ∈ᴿ-∈ y∈π ⟫
+tm-subst Δ₁ Δ₂ v (Var {l = l} ⟪ y∈π ⟫) = var-subst {l = l} Δ₁ Δ₂ v ⟪ ∈ᴿ-∈ y∈π ⟫
 tm-subst Δ₁ Δ₂ v (Abs t) = Abs (tm-subst (_ ∷ Δ₁) Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (App t t₁) = App (tm-subst Δ₁ Δ₂ v t) (tm-subst Δ₁ Δ₂ v t₁)
 tm-subst Δ₁ Δ₂ v (If t Then t₁ Else t₂) = If (tm-subst Δ₁ Δ₂ v t) Then (tm-subst Δ₁ Δ₂ v t₁) Else (tm-subst Δ₁ Δ₂ v t₂)
@@ -345,8 +347,8 @@ dup-ufv vs False = False
 dup-ufv vs (Id t) = Id (dup-ufv vs t)
 dup-ufv vs (unId t) = unId (dup-ufv vs t)
 dup-ufv vs (Var ⟪ τ∈π ⟫) with memberⱽ (∈ᴿ-∈ τ∈π) vs
-dup-ufv vs (Var ⟪ τ∈π ⟫) | yes p = Var ⟪ τ∈π ⟫  -- In scope
-dup-ufv vs (Var ⟪ τ∈π ⟫) | no ¬p = deepDup (Var ⟪ τ∈π ⟫) -- Free
+dup-ufv vs (Var {l = l} ⟪ τ∈π ⟫) | yes p = Var {l = l} ⟪ τ∈π ⟫  -- In scope
+dup-ufv vs (Var {l = l} ⟪ τ∈π ⟫) | no ¬p = deepDup (Var {l = l} ⟪ τ∈π ⟫) -- Free
 dup-ufv vs (Abs t) = Abs (dup-ufv (here ∷ mapⱽ there vs) t)
 dup-ufv vs (App t t₁) = App (dup-ufv vs t) (dup-ufv vs t₁)
 dup-ufv vs (If t Then t₁ Else t₂) = If (dup-ufv vs t) Then (dup-ufv vs t₁) Else (dup-ufv vs t₂)

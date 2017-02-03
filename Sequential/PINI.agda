@@ -1,13 +1,13 @@
-open import Types
-import Lattice
-open Lattice.Lattice 𝓛
+import Lattice as L
 
-module Sequential.PINI (A : Label) where
+module Sequential.PINI (𝓛 : L.Lattice) (A : L.Label 𝓛) where
 
-open import Sequential.Calculus
-open import Sequential.Semantics
-open import Sequential.Determinism
-open import Sequential.Erasure A
+open import Types 𝓛
+open import Sequential.Calculus 𝓛
+open import Sequential.Semantics 𝓛
+open import Sequential.Determinism 𝓛
+open import Sequential.Erasure 𝓛 A
+
 open import Relation.Binary.PropositionalEquality
 
 data _≈ᴾ_ {l ls τ} (p₁ p₂ : Program l ls τ) : Set where
