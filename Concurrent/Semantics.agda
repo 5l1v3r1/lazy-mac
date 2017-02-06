@@ -12,20 +12,21 @@ open S.Event
 open import Sequential.Calculus 𝓛
 open import Sequential.Semantics 𝓛
 open import Concurrent.Calculus 𝓛 𝓢
+open import Relation.Nullary
 
 -- Concurrent semantics
 data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
-  step-∅ : ∀ {π₁ π₂ τ₁ τ₂ S₁ S₂ s₁ s₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heap ls} {P₁ P₂ : Pools ls} {T₁ T₂ : Pool l}
+  step-∅ : ∀ {π₁ π₂ τ₁ τ₂ S₁ S₂ Σ₁ Σ₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heap ls} {P₁ P₂ : Pools ls} {T₁ T₂ : Pool l}
            (l∈P : l ↦ T₁ ∈ᴾ P₁)
            (t∈T : n ↦ ⟨ t₁ , S₁ ⟩ ∈ᵀ T₁)
            (¬fork : ¬ (IsFork t₁))
            (step : ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩)
-           (sch : s₁ ⟶ s₂ ↑ (l , n , Step) )
+           (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Step) )
            (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ t₂ , S₂ ⟩ ]ᵀ )
            (uᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ ) ->
-           Stepᶜ l n ⟨ s₁ , Γ₁ , P₁ ⟩ ⟨ s₂ , Γ₂ , P₂ ⟩
+           Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
 
-  fork :  ∀ {H π₁ π₂ τ₂ S₁ S₂ s₁ s₂} {tᴴ : Term π₁ (Mac H _)} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heap ls}
+  fork :  ∀ {H π₁ π₂ τ₂ S₁ S₂ Σ₁ Σ₂} {tᴴ : Term π₁ (Mac H _)} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heap ls}
             {P₁ P₂ P₃ : Pools ls} {T₁ T₂ : Pool l} {Tᴴ : Pool H} {l⊑H : l ⊑ H}
            (l∈P : l ↦ T₁ ∈ᴾ P₁)
            (t∈T : n ↦ ⟨ fork l⊑H tᴴ , S₁ ⟩ ∈ᵀ T₁)
@@ -33,29 +34,29 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ t₂ , S₂ ⟩ ]ᵀ )
            (u₁ᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ )
            (H∈P₂ : H ↦ Tᴴ ∈ᴾ P₂)
-           (sch : s₁ ⟶ s₂ ↑ (l , n , Fork H (lenghtᴾ Tᴴ) l⊑H) )
+           (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Fork H (lenghtᴾ Tᴴ) l⊑H) )
            (u₂ᴾ : P₃ ≔ P₂ [ H ↦ Tᴴ ▻ ⟨ tᴴ , [] ⟩ ]ᴾ ) ->
-           Stepᶜ l n ⟨ s₁ , Γ₁ , P₁ ⟩ ⟨ s₂ , Γ₂ , P₂ ⟩
+           Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
 
-  skip : ∀ {s₁ s₂ τ π S} {t : Term π τ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
+  skip : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
             (t∈T : n ↦ ⟨ t , S ⟩ ∈ᵀ T)
             (stuck : Stuckᴾ ⟨ Γ , t , S ⟩)
-            (sch : s₁ ⟶ s₂ ↑ (l , n , Skip) ) ->
-            Stepᶜ l n ⟨ s₁ , Γ , P ⟩ ⟨ s₂ , Γ , P ⟩
+            (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Skip) ) ->
+            Stepᶜ l n ⟨ Σ₁ , Γ , P ⟩ ⟨ Σ₂ , Γ , P ⟩
 
-  done : ∀ {s₁ s₂ τ π S} {t : Term π τ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
+  done : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
             (t∈T : n ↦ ⟨ t , S ⟩ ∈ᵀ T)
             (done : Doneᴾ ⟨ Γ , t , S ⟩)
-            (sch : s₁ ⟶ s₂ ↑ (l , n , Done) ) ->
-            Stepᶜ l n ⟨ s₁ , Γ , P ⟩ ⟨ s₂ , Γ , P ⟩
+            (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Done) ) ->
+            Stepᶜ l n ⟨ Σ₁ , Γ , P ⟩ ⟨ Σ₂ , Γ , P ⟩
 
-  hole : ∀ {s} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
+  hole : ∀ {Σ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
             (t∈T : n ↦ ∙ ∈ᵀ T)
-            (sch : s ⟶ s ↑ (l , n , ∙) ) ->
-           Stepᶜ l n ⟨ s , Γ , P ⟩ ⟨ s , Γ , P ⟩
+            (sch : Σ ⟶ Σ ↑ (l , n , ∙) ) ->
+           Stepᶜ l n ⟨ Σ , Γ , P ⟩ ⟨ Σ , Γ , P ⟩
 
 
 open import Data.Product

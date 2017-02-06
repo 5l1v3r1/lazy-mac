@@ -1,11 +1,10 @@
 open import Lattice using (Lattice ; Label)
 import Scheduler.Base as S
 
-module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) (𝓢 : S.Scheduler 𝓛) where
+module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
 
   open import Scheduler.Base 𝓛
   open Lattice.Lattice 𝓛
-  open Scheduler 𝓢 public
 
   open import Data.Nat
   open import Relation.Nullary
@@ -27,11 +26,11 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) (𝓢 : S.Scheduler 
   εᴹ = ε₁ᴹ (_ ⊑? A)
 
 
-  record NI-Sch : Set₁ where
-    constructor Sec
+  record NIˢ (𝓢 : S.Scheduler 𝓛) : Set₁ where
+    open Scheduler 𝓢 public
     field
       εˢ  : State -> State
-      _≈ˢ_ : State -> State -> Set  -- I expect this to be equivalent to the kerner of the erasure function, i.e. s₁ ≈ˢ s₂ ⇔ εˢ s₁ ≡ εˢ s₂
+      _≈ˢ_ : State -> State -> Set
 
       ε-sch-dist : ∀ {s₁ s₂ : State} {l} {m : Message l} ->  s₁ ⟶ s₂ ↑ m -> (εˢ s₁) ⟶ (εˢ s₂) ↑ (εᴹ m)
       ε-sch-≡ : ∀ {s₁ s₂ l} {m : Message l} -> l ⋤ A -> s₁ ⟶ s₂ ↑ m -> s₁ ≈ˢ s₂
@@ -43,3 +42,5 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) (𝓢 : S.Scheduler 
       offset₂ : {s₁ s₂ : State} -> s₁ ≈ˢ s₂ -> ℕ
       align : ∀ {s₁ s₂} -> (eq : s₁ ≈ˢ s₂) -> s₁ ≈ˢ-⟨ offset₁ eq , offset₂ eq ⟩ s₂
       forget : ∀ {s₁ s₂ n m} -> s₁ ≈ˢ-⟨ n , m ⟩ s₂ -> s₁ ≈ˢ s₂
+
+  open NIˢ

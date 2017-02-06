@@ -10,13 +10,13 @@ open S.Scheduler 𝓛 𝓢 renaming (State to Stateˢ)
 --------------------------------------------------------------------------------
 
 data Thread (l : Label) : Set where
-  ⟨_,_⟩ :  ∀ {τ π} -> Term π τ -> Stack l τ (Mac l （）) -> Thread l
+  ⟨_,_⟩ :  ∀ {τ π} -> (t : Term π τ) (S : Stack l τ (Mac l （）)) -> Thread l
   ∙ : Thread l  -- We use this instead ⟨ ∙ , ∙ ⟩ to make the semantics deterministic easily
 
 -- Pool of threads at a certain label
 data Pool (l : Label) : Set where
   [] : Pool l
-  _◅_ :  Thread l -> Pool l -> Pool l
+  _◅_ : (t : Thread l) (T : Pool l) -> Pool l
   ∙ : Pool l
 
 infixr 3 _◅_
@@ -37,9 +37,10 @@ _▻_ : ∀ {l} -> Pool l -> Thread l -> Pool l
 -- A list of pools
 data Pools : List Label -> Set where
   [] : Pools []
-  _◅_ : ∀ {l ls} {{u : Unique l ls}} -> Pool l -> Pools ls -> Pools (l ∷ ls)
+  _◅_ : ∀ {l ls} {{u : Unique l ls}} -> (T : Pool l)(P : Pools ls) -> Pools (l ∷ ls)
 
 open import Relation.Binary.PropositionalEquality
+open import Data.Empty
 
 pools-unique : ∀ {l ls} -> (x y : l ∈ ls) -> Pools ls -> x ≡ y
 pools-unique here here (x ◅ p) = refl

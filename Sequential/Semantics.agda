@@ -7,6 +7,7 @@ open import Sequential.Calculus 𝓛
 
 open import Data.Maybe
 open import Data.Product
+open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 
 --------------------------------------------------------------------------------
@@ -188,7 +189,5 @@ data Redexᴾ {l ls τ} (p : Program l ls τ) : Set where
 Stuckᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
 Stuckᴾ p = (¬ (Doneᴾ p)) × (¬ (Redexᴾ p))
 
-data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
-  D : Doneᴾ p -> Stateᴾ p
-  R : Redexᴾ p -> Stateᴾ p
-  S : Stuckᴾ p -> Stateᴾ p
+Stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Set
+Stateᴾ p = (Doneᴾ p) × ((Redexᴾ p) × (Stuckᴾ p))

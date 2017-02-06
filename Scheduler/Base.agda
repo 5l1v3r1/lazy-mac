@@ -18,12 +18,8 @@ open Event public
 data Message : Label -> Set where
    _,_,_ : (l : Label) (n : ℕ) (e : Event l) -> Message l
 
-open Message public
-
 record Scheduler : Set₁ where
   constructor Sch
   field
     State : Set
     _⟶_↑_ : ∀ {l} -> State -> State -> Message l -> Set
-
-open Scheduler public

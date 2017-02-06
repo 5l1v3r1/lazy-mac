@@ -244,6 +244,8 @@ lengthᴹ ∙ = 0  -- We don't care when the memory is collapsed
 -- A heap pairs together labeled memories and environment
 
 open import Data.List.All
+open import Data.Empty
+open import Relation.Nullary
 
 Unique : Label -> List Label -> Set
 Unique l₁ ls = All (λ l₂ → ¬ (l₁ ≡ l₂)) ls

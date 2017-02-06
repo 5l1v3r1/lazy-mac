@@ -9,6 +9,8 @@ open import Sequential.Semantics 𝓛
 
 open import Data.Sum
 open import Relation.Binary.PropositionalEquality hiding (subst ; [_])
+open import Relation.Nullary
+open import Data.Empty
 
 -- A view over sensitive (secret) computation types.
 -- A is the attacker's security level

@@ -63,9 +63,9 @@ snoc-∈ τ (x ∷ π) = there (snoc-∈ τ π)
 ∈-∈ᴿ {_} {τ} {.τ ∷ π} here = snoc-∈ τ (reverse π)
 ∈-∈ᴿ {_} {τ} {τ' ∷ π} (there x) = wken-∈ drop-⊆ (∈-∈ᴿ x)
 
-open import Relation.Nullary public
+open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality hiding ([_])
-open import Data.Empty public
+open import Data.Empty
 
 {-# BUILTIN REWRITE _≡_ #-}
 
