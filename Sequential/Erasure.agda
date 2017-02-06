@@ -80,7 +80,10 @@ open import Data.Product
 εᵀ (write∙ l⊑h t₁ t₂) = write∙ l⊑h (εᵀ t₁) (εᵀ t₂)
 εᵀ (#[ n ]) = #[ n ]
 εᵀ (#[ n ]ᴰ) = #[ n ]ᴰ
-εᵀ (fork l⊑h t) = fork l⊑h (εᵀ t)
+εᵀ (fork {h = h} l⊑h t) with h ⊑? A
+... | yes _ = fork l⊑h (εᵀ t)
+... | no _ = fork∙ l⊑h (εᵀ t)
+εᵀ (fork∙ l⊑h t) = fork∙ l⊑h (εᵀ t)
 εᵀ (deepDup t) = deepDup (εᵀ t)
 εᵀ ∙ = ∙
 
@@ -114,7 +117,10 @@ open import Data.Product
 εᵀ¬Val {t = write∙ l⊑h t₁ t₂} ¬val ()
 εᵀ¬Val {t = #[ t ]} ¬val val-ε = ¬val #[ t ]
 εᵀ¬Val {t = #[ t ]ᴰ} ¬val val-ε = ¬val #[ t ]ᴰ
-εᵀ¬Val {t = fork l⊑h t} ¬val ()
+εᵀ¬Val {t = fork {h = h} l⊑h t} ¬val val-ε with h ⊑? A
+εᵀ¬Val {t = fork l⊑h t} ¬val ()  | yes _
+εᵀ¬Val {t = fork l⊑h t} ¬val () | no _
+εᵀ¬Val {t = fork∙ l⊑h t} ¬val ()
 εᵀ¬Val {t = deepDup t} ¬val ()
 εᵀ¬Val {t = ∙} ¬val ()
 
@@ -163,7 +169,10 @@ open import Data.Product
 εᵀ¬Var {t = write∙ l⊑h t₁ t₂} ¬var ()
 εᵀ¬Var {t = #[ t ]} ¬var ()
 εᵀ¬Var {t = #[ t ]ᴰ} ¬var ()
-εᵀ¬Var {t = fork l⊑h t} ¬var ()
+εᵀ¬Var {t = fork {h = h} l⊑h t} ¬var var-ε with h ⊑? A
+εᵀ¬Var {t = fork l⊑h t} ¬var () | yes _
+εᵀ¬Var {t = fork l⊑h t} ¬var () | no _
+εᵀ¬Var {t = fork∙ l⊑h t} ¬var ()
 εᵀ¬Var {t = deepDup t} ¬var ()
 εᵀ¬Var {t = ∙} ¬var ()
 
@@ -194,6 +203,7 @@ open import Data.Product
 εᵀ¬Fork {t = #[ x ]} ¬fork ()
 εᵀ¬Fork {t = #[ x ]ᴰ} ¬fork ()
 εᵀ¬Fork {t = fork l⊑h t} ¬fork x = ¬fork (Fork l⊑h t)
+εᵀ¬Fork {t = fork∙ l⊑h t} ¬fork x = ¬fork (Fork∙ l⊑h t)
 εᵀ¬Fork {t = deepDup t} ¬fork ()
 εᵀ¬Fork {t = ∙} ¬fork ()
 
@@ -292,7 +302,10 @@ open import Function
 ε-wken (new∙ x t) p rewrite ε-wken t p = refl
 ε-wken #[ n ] p = refl
 ε-wken #[ n ]ᴰ p = refl
-ε-wken (fork l⊑h t) p rewrite ε-wken t p = refl
+ε-wken (fork {h = h} l⊑h t) p with h ⊑? A
+... | yes _ rewrite ε-wken t p = refl
+... | no _ rewrite ε-wken t p = refl
+ε-wken (fork∙ l⊑h t) p rewrite ε-wken t p = refl
 ε-wken (deepDup t) p rewrite ε-wken t p = refl
 ε-wken ∙ p = refl
 
@@ -345,7 +358,10 @@ open import Function
         ε-tm-subst π₁ π₂ t₁ (new∙ x t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ #[ n ] = refl
         ε-tm-subst π₁ π₂ t₁ #[ n ]ᴰ = refl
-        ε-tm-subst π₁ π₂ t₁ (fork l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
+        ε-tm-subst π₁ π₂ t₁ (fork {h = h} l⊑h t₂) with h ⊑? A
+        ... | yes _ rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
+        ... | no _ rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
+        ε-tm-subst π₁ π₂ t₁ (fork∙ l⊑h t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ (deepDup t₂) rewrite ε-tm-subst π₁ π₂ t₁ t₂ = refl
         ε-tm-subst π₁ π₂ t₁ ∙ = refl
 
@@ -394,7 +410,10 @@ open import Function
         εᵀ-dup-ufv-≡ vs (new∙ x t) rewrite εᵀ-dup-ufv-≡ vs t = refl
         εᵀ-dup-ufv-≡ vs #[ n ] = refl
         εᵀ-dup-ufv-≡ vs #[ n ]ᴰ = refl
-        εᵀ-dup-ufv-≡ vs (fork l⊑h t) rewrite εᵀ-dup-ufv-≡ vs t = refl
+        εᵀ-dup-ufv-≡ vs (fork {h = h} l⊑h t) with h ⊑? A
+        ... | yes _ rewrite εᵀ-dup-ufv-≡ vs t = refl
+        ... | no _ rewrite εᵀ-dup-ufv-≡ vs t = refl
+        εᵀ-dup-ufv-≡ vs (fork∙ l⊑h t) rewrite εᵀ-dup-ufv-≡ vs t = refl
         εᵀ-dup-ufv-≡ vs (deepDup t) rewrite εᵀ-dup-ufv-≡ vs t = refl
         εᵀ-dup-ufv-≡ vs ∙ = refl
 
@@ -445,7 +464,10 @@ updateᴱ (there x) = there (updateᴱ x)
 ε-sim (yes y) (Unlabel₂ p) | no ¬p = ⊥-elim (¬p (trans-⊑ p y))
 ε-sim (yes y) UnId₁ = UnId₁
 ε-sim (yes y) UnId₂ = UnId₂
-ε-sim (yes y) (Fork p) = Fork p
+ε-sim (yes y) (Fork {h = h} p) with h ⊑? A
+... | yes _ = Fork p
+... | no _ = Fork∙ p
+ε-sim (yes y) (Fork∙ p) = Fork∙ p
 ε-sim (yes y) (DeepDup τ∈π t∈Δ) = DeepDup τ∈π (memberᴱ τ∈π t∈Δ)
 ε-sim (yes y) (DeepDup' ¬var) = DeepDup' (εᵀ¬Var ¬var)
 ε-sim (yes y) (New₁ {H = H} ¬var) with H ⊑? A

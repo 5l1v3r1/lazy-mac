@@ -82,6 +82,9 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
  Fork : ∀ {π τ h} {Δ : Env l π} {S : Stack l _ τ} {t : Term π (Mac h _)} -> (p : l ⊑ h) ->
           ⟨ Δ , (fork p t) , S ⟩ ⇝ ⟨ Δ , Return {π = π} l （） , S ⟩
 
+ Fork∙ : ∀ {π τ h} {Δ : Env l π} {S : Stack l _ τ} {t : Term π (Mac h _)} -> (p : l ⊑ h) ->
+          ⟨ Δ , (fork∙ p t) , S ⟩ ⇝ ⟨ Δ , Return {π = π} l （） , S ⟩
+
  Hole₁ : ∀ {τ} -> ∙ {τ = τ} ⇝ ∙
 
  Hole₂ : ∀ {τ} {π} -> ⟨ ∙ {{π}} , ∙ {{τ}} , ∙ ⟩ ⇝ ⟨ ∙ {{π}} , ∙ , ∙ ⟩

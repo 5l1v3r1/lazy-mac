@@ -59,6 +59,7 @@ data Term (π : Context) : Ty -> Set where
 
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
+  fork∙ : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
 
   deepDup : ∀ {τ} -> Term π τ -> Term π τ
 
@@ -108,6 +109,7 @@ wken (new∙ x t) p = new∙ x (wken t p)
 wken (#[ n ]) p = #[ n ]
 wken (#[ n ]ᴰ) p = #[ n ]ᴰ
 wken (fork x t) p = fork x (wken t p)
+wken (fork∙ x t) p = fork∙ x (wken t p)
 wken (deepDup x) p = deepDup (wken x p)
 wken ∙ p = ∙
 
@@ -147,6 +149,7 @@ tm-subst Δ₁ Δ₂ v (new∙ x t) = new∙ x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (#[ n ]) = #[ n ]
 tm-subst Δ₁ Δ₂ v (#[ n ]ᴰ) = #[ n ]ᴰ
 tm-subst Δ₁ Δ₂ v (fork x t) = fork x (tm-subst Δ₁ Δ₂ v t)
+tm-subst Δ₁ Δ₂ v (fork∙ x t) = fork∙ x (tm-subst Δ₁ Δ₂ v t)
 tm-subst Δ₁ Δ₂ v (deepDup x) = deepDup (tm-subst Δ₁ Δ₂ v x)
 tm-subst Δ₁ Δ₂ v ∙ = ∙
 
@@ -366,6 +369,7 @@ dup-ufv vs (new∙ l⊑h t) = new∙ l⊑h (dup-ufv vs t)
 dup-ufv vs (#[ n ]) = #[ n ]ᴰ  -- Duplicate on read!
 dup-ufv vs (#[ n ]ᴰ) = #[ n ]ᴰ
 dup-ufv vs (fork l⊑h t) = fork l⊑h (dup-ufv vs t)
+dup-ufv vs (fork∙ l⊑h t) = fork∙ l⊑h (dup-ufv vs t)
 dup-ufv vs (deepDup t) = deepDup t  -- deepDup (deepDup t) is semantically equal to deepDup t
 dup-ufv vs ∙ = ∙
 
@@ -378,3 +382,4 @@ data IsVar {π} {τ} : Term π τ -> Set where
 
 data IsFork {π} : ∀ {τ} -> Term π τ -> Set where
   Fork : ∀ {l h} (p : l ⊑ h) (t : Term π _) -> IsFork (fork p t)
+  Fork∙ : ∀ {l h} (p : l ⊑ h) (t : Term π _) -> IsFork (fork∙ p t)
