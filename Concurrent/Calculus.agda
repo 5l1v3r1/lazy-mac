@@ -11,7 +11,6 @@ open S.Scheduler 𝓛 𝓢 renaming (State to Stateˢ)
 
 data Thread (l : Label) : Set where
   ⟨_,_⟩ :  ∀ {τ π} -> (t : Term π τ) (S : Stack l τ (Mac l （）)) -> Thread l
-  ∙ : Thread l  -- We use this instead ⟨ ∙ , ∙ ⟩ to make the semantics deterministic easily
 
 -- Pool of threads at a certain label
 data Pool (l : Label) : Set where

@@ -25,7 +25,6 @@ open Scheduler.Security.NIˢ 𝓛 A 𝓝
 
 εᵗ : ∀ {l} ->  Thread l -> Thread l
 εᵗ C.⟨ t , S ⟩ = ⟨ SE.εᵀ t , SE.εˢ S ⟩
-εᵗ C.∙ = ∙
 
 εᵀ : ∀ {l} -> Dec (l ⊑ A) -> Pool l -> Pool l
 εᵀ (yes p) C.[] = []
@@ -127,4 +126,3 @@ newᴾ∙ T t H⋤A (C.there x) rewrite newᴾ∙ T t H⋤A x = refl
   = fork∙ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᴾ-simᴸ l⊑A step) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (εˢ-simᴸ l⊑A sch)
 εᴳ-sim l⊑A (CS.skip l∈P t∈T stuck sch) = skip (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (stuck-ε l⊑A stuck) (εˢ-simᴸ l⊑A sch)
 εᴳ-sim l⊑A (CS.done l∈P t∈T don sch) = done (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (done-ε l⊑A don) (εˢ-simᴸ l⊑A sch)
-εᴳ-sim l⊑A (CS.hole l∈P t∈T sch) = hole (memberᴾ l⊑A l∈P) {!!} (εˢ-simᴸ l⊑A sch)

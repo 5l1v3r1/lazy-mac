@@ -62,14 +62,6 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
             (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Done) ) ->
             Stepᶜ l n ⟨ Σ₁ , Γ , P ⟩ ⟨ Σ₂ , Γ , P ⟩
 
-  -- Do we need this if we match high steps with 0 steps?
-  hole : ∀ {Σ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
-            (l∈P : l ↦ T ∈ᴾ P)
-            (t∈T : n ↦ ∙ ∈ᵀ T)
-            (sch : Σ ⟶ Σ ↑ (l , n , ∙) ) ->
-           Stepᶜ l n ⟨ Σ , Γ , P ⟩ ⟨ Σ , Γ , P ⟩
-
-
 open import Data.Product
 
 _⊢_↪_ : ∀ {ls} -> Label × ℕ -> Global ls -> Global ls -> Set
