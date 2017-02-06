@@ -18,12 +18,9 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
   εᴱ e = e
 
   -- Erasure of labeled messages
-  ε₁ᴹ : ∀ {l} -> Dec (l ⊑ A) -> Message l -> Message l
-  ε₁ᴹ (yes p) (l , n , e) = l , n , εᴱ e
-  ε₁ᴹ (no ¬p) (l , n , e) = l , n , ∙
-
-  εᴹ : ∀ {l} -> Message l -> Message l
-  εᴹ = ε₁ᴹ (_ ⊑? A)
+  εᴹ : ∀ {l} -> Dec (l ⊑ A) -> Message l -> Message l
+  εᴹ (yes p) (l , n , e) = l , n , εᴱ e
+  εᴹ (no ¬p) (l , n , e) = l , n , ∙
 
 
   record NIˢ (𝓢 : S.Scheduler 𝓛) : Set₁ where
@@ -32,8 +29,8 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
       εˢ  : State -> State
       _≈ˢ_ : State -> State -> Set
 
-      ε-sch-dist : ∀ {s₁ s₂ : State} {l} {m : Message l} ->  s₁ ⟶ s₂ ↑ m -> (εˢ s₁) ⟶ (εˢ s₂) ↑ (εᴹ m)
-      ε-sch-≡ : ∀ {s₁ s₂ l} {m : Message l} -> l ⋤ A -> s₁ ⟶ s₂ ↑ m -> s₁ ≈ˢ s₂
+      εˢ-simᴸ : ∀ {s₁ s₂ : State} {l} {m : Message l} -> (l⊑A : l ⊑ A) -> s₁ ⟶ s₂ ↑ m -> (εˢ s₁) ⟶ (εˢ s₂) ↑ (εᴹ (yes l⊑A) m)
+      εˢ-simᴴ : ∀ {s₁ s₂ l} {m : Message l} -> l ⋤ A -> s₁ ⟶ s₂ ↑ m -> s₁ ≈ˢ s₂
       determinismˢ : ∀ {l n e} {s₁ s₂ s₃ : State} -> s₁ ⟶ s₂ ↑ (l , n , e) -> s₁ ⟶ s₃ ↑ (l , n , e) -> s₂ ≡ s₃
 
       -- Annotated low-equivalence

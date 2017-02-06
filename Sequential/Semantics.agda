@@ -189,5 +189,10 @@ data Redexᴾ {l ls τ} (p : Program l ls τ) : Set where
 Stuckᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
 Stuckᴾ p = (¬ (Doneᴾ p)) × (¬ (Redexᴾ p))
 
+open import Data.Empty
+
+¬Done⇒¬Val :  ∀ {l π ls τ} {Γ : Heap ls} {t : Term π τ} -> ¬ (Doneᴾ {l} ⟨ Γ , t , [] ⟩) -> ¬ Value t
+¬Done⇒¬Val x v = ⊥-elim (x (Done v))
+
 Stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Set
 Stateᴾ p = (Doneᴾ p) × ((Redexᴾ p) × (Stuckᴾ p))

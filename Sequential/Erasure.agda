@@ -167,6 +167,36 @@ open import Data.Product
 εᵀ¬Var {t = deepDup t} ¬var ()
 εᵀ¬Var {t = ∙} ¬var ()
 
+εᵀ¬Fork : ∀ {π τ} {t : Term π τ} -> ¬ (IsFork t) -> ¬ (IsFork (εᵀ t))
+εᵀ¬Fork {t = （）} ¬fork ()
+εᵀ¬Fork {t = True} ¬fork ()
+εᵀ¬Fork {t = False} ¬fork ()
+εᵀ¬Fork {t = Id t} ¬fork ()
+εᵀ¬Fork {t = unId t} ¬fork ()
+εᵀ¬Fork {t = Var τ∈π} ¬fork ()
+εᵀ¬Fork {t = Abs t} ¬fork ()
+εᵀ¬Fork {t = App t t₁} ¬fork ()
+εᵀ¬Fork {t = If t Then t₁ Else t₂} ¬fork ()
+εᵀ¬Fork {t = Return l t} ¬fork ()
+εᵀ¬Fork {t = t >>= t₁} ¬fork ()
+εᵀ¬Fork {t = Mac l t} ¬fork ()
+εᵀ¬Fork {t = Res l t} ¬fork ()
+εᵀ¬Fork {t = label l⊑h t} ¬fork ()
+εᵀ¬Fork {t = label∙ l⊑h t} ¬fork ()
+εᵀ¬Fork {t = unlabel l⊑h t} ¬fork ()
+εᵀ¬Fork {t = read x t} ¬fork ()
+εᵀ¬Fork {t = write {h = h} x t t₁} ¬fork a with h ⊑? A
+εᵀ¬Fork {t = write x t t₁} ¬fork () | yes p
+εᵀ¬Fork {t = write x t t₁} ¬fork () | no _
+εᵀ¬Fork {t = write∙ x t t₁} ¬fork ()
+εᵀ¬Fork {t = new x t} ¬fork ()
+εᵀ¬Fork {t = new∙ x t} ¬fork ()
+εᵀ¬Fork {t = #[ x ]} ¬fork ()
+εᵀ¬Fork {t = #[ x ]ᴰ} ¬fork ()
+εᵀ¬Fork {t = fork l⊑h t} ¬fork x = ¬fork (Fork l⊑h t)
+εᵀ¬Fork {t = deepDup t} ¬fork ()
+εᵀ¬Fork {t = ∙} ¬fork ()
+
 open import Data.Product as P
 open import Data.Maybe as M
 open import Function
@@ -388,12 +418,6 @@ updateᴱ (there x) = there (updateᴱ x)
 --------------------------------------------------------------------------------
 
 -- Simulation Property
--- Note that I fixed the type of the whole configuration to be Mac l τ, in order
--- to tie the security level of the computation to that of the stack.
--- It is also consistent with the fact that all of these computations will be threads
--- in the concurrent semantics.
--- Since the actual term under evaluation can have any type the property
--- is still sufficiently general.
 ε-sim : ∀ {l τ} {s₁ s₂ : State l τ} (x : Dec (l ⊑ A)) -> s₁ ⇝ s₂ -> ε x s₁ ⇝ ε x s₂
 -- High-Computations
 ε-sim (no x) s = Hole₁
@@ -519,3 +543,9 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 
 εᴾ-sim : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} -> p₁ ⟼ p₂ -> εᴾ p₁ ⟼ εᴾ p₂
 εᴾ-sim {l} = ε₁ᴾ-sim (l ⊑? A)
+
+
+-- Simulation of low-step (shows that we maintain the program structure)
+εᴾ-simᴸ : ∀ {ls π₁ π₂ τ l τ₁ τ₂} {Γ₁ Γ₂ : Heap ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l _ τ} {S₂ : Stack l _ τ}
+             -> l ⊑ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> ⟨ εᴴ Γ₁ , εᵀ t₁ , εˢ S₁ ⟩ ⟼ ⟨ εᴴ Γ₂ , εᵀ t₂ , εˢ S₂ ⟩
+εᴾ-simᴸ l⊑A step = ε₁ᴾ-sim (yes l⊑A) step

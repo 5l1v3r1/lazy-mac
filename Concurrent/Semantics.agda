@@ -35,8 +35,8 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (u₁ᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ )
            (H∈P₂ : H ↦ Tᴴ ∈ᴾ P₂)
            (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Fork H (lenghtᴾ Tᴴ) l⊑H) )
-           (u₂ᴾ : P₃ ≔ P₂ [ H ↦ Tᴴ ▻ ⟨ tᴴ , [] ⟩ ]ᴾ ) ->
-           Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
+           (u₂ᴾ : P₃ ≔ P₂ [ H ↦ Tᴴ ▻ ⟨ tᴴ , [] ⟩ ]ᴾ ) ->  -- TODO must add deepDup!
+           Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₃ ⟩
 
   skip : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
@@ -48,10 +48,11 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
   done : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
             (t∈T : n ↦ ⟨ t , S ⟩ ∈ᵀ T)
-            (done : Doneᴾ ⟨ Γ , t , S ⟩)
+            (don : Doneᴾ ⟨ Γ , t , S ⟩)
             (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Done) ) ->
             Stepᶜ l n ⟨ Σ₁ , Γ , P ⟩ ⟨ Σ₂ , Γ , P ⟩
 
+  -- Do we need this if we match high steps with 0 steps?
   hole : ∀ {Σ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
             (t∈T : n ↦ ∙ ∈ᵀ T)
