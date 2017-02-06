@@ -15,6 +15,7 @@ data Event (l : Label) : Set where
 
 open Event public
 
+
 data Message : Label -> Set where
    _,_,_ : (l : Label) (n : ℕ) (e : Event l) -> Message l
 

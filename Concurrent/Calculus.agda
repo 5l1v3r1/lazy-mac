@@ -21,10 +21,10 @@ data Pool (l : Label) : Set where
 
 infixr 3 _◅_
 
-lenghtᴾ : ∀ {l} -> Pool l -> ℕ
-lenghtᴾ [] = 0
-lenghtᴾ (x ◅ P) = suc (lenghtᴾ P)
-lenghtᴾ ∙ = 0
+lengthᵀ : ∀ {l} -> Pool l -> ℕ
+lengthᵀ [] = 0
+lengthᵀ (x ◅ P) = suc (lengthᵀ P)
+lengthᵀ ∙ = 0
 
 -- Enqueue
 _▻_ : ∀ {l} -> Pool l -> Thread l -> Pool l

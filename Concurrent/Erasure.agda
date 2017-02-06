@@ -93,11 +93,38 @@ stuck-ε {l} {ls} {τ} l⊑A (¬done P., ¬redex) = ε¬done ¬done P., ε¬rede
         postulate ε¬redex : ∀ {p : Program l ls τ} -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
 
 
+lengthᵀ-ε-≡ : ∀ {l} (l⊑A : l ⊑ A) (T : Pool l) -> lengthᵀ T ≡ lengthᵀ (εᵀ (yes l⊑A) T)
+lengthᵀ-ε-≡ l⊑A C.[] = refl
+lengthᵀ-ε-≡ l⊑A (t C.◅ T) rewrite lengthᵀ-ε-≡ l⊑A T = refl
+lengthᵀ-ε-≡ l⊑A C.∙ = refl
+
+εᵀ-▻-≡ : ∀ {l} (l⊑A : l ⊑ A) (T : Pool l) (t : Thread l) -> ((εᵀ (yes l⊑A) T) ▻ εᵗ t) ≡ εᵀ (yes l⊑A) (T ▻ t)
+εᵀ-▻-≡ l⊑A C.[] t = refl
+εᵀ-▻-≡ l⊑A (t C.◅ T) t₁ rewrite εᵀ-▻-≡ l⊑A T t₁ = refl
+εᵀ-▻-≡ l⊑A C.∙ t = refl
+
+updateᴾ-▻ : ∀ {l ls} {P₁ P₂ : Pools ls} (T : Pool l) (t : Thread l) -> (l⊑A : l ⊑ A) ->
+                 P₁ ≔ P₂ [ l ↦ T ▻ t ]ᴾ ->
+                 (εᴾ P₁) ≔ (εᴾ P₂) [ l ↦ (εᵀ (yes l⊑A) T) ▻ (εᵗ t) ]ᴾ
+updateᴾ-▻ T t l⊑A x rewrite εᵀ-▻-≡ l⊑A T t = updateᴾ l⊑A x
+
+newᴾ∙ : ∀ {H ls} {P₁ P₂ : Pools ls} (T : Pool H) (t : Thread H) -> (H⋤A : H ⋤ A) -> P₂ ≔ P₁ [ H ↦ T ▻ t ]ᴾ -> εᴾ P₂ ≡ εᴾ P₁
+newᴾ∙ {H} T t H⋤A C.here with H ⊑? A
+newᴾ∙ T t H⋤A C.here | yes p = ⊥-elim (H⋤A p)
+newᴾ∙ T t H⋤A C.here | no ¬p = refl
+newᴾ∙ T t H⋤A (C.there x) rewrite newᴾ∙ T t H⋤A x = refl
+
 εᴳ-sim : ∀ {l n ls} {g₁ g₂ : Global ls} -> l ⊑ A -> (l P., n) ⊢ g₁ ↪ g₂ -> (l P., n) ⊢ (εᴳ g₁) ↪ (εᴳ g₂)
 εᴳ-sim l⊑A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ)
   = step-∅ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᵀ¬Fork ¬fork) (εᴾ-simᴸ l⊑A step) (εˢ-simᴸ l⊑A sch) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A uᴾ)
-εᴳ-sim l⊑A (CS.fork l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ)
-  = fork (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᴾ-simᴸ l⊑A step) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) {!memberᴾ!} {!εˢ-simᴸ l⊑A sch!} {!!}
+εᴳ-sim l⊑A (CS.fork {H = H} {tᴴ = tᴴ} {Tᴴ = Tᴴ} l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) with memberᵀ l⊑A t∈T | εᴾ-simᴸ l⊑A step | εˢ-simᴸ l⊑A sch
+... | t∈T' | step' | sch' with H ⊑? A
+... | yes H⊑A rewrite lengthᵀ-ε-≡ H⊑A Tᴴ
+    = fork (memberᴾ l⊑A l∈P) t∈T' step' (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (memberᴾ H⊑A H∈P₂) sch' (updateᴾ-▻ Tᴴ (⟨ tᴴ , [] ⟩) H⊑A u₂ᴾ)
+εᴳ-sim l⊑A (CS.fork {tᴴ = tᴴ} {P₂ = P₂} {Tᴴ = Tᴴ} l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) | t∈T' | step' | sch' | no H⋤A
+  rewrite newᴾ∙ Tᴴ ⟨ tᴴ , [] ⟩ H⋤A u₂ᴾ = fork∙ {P₂ = εᴾ P₂} (memberᴾ l⊑A l∈P) t∈T' step' (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) sch'
+εᴳ-sim l⊑A (CS.fork∙ l∈P t∈T step uᵀ u₁ᴾ sch)
+  = fork∙ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᴾ-simᴸ l⊑A step) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (εˢ-simᴸ l⊑A sch)
 εᴳ-sim l⊑A (CS.skip l∈P t∈T stuck sch) = skip (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (stuck-ε l⊑A stuck) (εˢ-simᴸ l⊑A sch)
 εᴳ-sim l⊑A (CS.done l∈P t∈T don sch) = done (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (done-ε l⊑A don) (εˢ-simᴸ l⊑A sch)
 εᴳ-sim l⊑A (CS.hole l∈P t∈T sch) = hole (memberᴾ l⊑A l∈P) {!!} (εˢ-simᴸ l⊑A sch)

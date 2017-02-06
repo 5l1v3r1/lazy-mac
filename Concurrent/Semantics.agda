@@ -34,9 +34,19 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ t₂ , S₂ ⟩ ]ᵀ )
            (u₁ᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ )
            (H∈P₂ : H ↦ Tᴴ ∈ᴾ P₂)
-           (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Fork H (lenghtᴾ Tᴴ) l⊑H) )
+           (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Fork H (lengthᵀ Tᴴ) l⊑H) )
            (u₂ᴾ : P₃ ≔ P₂ [ H ↦ Tᴴ ▻ ⟨ tᴴ , [] ⟩ ]ᴾ ) ->  -- TODO must add deepDup!
            Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₃ ⟩
+
+  fork∙ :  ∀ {H π₁ π₂ τ₂ S₁ S₂ Σ₁ Σ₂} {tᴴ : Term π₁ (Mac H _)} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heap ls}
+             {P₁ P₂ : Pools ls} {T₁ T₂ : Pool l} {l⊑H : l ⊑ H}
+           (l∈P : l ↦ T₁ ∈ᴾ P₁)
+           (t∈T : n ↦ ⟨ fork∙ l⊑H tᴴ , S₁ ⟩ ∈ᵀ T₁)
+           (step : ⟨ Γ₁ , fork∙ l⊑H tᴴ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩)
+           (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ t₂ , S₂ ⟩ ]ᵀ )
+           (u₁ᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ )
+           (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Step)) ->
+           Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
 
   skip : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
