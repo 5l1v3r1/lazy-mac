@@ -5,24 +5,29 @@ module Concurrent.Calculus (𝓛 : L.Lattice) (𝓢 : S.Scheduler 𝓛) where
 
 open import Types 𝓛
 open import Sequential.Calculus 𝓛
-open S.Scheduler 𝓛 𝓢 renaming (State to Stateˢ) public
+open S.Scheduler 𝓛 𝓢 renaming (State to Stateˢ)
 
 --------------------------------------------------------------------------------
 
-data Thread (π : Context) (l : Label) : Set where
-  ⟨_,_⟩ :  ∀ {τ} -> Term π τ -> Stack l τ (Mac l （）) -> Thread π l
-  ∙ : Thread π l  -- I define this as bullet even though it is probably not strictly necessary
+data Thread (l : Label) : Set where
+  ⟨_,_⟩ :  ∀ {τ π} -> Term π τ -> Stack l τ (Mac l （）) -> Thread l
+  ∙ : Thread l  -- We use this instead ⟨ ∙ , ∙ ⟩ to make the semantics deterministic easily
 
 -- Pool of threads at a certain label
 data Pool (l : Label) : Set where
   [] : Pool l
-  _◅_ : ∀ {π} -> Thread π l -> Pool l -> Pool l
+  _◅_ :  Thread l -> Pool l -> Pool l
   ∙ : Pool l
 
 infixr 3 _◅_
 
+lenghtᴾ : ∀ {l} -> Pool l -> ℕ
+lenghtᴾ [] = 0
+lenghtᴾ (x ◅ P) = suc (lenghtᴾ P)
+lenghtᴾ ∙ = 0
+
 -- Enqueue
-_▻_ : ∀ {π l} -> Pool l -> Thread π l -> Pool l
+_▻_ : ∀ {l} -> Pool l -> Thread l -> Pool l
 [] ▻ t = t ◅ []
 (x ◅ ts) ▻ t = x ◅ (ts ▻ t)
 ∙ ▻ t = ∙
@@ -67,16 +72,27 @@ open import Relation.Binary.PropositionalEquality
 -- pools-≡ refl = refl
 
 --------------------------------------------------------------------------------
+-- Thread Pool operation
 
--- Lookup threads and thread pools
-
-data Memberᵀ {l : Label} {π}  : (t : Thread π l) -> ℕ -> Pool l -> Set where
+data Memberᵀ {l : Label}  : (t : Thread l) -> ℕ -> Pool l -> Set where
 --  ∙ : ∀ {n} -> Memberᵀ ∙ n ∙ -- Not clear that we need this
   here : ∀ {t} {ts : Pool l} -> Memberᵀ t zero (t ◅ ts)
-  there : ∀ {n π' t} {ts : Pool l} {t' : Thread π' l} -> Memberᵀ t n ts -> Memberᵀ t (suc n) (t' ◅ ts)
+  there : ∀ {n t} {ts : Pool l} {t' : Thread l} -> Memberᵀ t n ts -> Memberᵀ t (suc n) (t' ◅ ts)
 
-_↦_∈ᵀ_ : ∀ {π l} -> ℕ -> Thread π l -> Pool l -> Set
+_↦_∈ᵀ_ : ∀ {l} -> ℕ -> Thread l -> Pool l -> Set
 n ↦ t ∈ᵀ ts = Memberᵀ t n ts
+
+data Updateᵀ {l : Label} (t : Thread l) : ℕ -> Pool l -> Pool l -> Set where
+  -- ∙ : Updateᵀ t n ∙ ∙  -- Not clear that we need this
+  here : ∀ {ts : Pool l} {t' : Thread l} -> Updateᵀ t zero (t' ◅ ts) (t ◅ ts)
+  there : ∀ {n} {ts₁ ts₂ : Pool l} {t' : Thread l} -> Updateᵀ t n ts₁ ts₂ -> Updateᵀ t (suc n) (t' ◅ ts₁) (t' ◅ ts₂)
+
+_≔_[_↦_]ᵀ : ∀ {l} -> Pool l -> Pool l -> ℕ -> Thread l -> Set
+P' ≔ P [ n ↦ t ]ᵀ = Updateᵀ t n P P'
+
+
+--------------------------------------------------------------------------------
+-- Thread Pools operations
 
 data Memberᴾ {l : Label} (ts : Pool l) : ∀ {ls} -> Pools ls -> Set where
   here : ∀ {ls} {P : Pools ls} {u : Unique l ls} -> Memberᴾ ts (ts ◅ P)
@@ -84,20 +100,6 @@ data Memberᴾ {l : Label} (ts : Pool l) : ∀ {ls} -> Pools ls -> Set where
 
 _↦_∈ᴾ_ : ∀ {ls} -> (l : Label) -> Pool l -> Pools ls -> Set
 l  ↦ ts ∈ᴾ P = Memberᴾ ts P
-
-
---------------------------------------------------------------------------------
--- Updates threads
-
-
-
-data Updateᵀ {l : Label} {π} (t : Thread π l) : ℕ -> Pool l -> Pool l -> Set where
-  -- ∙ : Updateᵀ t n ∙ ∙  -- Not clear that we need this
-  here : ∀ {π'} {ts : Pool l} {t' : Thread π' l} -> Updateᵀ t zero (t' ◅ ts) (t ◅ ts)
-  there : ∀ {n π'} {ts₁ ts₂ : Pool l} {t' : Thread π' l} -> Updateᵀ t n ts₁ ts₂ -> Updateᵀ t (suc n) (t' ◅ ts₁) (t' ◅ ts₂)
-
-_≔_[_↦_]ᵀ : ∀ {l π} -> Pool l -> Pool l -> ℕ -> Thread π l -> Set
-P' ≔ P [ n ↦ t ]ᵀ = Updateᵀ t n P P'
 
 data Updateᴾ {l : Label} (ts : Pool l) : ∀ {ls} -> Pools ls -> Pools ls -> Set where
   here : ∀ {ls} {ts' : Pool l} {u : Unique l ls} {P : Pools ls} -> Updateᴾ ts (ts' ◅  P) (ts ◅ P)

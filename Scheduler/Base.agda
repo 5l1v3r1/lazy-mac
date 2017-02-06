@@ -7,14 +7,18 @@ open L.Lattice 𝓛
 open import Data.Nat
 
 data Event (l : Label) : Set where
-  NoStep : Event l
+  Skip : Event l
   Step : Event l
   Done : Event l
   Fork : (h : Label) (n : ℕ) -> l ⊑ h -> Event l
   ∙ : Event l
 
+open Event public
+
 data Message : Label -> Set where
    _,_,_ : (l : Label) (n : ℕ) (e : Event l) -> Message l
+
+open Message public
 
 record Scheduler : Set₁ where
   constructor Sch

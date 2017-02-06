@@ -176,3 +176,19 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
              -> ⟨ Γ , deepDup (Var {π = π} τ∈π) , S ⟩ ⟼ ⟨ Γ , deepDup t , S ⟩
 
   Hole : ∀ {τ} -> ∙ {τ = τ} ⟼ ∙
+
+--------------------------------------------------------------------------------
+
+data Doneᴾ {l ls τ} : Program l ls τ -> Set where
+  Done : ∀ {Γ π} {v : Term π τ} -> (isVal : Value v) -> Doneᴾ ⟨ Γ , v , [] ⟩
+
+data Redexᴾ {l ls τ} (p : Program l ls τ) : Set where
+  Step : ∀ {p'} -> p ⟼ p' -> Redexᴾ p
+
+Stuckᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
+Stuckᴾ p = (¬ (Doneᴾ p)) × (¬ (Redexᴾ p))
+
+data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
+  D : Doneᴾ p -> Stateᴾ p
+  R : Redexᴾ p -> Stateᴾ p
+  S : Stuckᴾ p -> Stateᴾ p

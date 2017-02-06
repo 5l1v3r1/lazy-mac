@@ -32,3 +32,9 @@ Sequential/Determinism.agda~
 Sequential/Erasure.agda~
 Sequential/Map.agda~
 Sequential/PINI.agda~
+Concurrent.agdai
+Concurrent.agda~
+Concurrent/Calculus.agdai
+Concurrent/Semantics.agdai
+Concurrent/Calculus.agda~
+Concurrent/Semantics.agda~

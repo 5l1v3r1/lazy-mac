@@ -373,3 +373,6 @@ deepDupᵀ t = dup-ufv [] t
 -- The proof that a term is a variable
 data IsVar {π} {τ} : Term π τ -> Set where
   Var : ∀ {l} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> IsVar (Var τ∈π)
+
+data IsFork {π} : ∀ {τ} -> Term π τ -> Set where
+  Fork : ∀ {l h} (p : l ⊑ h) (t : Term π _) -> IsFork (fork p t)
