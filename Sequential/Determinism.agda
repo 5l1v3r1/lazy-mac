@@ -107,14 +107,14 @@ determinism Read₁ Read₁ = refl
 determinism Hole₁ Hole₁ = refl
 determinism Hole₂ Hole₂ = refl
 
-memberᴴ-≅ : ∀ {l π₁ π₂ ls} {Γ : Heap ls} {x : Memory l × Env l π₁} {y : Memory l × Env l π₂} ->
+memberᴴ-≅ : ∀ {l ls} {Γ : Heaps ls} {x : Heap l} {y : Heap l} ->
             l ↦ x ∈ᴴ Γ -> l ↦ y ∈ᴴ Γ -> x ≅ y
 memberᴴ-≅ here here = refl
 memberᴴ-≅ here (there {u = u} b) = ⊥-elim (∈-not-unique (member-∈ b) u)
 memberᴴ-≅ (there {u = u} a) here = ⊥-elim (∈-not-unique (member-∈ a) u)
 memberᴴ-≅ (there a) (there b) = memberᴴ-≅ a b
 
-updateᴴ-≡ : ∀ {l ls π} {Γ Γ₁ Γ₂ : Heap ls} {x : Memory l × Env l π} -> Γ₁ ≔ Γ [ l ↦ x ]ᴴ -> Γ₂ ≔ Γ [ l ↦ x ]ᴴ -> Γ₁ ≡ Γ₂
+updateᴴ-≡ : ∀ {l ls} {Γ Γ₁ Γ₂ : Heaps ls} {x : Heap l} -> Γ₁ ≔ Γ [ l ↦ x ]ᴴ -> Γ₂ ≔ Γ [ l ↦ x ]ᴴ -> Γ₁ ≡ Γ₂
 updateᴴ-≡ here here = refl
 updateᴴ-≡ here (there {u = u} b) = ⊥-elim (∈-not-unique (update-∈ b) u)
 updateᴴ-≡ (there {u = u} a) here = ⊥-elim (∈-not-unique (update-∈ a) u)

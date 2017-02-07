@@ -136,7 +136,7 @@ newᴾ∙ T t H⋤A (C.there x) rewrite newᴾ∙ T t H⋤A x = refl
 data _≈ᴳ_ {ls} (g₁ g₂ : Global ls) : Set where
   εᴳ-refl : εᴳ g₁ ≡ εᴳ g₂ -> g₁ ≈ᴳ g₂
 
-lift-εᴳ : ∀ {ls} {Σ₁ Σ₂ : Stateˢ} {Γ₁ Γ₂ : Heap ls} {P₁ P₂ : Pools ls} -> Σ₁ ≡ Σ₂ -> Γ₁ ≡ Γ₂ -> P₁ ≡ P₂ ->
+lift-εᴳ : ∀ {ls} {Σ₁ Σ₂ : Stateˢ} {Γ₁ Γ₂ : Heaps ls} {P₁ P₂ : Pools ls} -> Σ₁ ≡ Σ₂ -> Γ₁ ≡ Γ₂ -> P₁ ≡ P₂ ->
           _≡_ {_} {Global ls} ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
 lift-εᴳ eq₁ eq₂ eq₃ rewrite eq₁ | eq₂ | eq₃ = refl
 
@@ -146,8 +146,10 @@ updateᴾ∙ H⋤A C.here | yes p = ⊥-elim (H⋤A p)
 updateᴾ∙ H⋤A C.here | no ¬p = refl
 updateᴾ∙ H⋤A (C.there x) rewrite updateᴾ∙ H⋤A x = refl
 
+open import Relation.Binary.HeterogeneousEquality using (refl ; _≅_)
+
 -- TODO move to PINI
-stepᴴ-Γ : ∀ {H ls τ₁ τ₂ τ π₁ π₂} {Γ₁ Γ₂ : Heap ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ τ } {S₂ : Stack _ _ _} ->
+stepᴴ-Γ : ∀ {H ls τ₁ τ₂ τ π₁ π₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ τ } {S₂ : Stack _ _ _} ->
           H ⋤ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> εᴴ Γ₁ ≡ εᴴ Γ₂
 stepᴴ-Γ H⋤A (S₁.Pure l∈Γ step uᴴ) = writeᴹ∙-≡ H⋤A l∈Γ {!uᴴ!}
 stepᴴ-Γ H⋤A (S₁.New {l⊑h = L⊑H} H∈Γ uᴴ) = writeᴹ∙-≡ (trans-⋢ L⊑H H⋤A) H∈Γ uᴴ

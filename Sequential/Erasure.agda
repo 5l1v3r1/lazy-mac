@@ -46,8 +46,6 @@ isSecret? (Id τ) = inj₂ Id
 isSecret? Addr = inj₂ Addr
 --------------------------------------------------------------------------------
 
-open import Data.Product
-
 εᵀ : ∀ {τ π} -> Term π τ -> Term π τ
 εᵀ （） = （）
 εᵀ True = True
@@ -207,7 +205,6 @@ open import Data.Product
 εᵀ¬Fork {t = deepDup t} ¬fork ()
 εᵀ¬Fork {t = ∙} ¬fork ()
 
-open import Data.Product as P
 open import Data.Maybe as M
 open import Function
 
@@ -231,8 +228,8 @@ open import Function
 -- εᴱ-ext (no ¬p) (yes p) Δ = ⊥-elim (¬p p)
 -- εᴱ-ext (no ¬p) (no ¬p₁) Δ = refl
 
--- Heap Erasure Function
--- εᴴ : ∀ {ls} -> Heap ls -> Heap ls
+-- Heaps Erasure Function
+-- εᴴ : ∀ {ls} -> Heaps ls -> Heaps ls
 -- εᴴ [] = []
 -- εᴴ (Δ ∷ Γ) = (εᴱ ( _ ⊑? A) Δ) ∷ εᴴ Γ
 
@@ -484,11 +481,12 @@ updateᴱ (there x) = there (updateᴱ x)
 
 --------------------------------------------------------------------------------
 
-εᴹ : ∀ {l π} -> Dec (l ⊑ A) -> Memory l × Env l π -> Memory l × Env l π
-εᴹ (yes p) (M , Δ) = M , (εᴱ Δ)  -- Memory contains only pointers to Δ, so nothing to erase there
-εᴹ (no ¬p) _ = ∙ , ∙
+εᴹ : ∀ {l} -> Dec (l ⊑ A) -> Heap l -> Heap l
+εᴹ (yes p) ⟨ M , Δ ⟩ = ⟨ M , εᴱ Δ ⟩  -- Memory contains only pointers to Δ, so nothing to erase there
+εᴹ (yes p) ∙ = ∙
+εᴹ (no ¬p) _ = ∙  -- ∙ , ∙
 
-εᴴ : ∀ {ls} -> Heap ls -> Heap ls
+εᴴ : ∀ {ls} -> Heaps ls -> Heaps ls
 εᴴ [] = []
 εᴴ (x ∷ Γ) = εᴹ (_ ⊑? A) x ∷ εᴴ Γ
 
@@ -498,19 +496,7 @@ updateᴱ (there x) = there (updateᴱ x)
 ε₁ᴾ (yes p) ∙ = ∙
 ε₁ᴾ {l} {ls} {τ} (no ¬p) _ = ∙
 
-member∙ᴴ : ∀ {l π ls} {Γ : Heap ls} {M : Memory l} {Δ : Env l π} -> l ⋤ A -> l ↦ M , Δ ∈ᴴ Γ -> l ↦ ∙ , (∙ {{π}}) ∈ᴴ (εᴴ Γ)
-member∙ᴴ {l} ¬p here with l ⊑? A
-member∙ᴴ ¬p here | yes p = ⊥-elim (¬p p)
-member∙ᴴ ¬p₁ here | no ¬p = here
-member∙ᴴ ¬p (there x) = there (member∙ᴴ ¬p x)
-
-update∙ᴴ : ∀ {l π ls} {Γ Γ' : Heap ls} {M : Memory l} {Δ : Env l π} -> l ⋤ A -> Γ' ≔ Γ [ l ↦ M , Δ ]ᴴ -> (εᴴ Γ') ≔ (εᴴ Γ) [ l ↦ ∙ , (∙ {{π}}) ]ᴴ
-update∙ᴴ {l} ¬p here with l ⊑? A
-update∙ᴴ ¬p here | yes p = ⊥-elim (¬p p)
-update∙ᴴ ¬p₁ here | no ¬p = here
-update∙ᴴ ¬p (there x) = there (update∙ᴴ ¬p x)
-
-writeᴹ∙-≡ : ∀ {H π ls} {Γ₁ Γ₂ : Heap ls} {M₁ M₂ : Memory H} {Δ : Env H π} -> H ⋤ A -> H ↦ (M₁ , Δ) ∈ᴴ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ M₂ , Δ ]ᴴ -> (εᴴ Γ₁) ≡ (εᴴ Γ₂)
+writeᴹ∙-≡ : ∀ {H ls} {Γ₁ Γ₂ : Heaps ls} {X Y : Heap H} -> H ⋤ A -> H ↦ X ∈ᴴ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ Y ]ᴴ -> (εᴴ Γ₁) ≡ (εᴴ Γ₂)
 writeᴹ∙-≡ {H} H⋢A here here with H ⊑? A
 writeᴹ∙-≡ H⋢A here here | yes p = ⊥-elim (H⋢A p)
 writeᴹ∙-≡ H⋢A here here | no ¬p = refl
@@ -518,17 +504,29 @@ writeᴹ∙-≡ H⋢A here (there {u = u} y) = ⊥-elim (∈-not-unique (update-
 writeᴹ∙-≡ H⋢A (there {u = u} x) here = ⊥-elim (∈-not-unique (member-∈ x) u)
 writeᴹ∙-≡ H⋢A (there x) (there y) rewrite writeᴹ∙-≡ H⋢A x y = refl
 
-memberᴴ : ∀ {l π ls} {Γ : Heap ls} {M : Memory l} {Δ : Env l π} -> l ⊑ A -> l ↦ M , Δ ∈ᴴ Γ -> l ↦ M , (εᴱ Δ) ∈ᴴ (εᴴ Γ)
+-- open import Relation.Binary.HeterogeneousEquality as H
+-- TODO remove
+-- writeᴹ∙-≡' : ∀ {H π₁ π₂ ls} {Γ₁ Γ₂ : Heaps ls} {M₁ M₂ : Memory H} {Δ₁ : Env H π₁} {Δ₂ : Env H π₂} -> H ⋤ A -> H ↦ (M₁ , Δ₁) ∈ᴴ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ M₂ , Δ₂ ]ᴴ -> (εᴴ Γ₁) ≅ (εᴴ Γ₂)
+-- writeᴹ∙-≡' {H} H⋢A here here with H ⊑? A
+-- writeᴹ∙-≡' H⋢A here here | yes p = ⊥-elim (H⋢A p)
+-- writeᴹ∙-≡' H⋢A here here | no ¬p = refl
+-- writeᴹ∙-≡' H⋢A here (there {u = u} y) = ⊥-elim (∈-not-unique (update-∈ y) u)
+-- writeᴹ∙-≡' H⋢A (there {u = u} x) here = ⊥-elim (∈-not-unique (member-∈ x) u)
+-- writeᴹ∙-≡' H⋢A (there x) (there y) = H.cong (_∷_ _) ( writeᴹ∙-≡' H⋢A x y)
+
+memberᴴ : ∀ {l π ls} {Γ : Heaps ls} {M : Memory l} {Δ : Env l π} -> l ⊑ A -> l ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ -> l ↦ ⟨ M , εᴱ Δ ⟩ ∈ᴴ (εᴴ Γ)
 memberᴴ {l} l⊑A here with l ⊑? A
 ... | yes _ = here
 ... | no ¬p = ⊥-elim (¬p l⊑A)
 memberᴴ l⊑A (there x) = there (memberᴴ l⊑A x)
 
-updateᴴ : ∀ {l π ls} {Γ Γ' : Heap ls} {M : Memory l} {Δ : Env l π} -> l ⊑ A -> Γ' ≔ Γ [ l ↦ M , Δ ]ᴴ -> (εᴴ Γ') ≔ (εᴴ Γ) [ l ↦ M , (εᴱ Δ) ]ᴴ
+updateᴴ : ∀ {l π ls} {Γ Γ' : Heaps ls} {M : Memory l} {Δ : Env l π} -> l ⊑ A -> Γ' ≔ Γ [ l ↦ ⟨ M , Δ ⟩ ]ᴴ -> (εᴴ Γ') ≔ (εᴴ Γ) [ l ↦ ⟨ M , εᴱ Δ ⟩ ]ᴴ
 updateᴴ {l} l⊑A here with l ⊑? A
 ... | yes _ = here
 ... | no ¬p = ⊥-elim (¬p l⊑A)
 updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
+
+open import Data.Product using (proj₁ ; proj₂)
 
 ε₁ᴾ-sim : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (x : Dec (l ⊑ A)) -> p₁ ⟼ p₂ -> ε₁ᴾ x p₁ ⟼ ε₁ᴾ x p₂
 ε₁ᴾ-sim (yes p) (Pure l∈Γ step uᴴ) = Pure (memberᴴ p l∈Γ) (ε-sim (yes p) step) (updateᴴ p uᴴ)

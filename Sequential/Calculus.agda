@@ -219,7 +219,7 @@ _↦_∈ᴱ_ : ∀ {l τ} {π π' : Context} -> τ ∈⟨ l ⟩ᴿ π' -> Term �
 -- A labeled-typed memory cell, containing a pointer
 -- at most at level l
 data Cell (l : Label) (τ : Ty) : Set where
-  ∥_∥  : ∀ {L} {{π}} -> L ⊑ l × τ ∈⟨ L ⟩ᴿ π -> Cell l τ
+  ∥_,_∥  : ∀ {L} {{π}} -> L ⊑ l -> τ ∈⟨ L ⟩ᴿ π -> Cell l τ
 
 -- A labeled memory keeps pointer to no more sensitive heaps
 data Memory (l : Label) : Set where
@@ -265,29 +265,33 @@ Unique l₁ ls = All (λ l₂ → ¬ (l₁ ≡ l₂)) ls
 ∈-not-unique here (px ∷ q) = ⊥-elim (px refl)
 ∈-not-unique (there p) (px ∷ q) = ∈-not-unique p q
 
-data Heap : List Label -> Set where
-  [] : Heap []
-  _∷_ : ∀ {l ls π} {{u : Unique l ls}} -> Memory l × Env l π -> Heap ls -> Heap (l ∷ ls)
+data Heap (l : Label) : Set where
+  ⟨_,_⟩ : ∀ {π} -> Memory l -> Env l π -> Heap l
+  ∙ : Heap l
 
-data Member {l} {π} (x : Memory l × Env l π) : ∀ {ls} -> Heap ls -> Set where
-  here : ∀ {ls} {u : Unique l ls} {Γ : Heap ls} -> Member x (x ∷ Γ)
-  there : ∀ {ls l' π'} {u : Unique l' ls} {Γ : Heap ls} {y : Memory l' × Env l' π'} -> Member x Γ -> Member x (y ∷ Γ)
+data Heaps : List Label -> Set where
+  [] : Heaps []
+  _∷_ : ∀ {l ls} {{u : Unique l ls}} -> Heap l -> Heaps ls -> Heaps (l ∷ ls)
 
-_↦_∈ᴴ_ : ∀ {ls π} -> (l : Label) -> Memory l × Env l π -> Heap ls -> Set
+data Member {l} (x : Heap l) : ∀ {ls} -> Heaps ls -> Set where
+  here : ∀ {ls} {u : Unique l ls} {Γ : Heaps ls} -> Member x (x ∷ Γ)
+  there : ∀ {ls l'} {u : Unique l' ls} {Γ : Heaps ls} {y : Heap l'} -> Member x Γ -> Member x (y ∷ Γ)
+
+_↦_∈ᴴ_ : ∀ {ls} -> (l : Label) -> Heap l -> Heaps ls -> Set
 l ↦ x ∈ᴴ Γ = Member x Γ
 
-data Update {l} {π} (x : Memory l × Env l π) : ∀ {ls} -> Heap ls -> Heap ls -> Set where
-  here : ∀ {ls π'} {u : Unique l ls} {Γ : Heap ls} {x' : Memory l × Env l π'} -> Update x (x' ∷ Γ) (x ∷ Γ)
-  there : ∀ {ls l' π'} {u : Unique l' ls} {Γ Γ' : Heap ls} {y : Memory l' × Env l' π'} -> Update x Γ Γ' -> Update x (y ∷ Γ) (y ∷ Γ')
+data Update {l} (x : Heap l) : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
+  here : ∀ {ls} {u : Unique l ls} {Γ : Heaps ls} {x' : Heap l} -> Update x (x' ∷ Γ) (x ∷ Γ)
+  there : ∀ {ls l'} {u : Unique l' ls} {Γ Γ' : Heaps ls} {y : Heap l'} -> Update x Γ Γ' -> Update x (y ∷ Γ) (y ∷ Γ')
 
-_≔_[_↦_]ᴴ : ∀ {π ls} -> Heap ls -> Heap ls -> (l : Label) -> Memory l × Env l π -> Set
+_≔_[_↦_]ᴴ : ∀ {ls} -> Heaps ls -> Heaps ls -> (l : Label) -> Heap l -> Set
 Γ' ≔ Γ [ l ↦ x ]ᴴ = Update x Γ Γ'
 
-member-∈ : ∀ {l ls π} {x : Memory l × Env l π} {Γ : Heap ls} -> l ↦ x ∈ᴴ Γ -> l ∈ ls
+member-∈ : ∀ {l ls} {x : Heap l} {Γ : Heaps ls} -> l ↦ x ∈ᴴ Γ -> l ∈ ls
 member-∈ here = here
 member-∈ (there x) = there (member-∈ x)
 
-update-∈ : ∀ {l ls π} {x : Memory l × Env l π} {Γ Γ' : Heap ls} -> Γ' ≔ Γ [ l ↦ x ]ᴴ -> l ∈ ls
+update-∈ : ∀ {l ls} {x : Heap l} {Γ Γ' : Heaps ls} -> Γ' ≔ Γ [ l ↦ x ]ᴴ -> l ∈ ls
 update-∈ here = here
 update-∈ (there x) = there (update-∈ x)
 
@@ -303,7 +307,7 @@ data State (l : Label) (τ : Ty) : Set where
 
 -- Adds labeled memory and heap to a term and stack
 data Program (l : Label) (ls : List Label) (τ : Ty) : Set where
-  ⟨_,_,_⟩ : ∀ {π} {τ'} -> (Γ : Heap ls) (t : Term π τ') (S : Stack l τ' τ) -> Program l ls τ
+  ⟨_,_,_⟩ : ∀ {π} {τ'} -> (Γ : Heaps ls) (t : Term π τ') (S : Stack l τ' τ) -> Program l ls τ
   ∙ : Program l ls τ
 
 --------------------------------------------------------------------------------

@@ -6,7 +6,6 @@ open import Types 𝓛
 open import Sequential.Calculus 𝓛
 
 open import Data.Maybe
-open import Data.Product
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 
@@ -122,14 +121,16 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
  Read₁ : ∀ {τ τ' L} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {L⊑l : L ⊑ l} ->
          ⟨ Δ , read {τ = τ} L⊑l t , S ⟩ ⇝ ⟨ Δ , t , read L⊑l ∷ S ⟩
 
+
+
 -- Semantics for stateful operations (with memory)
 data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
 
   Pure : ∀ {Γ Γ' π₁ π₂ τ₁ τ₂ τ₃} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l τ₁ τ₃} {S₂ : Stack l τ₂ τ₃}
            {M : Memory l} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂}
-         -> (l∈Γ : l ↦ (M , Δ₁) ∈ᴴ Γ)
+         -> (l∈Γ : l ↦ ⟨ M , Δ₁ ⟩ ∈ᴴ Γ)
          -> (step : ⟨ Δ₁ , t₁ , S₁ ⟩ ⇝ ⟨ Δ₂ , t₂ , S₂ ⟩)
-         -> (uᴴ : Γ' ≔ Γ [ l ↦ (M , Δ₂) ]ᴴ)
+         -> (uᴴ : Γ' ≔ Γ [ l ↦ ⟨ M , Δ₂ ⟩ ]ᴴ)
          -> ⟨ Γ , t₁ , S₁ ⟩ ⟼ ⟨ Γ' , t₂ , S₂ ⟩
 
    -- We have to write the term in the memory segment labeled as the reference (H)
@@ -137,23 +138,23 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
    -- Note that if the current thread can also read the reference, then l ≡ H and we
    -- are still writing in the right memory.
   New : ∀ {Γ Γ' τ τ' H} {π : Context} {Δ : Env H π} {M : Memory H} {S : Stack l _ τ'} {τ∈π : τ ∈⟨ l ⟩ᴿ π} {l⊑h : l ⊑ H}
-         -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
-         -> (uᴴ : Γ' ≔ Γ [ H ↦ (newᴹ ∥ l⊑h , τ∈π ∥ M , Δ) ]ᴴ ) ->
+         -> (H∈Γ : H ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ)
+         -> (uᴴ : Γ' ≔ Γ [ H ↦ ⟨ newᴹ ∥ l⊑h , τ∈π ∥ M , Δ ⟩ ]ᴴ ) ->
          ⟨ Γ , new {π = π} l⊑h (Var τ∈π) , S ⟩ ⟼ ⟨ Γ' , Return l (Res {π = π} H #[ lengthᴹ M ]) , S ⟩
 
   New∙ : ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {l⊑h : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
          ⟨ Γ , new∙ {π = π} l⊑h (Var τ∈π) , S ⟩ ⟼ ⟨ Γ , Return l (Res {π = π} H ∙) , S ⟩
 
   Write₂ : ∀ {Γ Γ' τ τ' n π H} {M M' : Memory H} {Δ : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
-          -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
-          -> (uᴹ : M' ≔ M [ n ↦ ∥ (l⊑H , τ∈π) ∥ ]ᴹ)
-          -> (uᴴ : Γ' ≔ Γ [ H ↦ ( M' , Δ ) ]ᴴ) ->
+          -> (H∈Γ : H ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ)
+          -> (uᴹ : M' ≔ M [ n ↦ ∥ l⊑H , τ∈π ∥ ]ᴹ)
+          -> (uᴴ : Γ' ≔ Γ [ H ↦ ⟨ M' , Δ ⟩ ]ᴴ) ->
          ⟨ Γ , Res {π = π} H #[ n ] , write l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
   Writeᴰ₂ : ∀ {Γ Γ' τ τ' n π H} {M M' : Memory H} {Δ : Env H π} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
-          -> (H∈Γ : H ↦ (M , Δ) ∈ᴴ Γ)
-          -> (uᴹ : M' ≔ M [ n ↦ ∥ (l⊑H , τ∈π) ∥ ]ᴹ)
-          -> (uᴴ : Γ' ≔ Γ [ H ↦ ( M' , Δ ) ]ᴴ) ->
+          -> (H∈Γ : H ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ)
+          -> (uᴹ : M' ≔ M [ n ↦ ∥ l⊑H , τ∈π ∥ ]ᴹ)
+          -> (uᴴ : Γ' ≔ Γ [ H ↦ ⟨ M' , Δ ⟩ ]ᴴ) ->
          ⟨ Γ , Res {π = π} H #[ n ]ᴰ , write l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Γ' , Return {π = π} l （） , S ⟩
 
   Write∙₂ :  ∀ {Γ τ τ' H} {π : Context} {S : Stack l _ τ'} {l⊑H : l ⊑ H} {t : Term π Addr} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
@@ -163,19 +164,19 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
   -- (We could write this using different L and l and from the inequalities L ⊑ l and l ⊑ L conclude the same,
   -- but I don't know if I should
   Read₂ : ∀ {Γ τ τ' n} {π : Context} {M : Memory l} {Δ : Env l π} {S : Stack l _ τ'} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
-         -> (l∈Γ : l ↦ (M , Δ) ∈ᴴ Γ)
-         -> (n∈M : n ↦ ∥ (refl-⊑ , τ∈π) ∥ ∈ᴹ M) ->
+         -> (l∈Γ : l ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ)
+         -> (n∈M : n ↦ ∥ refl-⊑ , τ∈π ∥ ∈ᴹ M) ->
            ⟨ Γ , Res {π = π} l #[ n ] , read refl-⊑ ∷ S ⟩ ⟼ ⟨ Γ , Return {π = π} l (Var τ∈π) , S ⟩
 
   -- When we read a reference from a possibly lower level we must deepDup that
   Readᴰ₂ : ∀ {Γ τ τ' n L} {π : Context} {M : Memory L} {Δ : Env L π} {S : Stack l _ τ'} {τ∈π : τ ∈⟨ L ⟩ᴿ π} {L⊑l : L ⊑ l}
-         -> (L∈Γ : L ↦ (M , Δ) ∈ᴴ Γ)
-         -> (n∈M : n ↦ ∥ (refl-⊑ , τ∈π) ∥ ∈ᴹ M) ->
+         -> (L∈Γ : L ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ)
+         -> (n∈M : n ↦ ∥ refl-⊑ , τ∈π ∥ ∈ᴹ M) ->
            ⟨ Γ , Res {π = π} L #[ n ]ᴰ , read L⊑l ∷ S ⟩ ⟼ ⟨ Γ , Return {π = π} l (deepDup (Var τ∈π)) , S ⟩
 
   DeepDupˢ : ∀ {Γ π τ τ' L} {Δ : Env L π} {M : Memory L} {t : Term π τ}{S : Stack l τ τ'}{ τ∈π : τ ∈⟨ L ⟩ᴿ π }
              -> (L⊏l : L ⊏ l)  -- Probably we need ≢
-             -> (L∈Γ : L ↦ (M , Δ) ∈ᴴ Γ)
+             -> (L∈Γ : L ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ)
              -> (t∈Δ : τ∈π ↦ t ∈ᴱ Δ)
              -> ⟨ Γ , deepDup (Var {π = π} τ∈π) , S ⟩ ⟼ ⟨ Γ , deepDup t , S ⟩
 
@@ -183,18 +184,21 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
 
 --------------------------------------------------------------------------------
 
+
 data Doneᴾ {l ls τ} : Program l ls τ -> Set where
   Done : ∀ {Γ π} {v : Term π τ} -> (isVal : Value v) -> Doneᴾ ⟨ Γ , v , [] ⟩
 
 data Redexᴾ {l ls τ} (p : Program l ls τ) : Set where
   Step : ∀ {p'} -> p ⟼ p' -> Redexᴾ p
 
+open import Data.Product using (proj₁ ; proj₂ ; _×_)
+
 Stuckᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
 Stuckᴾ p = (¬ (Doneᴾ p)) × (¬ (Redexᴾ p))
 
 open import Data.Empty
 
-¬Done⇒¬Val :  ∀ {l π ls τ} {Γ : Heap ls} {t : Term π τ} -> ¬ (Doneᴾ {l} ⟨ Γ , t , [] ⟩) -> ¬ Value t
+¬Done⇒¬Val :  ∀ {l π ls τ} {Γ : Heaps ls} {t : Term π τ} -> ¬ (Doneᴾ {l} ⟨ Γ , t , [] ⟩) -> ¬ Value t
 ¬Done⇒¬Val x v = ⊥-elim (x (Done v))
 
 Stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Set
@@ -204,7 +208,7 @@ Stateᴾ p = (Doneᴾ p) × ((Redexᴾ p) × (Stuckᴾ p))
 -- Lemmas
 
 ⊥-stuckSteps : ∀ {l ls τ} {p₁ : Program l ls τ } -> Stuckᴾ p₁ -> ¬ (Redexᴾ p₁)
-⊥-stuckSteps (proj₁ , proj₂) x = proj₂ x
+⊥-stuckSteps x y = proj₂ x y
 
 ⊥-doneSteps : ∀ {l ls τ} {p₁ : Program l ls τ} -> Doneᴾ p₁ -> ¬ (Redexᴾ p₁)
 ⊥-doneSteps (Done （）) (Step (Pure l∈Γ () uᴴ))
@@ -254,7 +258,7 @@ step-⊆ Write∙₁ = drop refl-⊆
 step-⊆ Read₁ = refl-⊆
 
 stepᴾ-⊆ : ∀ {l ls τ τ₁ τ₂ π₁ π₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂}
-           {S₁ : Stack l τ₁ τ} {S₂ : Stack l τ₂ τ} {Γ₁ Γ₂ : Heap ls} ->
+           {S₁ : Stack l τ₁ τ} {S₂ : Stack l τ₂ τ} {Γ₁ Γ₂ : Heaps ls} ->
            ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> π₁ ⊆ π₂
 stepᴾ-⊆ (Pure l∈Γ step uᴴ) = step-⊆ step
 stepᴾ-⊆ (New H∈Γ uᴴ) = refl-⊆

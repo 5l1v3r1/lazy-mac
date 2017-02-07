@@ -55,7 +55,7 @@ infixl 3 _▻_
 record Global (ls : List Label) : Set where
   constructor ⟨_,_,_⟩
   field Σ : Stateˢ
-        Γ : Heap ls
+        Γ : Heaps ls
         P : Pools ls
 
 open Global public
