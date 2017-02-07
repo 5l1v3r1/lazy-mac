@@ -126,3 +126,16 @@ newᴾ∙ T t H⋤A (C.there x) rewrite newᴾ∙ T t H⋤A x = refl
   = fork∙ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᴾ-simᴸ l⊑A step) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (εˢ-simᴸ l⊑A sch)
 εᴳ-sim l⊑A (CS.skip l∈P t∈T stuck sch) = skip (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (stuck-ε l⊑A stuck) (εˢ-simᴸ l⊑A sch)
 εᴳ-sim l⊑A (CS.done l∈P t∈T don sch) = done (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (done-ε l⊑A don) (εˢ-simᴸ l⊑A sch)
+
+data _≈ᴾ_ {ls} (P₁ P₂ : Pools ls) : Set where
+  εᴾ-refl : εᴾ P₁ ≡ εᴾ P₂ -> P₁ ≈ᴾ P₂
+
+data _≈ᴳ_ {ls} : (g₁ g₂ : Global ls) -> Set where
+  ⟨_,_,_⟩ : ∀ {Σ₁ Σ₂ Γ₁ Γ₂ P₁ P₂} -> Γ₁ ≈ᴴ Γ₂ -> P₁ ≈ᴾ P₂ -> Σ₁ ≈ˢ Σ₂ -> C.⟨ Σ₁ , Γ₁ , P₁ ⟩ ≈ᴳ C.⟨ Σ₂ , Γ₂ , P₂ ⟩
+
+εᴳ-simᴴ : ∀ {H n ls} {g₁ g₂ : Global ls} -> H ⋤ A -> (H P., n) ⊢ g₁ ↪ g₂ -> g₁ ≈ᴳ g₂
+εᴳ-simᴴ H⋤A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) = {!!}
+εᴳ-simᴴ H⋤A (CS.fork l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) = {!!}
+εᴳ-simᴴ H⋤A (CS.fork∙ l∈P t∈T step uᵀ u₁ᴾ sch) = {!!}
+εᴳ-simᴴ H⋤A (CS.skip l∈P t∈T stuck sch) = {!!}
+εᴳ-simᴴ H⋤A (CS.done l∈P t∈T don sch) = {!!}

@@ -199,3 +199,23 @@ open import Data.Empty
 
 Stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Set
 Stateᴾ p = (Doneᴾ p) × ((Redexᴾ p) × (Stuckᴾ p))
+
+--------------------------------------------------------------------------------
+-- Lemmas
+
+⊥-stuckSteps : ∀ {l ls τ} {p₁ : Program l ls τ } -> Stuckᴾ p₁ -> ¬ (Redexᴾ p₁)
+⊥-stuckSteps (proj₁ , proj₂) x = proj₂ x
+
+⊥-doneSteps : ∀ {l ls τ} {p₁ : Program l ls τ} -> Doneᴾ p₁ -> ¬ (Redexᴾ p₁)
+⊥-doneSteps (Done （）) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (Done True) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (Done False) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (Done (Abs t)) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (Done (Id t)) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (Done (Mac t)) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (Done (Res t)) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (Done #[ n ]) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (Done #[ n ]ᴰ) (Step (Pure l∈Γ () uᴴ))
+
+⊥-stuckDone : ∀ {l ls τ} {p : Program l ls τ} -> Stuckᴾ p -> ¬ (Doneᴾ p)
+⊥-stuckDone stuck don = proj₁ stuck don

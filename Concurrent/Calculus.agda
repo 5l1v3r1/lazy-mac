@@ -109,3 +109,11 @@ _≔_[_↦_]ᴾ : ∀ {ls} -> Pools ls -> Pools ls -> (l : Label) -> Pool l -> S
 P' ≔ P [ l ↦ ts ]ᴾ = Updateᴾ ts P P'
 
 --------------------------------------------------------------------------------
+
+memberᴾ-∈ : ∀ {l ls} {P : Pools ls} {T : Pool l} -> l ↦ T ∈ᴾ P -> l ∈ ls
+memberᴾ-∈ here = here
+memberᴾ-∈ (there x) = there (memberᴾ-∈ x)
+
+updateᴾ-∈ : ∀ {l ls} {P₁ P₂ : Pools ls} {T : Pool l} -> P₂ ≔ P₁ [ l ↦ T ]ᴾ -> l ∈ ls
+updateᴾ-∈ here = here
+updateᴾ-∈ (there x) = there (updateᴾ-∈ x)

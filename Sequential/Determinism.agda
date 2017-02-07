@@ -128,49 +128,49 @@ memberᴹ-≡ : ∀ {l n τ} {M : Memory l} {c₁ c₂ : Cell l τ} -> n ↦ c�
 memberᴹ-≡ here here = refl
 memberᴹ-≡ (there x) (there y) rewrite memberᴹ-≡ x y = refl
 
-determinism⟼ : ∀ {l ls τ} {p₁ p₂ p₃ : Program l ls τ} -> p₁ ⟼ p₂ -> p₁ ⟼ p₃ -> p₂ ≡ p₃
-determinism⟼ (Pure l∈Γ step uᴴ) (Pure l∈Γ₁ step₁ uᴴ₁) with memberᴴ-≅ l∈Γ l∈Γ₁
+determinismᴾ : ∀ {l ls τ} {p₁ p₂ p₃ : Program l ls τ} -> p₁ ⟼ p₂ -> p₁ ⟼ p₃ -> p₂ ≡ p₃
+determinismᴾ (Pure l∈Γ step uᴴ) (Pure l∈Γ₁ step₁ uᴴ₁) with memberᴴ-≅ l∈Γ l∈Γ₁
 ... | refl with determinism step step₁
 ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
-determinism⟼ (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ) (New H∈Γ uᴴ₁)
-determinism⟼ (Pure l∈Γ (New₁ ¬var) uᴴ) (New H∈Γ uᴴ₁) = ⊥-elim (¬var (Var ⟪ _ ⟫))
-determinism⟼ (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ) New∙
-determinism⟼ (Pure l∈Γ (New∙₁ ¬var) uᴴ) New∙ = ⊥-elim (¬var (Var ⟪ _ ⟫))
-determinism⟼ (Pure l∈Γ () uᴴ) (Write₂ H∈Γ uᴹ uᴴ₁)
-determinism⟼ (Pure l∈Γ () uᴴ) (Writeᴰ₂ H∈Γ uᴹ uᴴ₁)
-determinism⟼ (Pure l∈Γ () uᴴ) Write∙₂
-determinism⟼ (Pure l∈Γ () uᴴ) (Read₂ l∈Γ₁ n∈M)
-determinism⟼ (Pure l∈Γ () uᴴ) (Readᴰ₂ L∈Γ t∈M)
-determinism⟼ (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ) (DeepDupˢ L⊏l L∈Γ t∈Δ)
-determinism⟼ (Pure l∈Γ (DeepDup ._ t∈Δ) uᴴ) (DeepDupˢ (L⊑l , L≢l) L∈Γ t∈Δ₁) = ⊥-elim (L≢l refl)
-determinism⟼ (Pure l∈Γ (DeepDup' ¬var) uᴴ) (DeepDupˢ L⊏l L∈Γ t∈Δ) = ⊥-elim (¬var (Var ⟪ _ ⟫))
-determinism⟼ (New H∈Γ uᴴ) (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ₁)
-determinism⟼ (New H∈Γ uᴴ) (Pure l∈Γ (New₁ ¬var) uᴴ₁) = ⊥-elim (¬var (Var ⟪ _ ⟫))
-determinism⟼ (New H∈Γ uᴴ) (New H∈Γ₁ uᴴ₁) with memberᴴ-≅ H∈Γ H∈Γ₁
+determinismᴾ (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ) (New H∈Γ uᴴ₁)
+determinismᴾ (Pure l∈Γ (New₁ ¬var) uᴴ) (New H∈Γ uᴴ₁) = ⊥-elim (¬var (Var ⟪ _ ⟫))
+determinismᴾ (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ) New∙
+determinismᴾ (Pure l∈Γ (New∙₁ ¬var) uᴴ) New∙ = ⊥-elim (¬var (Var ⟪ _ ⟫))
+determinismᴾ (Pure l∈Γ () uᴴ) (Write₂ H∈Γ uᴹ uᴴ₁)
+determinismᴾ (Pure l∈Γ () uᴴ) (Writeᴰ₂ H∈Γ uᴹ uᴴ₁)
+determinismᴾ (Pure l∈Γ () uᴴ) Write∙₂
+determinismᴾ (Pure l∈Γ () uᴴ) (Read₂ l∈Γ₁ n∈M)
+determinismᴾ (Pure l∈Γ () uᴴ) (Readᴰ₂ L∈Γ t∈M)
+determinismᴾ (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ) (DeepDupˢ L⊏l L∈Γ t∈Δ)
+determinismᴾ (Pure l∈Γ (DeepDup ._ t∈Δ) uᴴ) (DeepDupˢ (L⊑l , L≢l) L∈Γ t∈Δ₁) = ⊥-elim (L≢l refl)
+determinismᴾ (Pure l∈Γ (DeepDup' ¬var) uᴴ) (DeepDupˢ L⊏l L∈Γ t∈Δ) = ⊥-elim (¬var (Var ⟪ _ ⟫))
+determinismᴾ (New H∈Γ uᴴ) (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ₁)
+determinismᴾ (New H∈Γ uᴴ) (Pure l∈Γ (New₁ ¬var) uᴴ₁) = ⊥-elim (¬var (Var ⟪ _ ⟫))
+determinismᴾ (New H∈Γ uᴴ) (New H∈Γ₁ uᴴ₁) with memberᴴ-≅ H∈Γ H∈Γ₁
 ... | refl rewrite updateᴴ-≡ uᴴ uᴴ₁ = refl
-determinism⟼ New∙ (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ)
-determinism⟼ New∙ (Pure l∈Γ (New∙₁ ¬var) uᴴ) = ⊥-elim (¬var (Var ⟪ _ ⟫))
-determinism⟼ New∙ New∙ = refl
-determinism⟼ (Write₂ H∈Γ uᴹ uᴴ) (Pure l∈Γ () uᴴ₁)
-determinism⟼ (Write₂ H∈Γ uᴹ uᴴ) (Write₂ H∈Γ₁ uᴹ₁ uᴴ₁) with memberᴴ-≅ H∈Γ H∈Γ₁
+determinismᴾ New∙ (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ)
+determinismᴾ New∙ (Pure l∈Γ (New∙₁ ¬var) uᴴ) = ⊥-elim (¬var (Var ⟪ _ ⟫))
+determinismᴾ New∙ New∙ = refl
+determinismᴾ (Write₂ H∈Γ uᴹ uᴴ) (Pure l∈Γ () uᴴ₁)
+determinismᴾ (Write₂ H∈Γ uᴹ uᴴ) (Write₂ H∈Γ₁ uᴹ₁ uᴴ₁) with memberᴴ-≅ H∈Γ H∈Γ₁
 ... | refl rewrite updateᴹ-≡ uᴹ uᴹ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
-determinism⟼ (Writeᴰ₂ H∈Γ uᴹ uᴴ) (Pure l∈Γ () uᴴ₁)
-determinism⟼ (Writeᴰ₂ H∈Γ uᴹ uᴴ) (Writeᴰ₂ H∈Γ₁ uᴹ₁ uᴴ₁) with memberᴴ-≅ H∈Γ H∈Γ₁
+determinismᴾ (Writeᴰ₂ H∈Γ uᴹ uᴴ) (Pure l∈Γ () uᴴ₁)
+determinismᴾ (Writeᴰ₂ H∈Γ uᴹ uᴴ) (Writeᴰ₂ H∈Γ₁ uᴹ₁ uᴴ₁) with memberᴴ-≅ H∈Γ H∈Γ₁
 ... | refl rewrite updateᴹ-≡ uᴹ uᴹ₁ | updateᴴ-≡ uᴴ uᴴ₁ = refl
-determinism⟼ Write∙₂ (Pure l∈Γ () uᴴ)
-determinism⟼ Write∙₂ Write∙₂ = refl
-determinism⟼ (Read₂ l∈Γ n∈M) (Pure l∈Γ₁ () uᴴ)
-determinism⟼ (Read₂ l∈Γ n∈M) (Read₂ l∈Γ₁ n∈M₁) with memberᴴ-≅ l∈Γ l∈Γ₁
+determinismᴾ Write∙₂ (Pure l∈Γ () uᴴ)
+determinismᴾ Write∙₂ Write∙₂ = refl
+determinismᴾ (Read₂ l∈Γ n∈M) (Pure l∈Γ₁ () uᴴ)
+determinismᴾ (Read₂ l∈Γ n∈M) (Read₂ l∈Γ₁ n∈M₁) with memberᴴ-≅ l∈Γ l∈Γ₁
 ... | refl with memberᴹ-≡ n∈M n∈M₁
 ... | refl = refl
-determinism⟼ (Readᴰ₂ L∈Γ t∈M) (Pure l∈Γ () uᴴ)
-determinism⟼ (Readᴰ₂ L∈Γ n∈M) (Readᴰ₂ L∈Γ₁ n∈M₁) with memberᴴ-≅ L∈Γ L∈Γ₁
+determinismᴾ (Readᴰ₂ L∈Γ t∈M) (Pure l∈Γ () uᴴ)
+determinismᴾ (Readᴰ₂ L∈Γ n∈M) (Readᴰ₂ L∈Γ₁ n∈M₁) with memberᴴ-≅ L∈Γ L∈Γ₁
 ... | refl with memberᴹ-≡ n∈M n∈M₁
 ... | refl = refl
-determinism⟼ (DeepDupˢ L⊏l L∈Γ t∈Δ) (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ)
-determinism⟼ (DeepDupˢ (L⊑l , L≢l) L∈Γ t∈Δ) (Pure l∈Γ (DeepDup ._ t∈Δ₁) uᴴ) = ⊥-elim (L≢l refl)
-determinism⟼ (DeepDupˢ L⊏l L∈Γ t∈Δ) (Pure l∈Γ (DeepDup' ¬var) uᴴ) = ⊥-elim (¬var (Var ⟪ _ ⟫))
-determinism⟼ (DeepDupˢ {τ∈π = τ∈π} L⊏l L∈Γ t∈Δ) (DeepDupˢ L⊏l' L∈Γ₁ t∈Δ₁) with memberᴴ-≅ L∈Γ L∈Γ₁
+determinismᴾ (DeepDupˢ L⊏l L∈Γ t∈Δ) (Pure l∈Γ (Var₂ τ∈π () uᴱ) uᴴ)
+determinismᴾ (DeepDupˢ (L⊑l , L≢l) L∈Γ t∈Δ) (Pure l∈Γ (DeepDup ._ t∈Δ₁) uᴴ) = ⊥-elim (L≢l refl)
+determinismᴾ (DeepDupˢ L⊏l L∈Γ t∈Δ) (Pure l∈Γ (DeepDup' ¬var) uᴴ) = ⊥-elim (¬var (Var ⟪ _ ⟫))
+determinismᴾ (DeepDupˢ {τ∈π = τ∈π} L⊏l L∈Γ t∈Δ) (DeepDupˢ L⊏l' L∈Γ₁ t∈Δ₁) with memberᴴ-≅ L∈Γ L∈Γ₁
 ... | refl with memberᴱ-≅ᵀ τ∈π t∈Δ t∈Δ₁
 ... | refl = refl
-determinism⟼ Hole Hole = refl
+determinismᴾ Hole Hole = refl
