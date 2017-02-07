@@ -18,38 +18,38 @@ _∈ᴿ_ : ∀ {A} -> A -> List A -> Set
 τ ∈ᴿ π = τ ∈ (reverse π)
 
 -- Subset relation
-data _⊆ˡ_ {A : Set} : List A -> List A -> Set where
-  base : [] ⊆ˡ []
-  cons : ∀ {α π₁ π₂} -> π₁ ⊆ˡ π₂ -> (α ∷ π₁) ⊆ˡ (α ∷ π₂)
-  drop : ∀ {α π₁ π₂} -> π₁ ⊆ˡ π₂ -> π₁ ⊆ˡ (α ∷ π₂)
+data _⊆_ {A : Set} : List A -> List A -> Set where
+  base : [] ⊆ []
+  cons : ∀ {α π₁ π₂} -> π₁ ⊆ π₂ -> (α ∷ π₁) ⊆ (α ∷ π₂)
+  drop : ∀ {α π₁ π₂} -> π₁ ⊆ π₂ -> π₁ ⊆ (α ∷ π₂)
 
-infixr 2 _⊆ˡ_
+infixr 2 _⊆_
 
-refl-⊆ˡ : ∀ {A} {π : List A} -> π ⊆ˡ π
-refl-⊆ˡ {_} {[]} = base
-refl-⊆ˡ {_} {x ∷ π} = cons refl-⊆ˡ
+refl-⊆ : ∀ {A} {π : List A} -> π ⊆ π
+refl-⊆ {_} {[]} = base
+refl-⊆ {_} {x ∷ π} = cons refl-⊆
 
-prod-⊆ : ∀ {A : Set} {τ : A} {π₁ π₂} -> π₁ ⊆ˡ π₂ -> π₁ ⊆ˡ π₂ ++ [ τ ]
+prod-⊆ : ∀ {A : Set} {τ : A} {π₁ π₂} -> π₁ ⊆ π₂ -> π₁ ⊆ π₂ ++ [ τ ]
 prod-⊆ base = drop base
 prod-⊆ (cons x) = cons (prod-⊆ x)
 prod-⊆ (drop x) = drop (prod-⊆ x)
 
-snoc-⊆ : ∀ {A : Set} {τ : A} {π₁ π₂} -> π₁ ⊆ˡ π₂ -> π₁ ++ [ τ ] ⊆ˡ π₂ ++ [ τ ]
+snoc-⊆ : ∀ {A : Set} {τ : A} {π₁ π₂} -> π₁ ⊆ π₂ -> π₁ ++ [ τ ] ⊆ π₂ ++ [ τ ]
 snoc-⊆ base = cons base
 snoc-⊆ (cons x) = cons (snoc-⊆ x)
 snoc-⊆ (drop x) = drop (snoc-⊆ x)
 
-rev-⊆ˡ : ∀ {A} {π₁ π₂ : List A} -> π₁ ⊆ˡ π₂ -> reverse π₁ ⊆ˡ reverse π₂
-rev-⊆ˡ base = base
-rev-⊆ˡ (cons x) = snoc-⊆ (rev-⊆ˡ x)
-rev-⊆ˡ (drop x) = prod-⊆ (rev-⊆ˡ x)
+rev-⊆ : ∀ {A} {π₁ π₂ : List A} -> π₁ ⊆ π₂ -> reverse π₁ ⊆ reverse π₂
+rev-⊆ base = base
+rev-⊆ (cons x) = snoc-⊆ (rev-⊆ x)
+rev-⊆ (drop x) = prod-⊆ (rev-⊆ x)
 
-drop-⊆ : ∀ {A} {π₁ π₂ : List A} -> π₁ ⊆ˡ π₁ ++ π₂
+drop-⊆ : ∀ {A} {π₁ π₂ : List A} -> π₁ ⊆ π₁ ++ π₂
 drop-⊆ {_} {[]} {[]} = base
 drop-⊆ {_} {[]} {x ∷ π₂} = drop drop-⊆
 drop-⊆ {_} {x ∷ π₁} = cons drop-⊆
 
-wken-∈ : ∀ {A x} {π₁ : List A} {π₂ : List A} -> π₁ ⊆ˡ π₂ -> x ∈ π₁ -> x ∈ π₂
+wken-∈ : ∀ {A x} {π₁ : List A} {π₂ : List A} -> π₁ ⊆ π₂ -> x ∈ π₁ -> x ∈ π₂
 wken-∈ base ()
 wken-∈ (cons p) here = here
 wken-∈ (cons p) (there q) = there (wken-∈ p q)
@@ -84,8 +84,8 @@ rev-rev-≡ (x ∷ π) = cong (_∷_ x) (rev-rev-≡ π)
 ∈ᴿ-∈ : ∀ {A} {τ : A} {π} -> τ ∈ᴿ π -> τ ∈ π
 ∈ᴿ-∈ {τ} {π} x = ∈-∈ᴿ x
 
-wken-∈ᴿ : ∀ {A x} {π₁ : List A} {π₂ : List A} -> π₁ ⊆ˡ π₂ -> x ∈ᴿ π₁ -> x ∈ᴿ π₂
-wken-∈ᴿ x p = wken-∈ (rev-⊆ˡ x) p
+wken-∈ᴿ : ∀ {A x} {π₁ : List A} {π₂ : List A} -> π₁ ⊆ π₂ -> x ∈ᴿ π₁ -> x ∈ᴿ π₂
+wken-∈ᴿ x p = wken-∈ (rev-⊆ x) p
 
 hereᴿ : ∀ {A : Set} {{π}} {τ : A} -> τ ∈ᴿ (τ ∷ π)
 hereᴿ {{π}} {τ} = snoc-∈ τ (reverse π)

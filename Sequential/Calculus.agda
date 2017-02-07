@@ -84,7 +84,7 @@ data Value {π : Context} : ∀ {τ} -> Term π τ -> Set where
 --------------------------------------------------------------------------------
 
 -- The context of a term can be extended without harm
-wken : ∀ {τ} {Δ₁ : Context} {Δ₂ : Context} -> Term Δ₁ τ -> Δ₁ ⊆ˡ Δ₂ -> Term Δ₂ τ
+wken : ∀ {τ} {Δ₁ : Context} {Δ₂ : Context} -> Term Δ₁ τ -> Δ₁ ⊆ Δ₂ -> Term Δ₂ τ
 wken （） p = （）
 wken True p = True
 wken False p = False
@@ -114,7 +114,7 @@ wken (deepDup x) p = deepDup (wken x p)
 wken ∙ p = ∙
 
 _↑¹ : ∀ {α β} {Δ : Context} -> Term Δ α -> Term (β ∷ Δ) α
-t ↑¹ = wken t (drop refl-⊆ˡ)
+t ↑¹ = wken t (drop refl-⊆)
 
 -- Performs the variable-term substitution.
 var-subst : ∀ {l α β} (Δ₁ : Context) (Δ₂ : Context)

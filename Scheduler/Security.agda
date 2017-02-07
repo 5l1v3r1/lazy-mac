@@ -31,7 +31,6 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
 
       εˢ-simᴸ : ∀ {s₁ s₂ : State} {l} {m : Message l} -> (l⊑A : l ⊑ A) -> s₁ ⟶ s₂ ↑ m -> (εˢ s₁) ⟶ (εˢ s₂) ↑ (εᴹ (yes l⊑A) m)
       εˢ-simᴴ : ∀ {s₁ s₂ l} {m : Message l} -> l ⋤ A -> s₁ ⟶ s₂ ↑ m -> s₁ ≈ˢ s₂
-      determinismˢ : ∀ {l n e} {s₁ s₂ s₃ : State} -> s₁ ⟶ s₂ ↑ (l , n , e) -> s₁ ⟶ s₃ ↑ (l , n , e) -> s₂ ≡ s₃
 
       -- Annotated low-equivalence
       _≈ˢ-⟨_,_⟩_ : State -> ℕ -> ℕ -> State -> Set

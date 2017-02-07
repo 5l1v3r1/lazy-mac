@@ -266,7 +266,7 @@ open import Function
 
 --------------------------------------------------------------------------------
 
-ε-wken : ∀ {τ π₁ π₂} -> (t : Term π₁ τ) (p : π₁ ⊆ˡ π₂) -> εᵀ (wken t p) ≡ wken (εᵀ t) p
+ε-wken : ∀ {τ π₁ π₂} -> (t : Term π₁ τ) (p : π₁ ⊆ π₂) -> εᵀ (wken t p) ≡ wken (εᵀ t) p
 ε-wken （） p = refl
 ε-wken True p = refl
 ε-wken False p = refl
@@ -319,7 +319,7 @@ open import Function
         ε-var-subst [] π₁ t₁ (⟪ there β∈π ⟫) = refl
         ε-var-subst (β ∷ π₁) π₂ t₁ ⟪ here ⟫ = refl
         ε-var-subst {l} (τ ∷ π₁) π₂ t₁ (⟪ there β∈π ⟫)
-          rewrite ε-wken (var-subst π₁ π₂ t₁ ⟪ β∈π ⟫) (drop {_} {τ} refl-⊆ˡ) | ε-var-subst {l} π₁ π₂ t₁ ⟪ β∈π ⟫ = refl
+          rewrite ε-wken (var-subst π₁ π₂ t₁ ⟪ β∈π ⟫) (drop {_} {τ} refl-⊆) | ε-var-subst {l} π₁ π₂ t₁ ⟪ β∈π ⟫ = refl
 
         ε-tm-subst : ∀ {τ τ'} (π₁ : Context) (π₂ : Context) (t₁ : Term π₂ τ') (t₂ : Term (π₁ ++ [ τ' ] ++ π₂) τ)
                    ->  εᵀ (tm-subst π₁ π₂ t₁ t₂) ≡ tm-subst π₁ π₂ (εᵀ t₁) (εᵀ t₂)

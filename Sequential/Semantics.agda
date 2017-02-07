@@ -18,7 +18,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
 data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
  App₁ : ∀ {τ₁ τ₂ τ₃ π} {Δ : Env l π} {t₁ : Term π (τ₁ => τ₂)} {t₂ : Term π τ₁} {S : Stack l τ₂ τ₃} ->
-          ⟨ Δ , App t₁ t₂ , S ⟩ ⇝ ⟨ just t₂ ∷ Δ ,  wken t₁ (drop refl-⊆ˡ) , (Var {{π = τ₁ ∷ π}} ⟪ hereᴿ ⟫) ∷ S ⟩
+          ⟨ Δ , App t₁ t₂ , S ⟩ ⇝ ⟨ just t₂ ∷ Δ ,  wken t₁ (drop refl-⊆) , (Var {{π = τ₁ ∷ π}} ⟪ hereᴿ ⟫) ∷ S ⟩
 
  App₂ : ∀ {β α τ'} {π : Context} {Δ : Env l π} {S : Stack l β τ'} {t : Term (α ∷ π) β}
             -> (α∈π : α ∈⟨ l ⟩ᴿ π) ->
@@ -114,10 +114,10 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
          ⟨ Δ , new∙ {π = π} l⊑h t , S ⟩ ⇝ ⟨ just t ∷ Δ , new∙ l⊑h (Var {π = τ ∷ π} {l} ⟪ hereᴿ ⟫) , S ⟩
 
  Write₁ : ∀ {τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
-            ⟨ Δ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ (just t₂ ∷ Δ) , wken t₁ (drop refl-⊆ˡ) , write {{π = τ ∷ π}} l⊑H ⟪ hereᴿ ⟫ ∷ S ⟩
+            ⟨ Δ , write l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ (just t₂ ∷ Δ) , wken t₁ (drop refl-⊆) , write {{π = τ ∷ π}} l⊑H ⟪ hereᴿ ⟫ ∷ S ⟩
 
  Write∙₁ : ∀ {τ τ' H} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t₁ : Term π (Ref H τ)} {t₂ : Term π τ} {l⊑H : l ⊑ H} ->
-             ⟨ Δ , write∙ l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ just t₂ ∷ Δ , wken t₁ (drop refl-⊆ˡ) , write∙ {{π = τ ∷ π}} l⊑H ⟪ hereᴿ ⟫ ∷ S ⟩
+             ⟨ Δ , write∙ l⊑H t₁ t₂ , S ⟩ ⇝ ⟨ just t₂ ∷ Δ , wken t₁ (drop refl-⊆) , write∙ {{π = τ ∷ π}} l⊑H ⟪ hereᴿ ⟫ ∷ S ⟩
 
  Read₁ : ∀ {τ τ' L} {π : Context} {Δ : Env l π} {S : Stack l _ τ'} {t : Term π (Ref L τ)} {L⊑l : L ⊑ l} ->
          ⟨ Δ , read {τ = τ} L⊑l t , S ⟩ ⇝ ⟨ Δ , t , read L⊑l ∷ S ⟩
@@ -219,3 +219,49 @@ Stateᴾ p = (Doneᴾ p) × ((Redexᴾ p) × (Stuckᴾ p))
 
 ⊥-stuckDone : ∀ {l ls τ} {p : Program l ls τ} -> Stuckᴾ p -> ¬ (Doneᴾ p)
 ⊥-stuckDone stuck don = proj₁ stuck don
+
+--------------------------------------------------------------------------------
+
+step-⊆ : ∀ {l τ τ₁ τ₂ π₁ π₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂}
+           {S₁ : Stack l τ₁ τ} {S₂ : Stack l τ₂ τ} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂}  ->
+           ⟨ Δ₁ , t₁ , S₁ ⟩ ⇝ ⟨ Δ₂ , t₂ , S₂ ⟩ -> π₁ ⊆ π₂
+step-⊆ App₁ = drop refl-⊆
+step-⊆ (App₂ α∈π) = refl-⊆
+step-⊆ (Var₁ τ∈π t∈Δ ¬val rᴱ) = refl-⊆
+step-⊆ (Var₁' τ∈π v∈Δ val) = refl-⊆
+step-⊆ (Var₂ τ∈π val uᴱ) = refl-⊆
+step-⊆ If = refl-⊆
+step-⊆ IfTrue = refl-⊆
+step-⊆ IfFalse = refl-⊆
+step-⊆ Return = refl-⊆
+step-⊆ Bind₁ = refl-⊆
+step-⊆ Bind₂ = refl-⊆
+step-⊆ (Label' p) = refl-⊆
+step-⊆ (Label'∙ p) = refl-⊆
+step-⊆ (Unlabel₁ p) = refl-⊆
+step-⊆ (Unlabel₂ p) = refl-⊆
+step-⊆ UnId₁ = refl-⊆
+step-⊆ UnId₂ = refl-⊆
+step-⊆ (Fork p) = refl-⊆
+step-⊆ (Fork∙ p) = refl-⊆
+step-⊆ Hole₂ = refl-⊆
+step-⊆ (DeepDup τ∈π t∈Δ) = drop refl-⊆
+step-⊆ (DeepDup' ¬var) = drop refl-⊆
+step-⊆ (New₁ ¬var) = drop refl-⊆
+step-⊆ (New∙₁ ¬var) = drop refl-⊆
+step-⊆ Write₁ = drop refl-⊆
+step-⊆ Write∙₁ = drop refl-⊆
+step-⊆ Read₁ = refl-⊆
+
+stepᴾ-⊆ : ∀ {l ls τ τ₁ τ₂ π₁ π₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂}
+           {S₁ : Stack l τ₁ τ} {S₂ : Stack l τ₂ τ} {Γ₁ Γ₂ : Heap ls} ->
+           ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> π₁ ⊆ π₂
+stepᴾ-⊆ (Pure l∈Γ step uᴴ) = step-⊆ step
+stepᴾ-⊆ (New H∈Γ uᴴ) = refl-⊆
+stepᴾ-⊆ New∙ = refl-⊆
+stepᴾ-⊆ (Write₂ H∈Γ uᴹ uᴴ) = refl-⊆
+stepᴾ-⊆ (Writeᴰ₂ H∈Γ uᴹ uᴴ) = refl-⊆
+stepᴾ-⊆ Write∙₂ = refl-⊆
+stepᴾ-⊆ (Read₂ l∈Γ n∈M) = refl-⊆
+stepᴾ-⊆ (Readᴰ₂ L∈Γ n∈M) = refl-⊆
+stepᴾ-⊆ (DeepDupˢ L⊏l L∈Γ t∈Δ) = refl-⊆
