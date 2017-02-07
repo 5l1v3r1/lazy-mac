@@ -186,6 +186,14 @@ data Env (l : Label) : Context -> Set where
   _∷_ : ∀ {π τ} -> (t : Maybe (Term π τ)) -> Env l π -> Env l (τ ∷ π)
   ∙ : ∀ {{π}} -> Env l π
 
+wkenᴱ : ∀ {l π₁ π₂} -> Env l π₁ -> π₁ ⊆ π₂ -> Env l π₂
+wkenᴱ [] base = []
+wkenᴱ [] (drop x) = nothing ∷ wkenᴱ [] x
+wkenᴱ (just t ∷ Δ) (cons x) = (just (wken t x)) ∷ (wkenᴱ Δ x)
+wkenᴱ (nothing ∷ Δ) (cons x) = nothing ∷ wkenᴱ Δ x
+wkenᴱ (t ∷ Δ) (drop x) = nothing ∷ wkenᴱ (t ∷ Δ) x
+wkenᴱ ∙ x = ∙
+
 data Updateᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈⟨ l ⟩ π' -> Env l π' -> Env l π' -> Set where
   here : ∀ {Δ : Env l π} {mt' : Maybe (Term _ τ)} -> Updateᴱ mt (⟪ here ⟫) (mt' ∷ Δ) (mt ∷ Δ)
   there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ Δ' : Env l π'} {mt' : Maybe (Term _ τ')} -> Updateᴱ mt (⟪ τ∈π' ⟫) Δ Δ' ->
