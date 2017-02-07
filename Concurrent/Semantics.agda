@@ -16,7 +16,7 @@ open import Relation.Nullary
 
 -- Concurrent semantics
 data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
-  step-∅ : ∀ {π₁ π₂ τ₁ τ₂ S₁ S₂ Σ₁ Σ₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heap ls} {P₁ P₂ : Pools ls} {T₁ T₂ : Pool l}
+  step-∅ : ∀ {π₁ π₂ τ₁ τ₂ S₁ S₂ Σ₁ Σ₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heaps ls} {P₁ P₂ : Pools ls} {T₁ T₂ : Pool l}
            (l∈P : l ↦ T₁ ∈ᴾ P₁)
            (t∈T : n ↦ ⟨ t₁ , S₁ ⟩ ∈ᵀ T₁)
            (¬fork : ¬ (IsFork t₁))
@@ -26,7 +26,7 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (uᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ ) ->
            Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
 
-  fork :  ∀ {H π₁ π₂ τ₂ S₁ S₂ Σ₁ Σ₂} {tᴴ : Term π₁ (Mac H _)} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heap ls}
+  fork :  ∀ {H π₁ π₂ τ₂ S₁ S₂ Σ₁ Σ₂} {tᴴ : Term π₁ (Mac H _)} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heaps ls}
             {P₁ P₂ P₃ : Pools ls} {T₁ T₂ : Pool l} {Tᴴ : Pool H} {l⊑H : l ⊑ H}
            (l∈P : l ↦ T₁ ∈ᴾ P₁)
            (t∈T : n ↦ ⟨ fork l⊑H tᴴ , S₁ ⟩ ∈ᵀ T₁)
@@ -38,24 +38,24 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (u₂ᴾ : P₃ ≔ P₂ [ H ↦ Tᴴ ▻ ⟨ tᴴ , [] ⟩ ]ᴾ ) ->  -- TODO must add deepDup!
            Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₃ ⟩
 
-  fork∙ :  ∀ {H π₁ π₂ τ₂ S₁ S₂ Σ₁ Σ₂} {tᴴ : Term π₁ (Mac H _)} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heap ls}
+  fork∙ :  ∀ {H π₁ π₂ τ₂ S₁ S₂ Σ₁ Σ₂} {tᴴ : Term π₁ (Mac H _)} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heaps ls}
              {P₁ P₂ : Pools ls} {T₁ T₂ : Pool l} {l⊑H : l ⊑ H}
            (l∈P : l ↦ T₁ ∈ᴾ P₁)
            (t∈T : n ↦ ⟨ fork∙ l⊑H tᴴ , S₁ ⟩ ∈ᵀ T₁)
            (step : ⟨ Γ₁ , fork∙ l⊑H tᴴ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩)
            (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ t₂ , S₂ ⟩ ]ᵀ )
-           (u₁ᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ )
+           (uᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ )
            (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Step)) ->
            Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
 
-  skip : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
+  skip : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heaps ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
             (t∈T : n ↦ ⟨ t , S ⟩ ∈ᵀ T)
             (stuck : Stuckᴾ ⟨ Γ , t , S ⟩)
             (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Skip) ) ->
             Stepᶜ l n ⟨ Σ₁ , Γ , P ⟩ ⟨ Σ₂ , Γ , P ⟩
 
-  done : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heap ls} {P : Pools ls} {T : Pool l}
+  done : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heaps ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
             (t∈T : n ↦ ⟨ t , S ⟩ ∈ᵀ T)
             (don : Doneᴾ ⟨ Γ , t , S ⟩)
