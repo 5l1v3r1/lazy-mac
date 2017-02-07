@@ -61,16 +61,6 @@ record Global (ls : List Label) : Set where
 open Global public
 open import Relation.Binary.PropositionalEquality
 
--- TODO do we need this?
--- state-≡ : ∀ {ls} {g₁ g₂ : Global ls} -> g₁ ≡ g₂ -> state g₁ ≡ state g₂
--- state-≡ refl = refl
-
--- storeᵍ-≡ : ∀ {ls} {g₁ g₂ : Global ls} -> g₁ ≡ g₂ -> storeᵍ g₁ ≡ storeᵍ g₂
--- storeᵍ-≡ refl = refl
-
--- pools-≡ : ∀ {ls} {g₁ g₂ : Global ls} -> g₁ ≡ g₂ -> pools g₁ ≡ pools g₂
--- pools-≡ refl = refl
-
 --------------------------------------------------------------------------------
 -- Thread Pool operation
 

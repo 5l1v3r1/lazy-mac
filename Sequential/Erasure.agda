@@ -504,16 +504,6 @@ writeᴹ∙-≡ H⋢A here (there {u = u} y) = ⊥-elim (∈-not-unique (update-
 writeᴹ∙-≡ H⋢A (there {u = u} x) here = ⊥-elim (∈-not-unique (member-∈ x) u)
 writeᴹ∙-≡ H⋢A (there x) (there y) rewrite writeᴹ∙-≡ H⋢A x y = refl
 
--- open import Relation.Binary.HeterogeneousEquality as H
--- TODO remove
--- writeᴹ∙-≡' : ∀ {H π₁ π₂ ls} {Γ₁ Γ₂ : Heaps ls} {M₁ M₂ : Memory H} {Δ₁ : Env H π₁} {Δ₂ : Env H π₂} -> H ⋤ A -> H ↦ (M₁ , Δ₁) ∈ᴴ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ M₂ , Δ₂ ]ᴴ -> (εᴴ Γ₁) ≅ (εᴴ Γ₂)
--- writeᴹ∙-≡' {H} H⋢A here here with H ⊑? A
--- writeᴹ∙-≡' H⋢A here here | yes p = ⊥-elim (H⋢A p)
--- writeᴹ∙-≡' H⋢A here here | no ¬p = refl
--- writeᴹ∙-≡' H⋢A here (there {u = u} y) = ⊥-elim (∈-not-unique (update-∈ y) u)
--- writeᴹ∙-≡' H⋢A (there {u = u} x) here = ⊥-elim (∈-not-unique (member-∈ x) u)
--- writeᴹ∙-≡' H⋢A (there x) (there y) = H.cong (_∷_ _) ( writeᴹ∙-≡' H⋢A x y)
-
 memberᴴ : ∀ {l π ls} {Γ : Heaps ls} {M : Memory l} {Δ : Env l π} -> l ⊑ A -> l ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ -> l ↦ ⟨ M , εᴱ Δ ⟩ ∈ᴴ (εᴴ Γ)
 memberᴴ {l} l⊑A here with l ⊑? A
 ... | yes _ = here

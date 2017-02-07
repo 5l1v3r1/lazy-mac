@@ -36,3 +36,15 @@ stepᴴ {H} {ls} {τ} H⋤A step = εᴾ-refl (aux (H ⊑? A))
 stepᴸ : ∀ {ls π₁ π₂ τ l τ₁ τ₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l _ τ} {S₂ : Stack l _ τ}
              -> l ⊑ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> ⟨ εᴴ Γ₁ , εᵀ t₁ , εˢ S₁ ⟩ ⟼ ⟨ εᴴ Γ₂ , εᵀ t₂ , εˢ S₂ ⟩
 stepᴸ l⊑A step = ε₁ᴾ-sim (yes l⊑A) step
+
+stepᴴ-Γ : ∀ {H ls τ₁ τ₂ τ π₁ π₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ τ } {S₂ : Stack _ _ _} ->
+          H ⋤ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> εᴴ Γ₁ ≡ εᴴ Γ₂
+stepᴴ-Γ H⋤A (S₁.Pure l∈Γ step uᴴ) = writeᴹ∙-≡ H⋤A l∈Γ uᴴ
+stepᴴ-Γ H⋤A (S₁.New {l⊑h = L⊑H} H∈Γ uᴴ) = writeᴹ∙-≡ (trans-⋢ L⊑H H⋤A) H∈Γ uᴴ
+stepᴴ-Γ H⋤A S₁.New∙ = refl
+stepᴴ-Γ H⋤A (S₁.Write₂ {l⊑H = L⊑H} H∈Γ uᴹ uᴴ) = writeᴹ∙-≡ (trans-⋢ L⊑H H⋤A) H∈Γ uᴴ
+stepᴴ-Γ H⋤A (S₁.Writeᴰ₂ {l⊑H = L⊑H} H∈Γ uᴹ uᴴ) = writeᴹ∙-≡ (trans-⋢ L⊑H H⋤A) H∈Γ uᴴ
+stepᴴ-Γ H⋤A S₁.Write∙₂ = refl
+stepᴴ-Γ H⋤A (S₁.Read₂ l∈Γ n∈M) = refl
+stepᴴ-Γ H⋤A (S₁.Readᴰ₂ L∈Γ n∈M) = refl
+stepᴴ-Γ H⋤A (S₁.DeepDupˢ L⊏l L∈Γ t∈Δ) = refl

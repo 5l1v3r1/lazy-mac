@@ -8,8 +8,7 @@ open import Relation.Nullary
 open import Types 𝓛
 open import Sequential.Calculus 𝓛
 
-import Sequential.Semantics as S₁
-open S₁ 𝓛
+open import Sequential.Semantics 𝓛
 
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
 open import Sequential.PINI 𝓛 A
@@ -145,21 +144,6 @@ updateᴾ∙ {H} H⋤A C.here with H ⊑? A
 updateᴾ∙ H⋤A C.here | yes p = ⊥-elim (H⋤A p)
 updateᴾ∙ H⋤A C.here | no ¬p = refl
 updateᴾ∙ H⋤A (C.there x) rewrite updateᴾ∙ H⋤A x = refl
-
-open import Relation.Binary.HeterogeneousEquality using (refl ; _≅_)
-
--- TODO move to PINI
-stepᴴ-Γ : ∀ {H ls τ₁ τ₂ τ π₁ π₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ τ } {S₂ : Stack _ _ _} ->
-          H ⋤ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> εᴴ Γ₁ ≡ εᴴ Γ₂
-stepᴴ-Γ H⋤A (S₁.Pure l∈Γ step uᴴ) = writeᴹ∙-≡ H⋤A l∈Γ uᴴ
-stepᴴ-Γ H⋤A (S₁.New {l⊑h = L⊑H} H∈Γ uᴴ) = writeᴹ∙-≡ (trans-⋢ L⊑H H⋤A) H∈Γ uᴴ
-stepᴴ-Γ H⋤A S₁.New∙ = refl
-stepᴴ-Γ H⋤A (S₁.Write₂ {l⊑H = L⊑H} H∈Γ uᴹ uᴴ) = writeᴹ∙-≡ (trans-⋢ L⊑H H⋤A) H∈Γ uᴴ
-stepᴴ-Γ H⋤A (S₁.Writeᴰ₂ {l⊑H = L⊑H} H∈Γ uᴹ uᴴ) = writeᴹ∙-≡ (trans-⋢ L⊑H H⋤A) H∈Γ uᴴ
-stepᴴ-Γ H⋤A S₁.Write∙₂ = refl
-stepᴴ-Γ H⋤A (S₁.Read₂ l∈Γ n∈M) = refl
-stepᴴ-Γ H⋤A (S₁.Readᴰ₂ L∈Γ n∈M) = refl
-stepᴴ-Γ H⋤A (S₁.DeepDupˢ L⊏l L∈Γ t∈Δ) = refl
 
 εᴳ-simᴴ : ∀ {H n ls} {g₁ g₂ : Global ls} -> H ⋤ A -> (H P., n) ⊢ g₁ ↪ g₂ -> g₁ ≈ᴳ g₂
 εᴳ-simᴴ H⋤A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) = εᴳ-refl (lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) (stepᴴ-Γ H⋤A step) (updateᴾ∙ H⋤A uᴾ))
