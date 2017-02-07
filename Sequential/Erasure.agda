@@ -510,7 +510,7 @@ update∙ᴴ ¬p here | yes p = ⊥-elim (¬p p)
 update∙ᴴ ¬p₁ here | no ¬p = here
 update∙ᴴ ¬p (there x) = there (update∙ᴴ ¬p x)
 
-writeᴹ∙-≡ : ∀ {H π ls} {Γ₁ Γ₂ : Heap ls} {M₁ M₂ : Memory H} {Δ : Env H π} -> H ⋤ A -> H ↦ (M₁ , Δ) ∈ᴴ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ M₂ , Δ ]ᴴ -> (εᴴ Γ₂) ≡ (εᴴ Γ₁)
+writeᴹ∙-≡ : ∀ {H π ls} {Γ₁ Γ₂ : Heap ls} {M₁ M₂ : Memory H} {Δ : Env H π} -> H ⋤ A -> H ↦ (M₁ , Δ) ∈ᴴ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ M₂ , Δ ]ᴴ -> (εᴴ Γ₁) ≡ (εᴴ Γ₂)
 writeᴹ∙-≡ {H} H⋢A here here with H ⊑? A
 writeᴹ∙-≡ H⋢A here here | yes p = ⊥-elim (H⋢A p)
 writeᴹ∙-≡ H⋢A here here | no ¬p = refl

@@ -8,7 +8,9 @@ open import Types 𝓛
 import Sequential.Calculus as S
 open S 𝓛
 
-open import Sequential.Semantics 𝓛
+import Sequential.Semantics as S₁
+open S₁ 𝓛
+
 open import Sequential.Determinism 𝓛
 open import Sequential.Erasure 𝓛 A
 
@@ -34,14 +36,3 @@ stepᴴ {H} {ls} {τ} H⋤A step = εᴾ-refl (aux (H ⊑? A))
 stepᴸ : ∀ {ls π₁ π₂ τ l τ₁ τ₂} {Γ₁ Γ₂ : Heap ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l _ τ} {S₂ : Stack l _ τ}
              -> l ⊑ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> ⟨ εᴴ Γ₁ , εᵀ t₁ , εˢ S₁ ⟩ ⟼ ⟨ εᴴ Γ₂ , εᵀ t₂ , εˢ S₂ ⟩
 stepᴸ l⊑A step = ε₁ᴾ-sim (yes l⊑A) step
-
--- data _≈ᴴ_ {ls} (Γ₁ Γ₂ : Heap ls) : Set where
---   εᴴ-refl : εᴴ Γ₁ ≡ εᴴ Γ₂ -> Γ₁ ≈ᴴ Γ₂
-
--- projᴴ : ∀ {H ls τ₁ τ₂ τ π₁ π₂} {Γ₁ Γ₂ : Heap ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ τ } {S₂ : Stack _ _ _} ->
---           H ⋤ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ≈ᴾ ⟨ Γ₂ , t₂ , S₂ ⟩ -> Γ₁ ≈ᴴ Γ₂
--- projᴴ {H} H⋤A (εᴾ-refl x) = εᴴ-refl (aux (H ⊑? A) x)
---  where aux : ∀ {ls τ₁ τ₂ τ π₁ π₂} {Γ₁ Γ₂ : Heap ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H τ₁ τ } {S₂ : Stack H τ₂ τ} ->
---                (x : Dec (H ⊑ A)) -> ε₁ᴾ x ⟨ Γ₁ , t₁ , S₁ ⟩ ≡ ε₁ᴾ x ⟨ Γ₂ , t₂ , S₂ ⟩ -> εᴴ Γ₁ ≡ εᴴ Γ₂
---        aux (yes p) eq = {!!}
---        aux (no ¬p) refl = {!refl!}
