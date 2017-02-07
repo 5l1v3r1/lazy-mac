@@ -3,65 +3,45 @@ import Lattice as L
 module Sequential.PINI (𝓛 : L.Lattice) (A : L.Label 𝓛) where
 
 open import Types 𝓛
-open import Sequential.Calculus 𝓛
+
+
+import Sequential.Calculus as S
+open S 𝓛
+
 open import Sequential.Semantics 𝓛
 open import Sequential.Determinism 𝓛
 open import Sequential.Erasure 𝓛 A
 
+open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
+open import Data.Empty
 
 data _≈ᴾ_ {l ls τ} (p₁ p₂ : Program l ls τ) : Set where
-  ε-refl : εᴾ p₁ ≡ εᴾ p₂ -> p₁ ≈ᴾ p₂
+  εᴾ-refl : εᴾ p₁ ≡ εᴾ p₂ -> p₁ ≈ᴾ p₂
 
 pini : ∀ {l ls τ} {p₁ p₁' p₂ p₂' : Program l ls τ} -> p₁ ≈ᴾ p₂ -> p₁ ⟼ p₁' -> p₂ ⟼ p₂' -> p₁' ≈ᴾ p₂'
-pini (ε-refl eq) s₁ s₂ = ε-refl (aux eq (εᴾ-sim s₁) (εᴾ-sim s₂))
+pini (εᴾ-refl eq) s₁ s₂ = εᴾ-refl (aux eq (εᴾ-sim s₁) (εᴾ-sim s₂))
   where aux : ∀ {l ls τ} {p₁ p₁' p₂ p₂' : Program l ls τ} -> p₁ ≡ p₂ -> p₁ ⟼ p₁' -> p₂ ⟼ p₂' -> p₁' ≡ p₂'
         aux refl x y = determinismᴾ x y
 
--- TODO move to PINI ?
-data _≈ᴴ_ {ls} (Γ₁ Γ₂ : Heap ls) : Set where
-  εᴴ-refl : εᴴ Γ₁ ≡ εᴴ Γ₂ -> Γ₁ ≈ᴴ Γ₂
+stepᴴ : ∀ {H ls τ} {p₁ p₂ : Program H ls τ} -> H ⋤ A -> p₁ ⟼ p₂ -> p₁ ≈ᴾ p₂
+stepᴴ {H} {ls} {τ} H⋤A step = εᴾ-refl (aux (H ⊑? A))
+  where aux : ∀ {p₁ p₂ : Program H ls τ} -> (x : Dec (H ⊑ A)) -> ε₁ᴾ x p₁ ≡ ε₁ᴾ x p₂
+        aux (yes H⊑A) = ⊥-elim (H⋤A H⊑A)
+        aux (no _) = refl
 
-data _≈ˢ_ {l τ₁ τ₂} (S₁ S₂ : Stack l τ₁ τ₂) : Set where
-  εˢ-refl : εˢ S₁ ≡ εˢ S₂ -> S₁ ≈ˢ S₂
+-- Simulation of low-step (shows that we maintain the program structure)
+stepᴸ : ∀ {ls π₁ π₂ τ l τ₁ τ₂} {Γ₁ Γ₂ : Heap ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l _ τ} {S₂ : Stack l _ τ}
+             -> l ⊑ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> ⟨ εᴴ Γ₁ , εᵀ t₁ , εˢ S₁ ⟩ ⟼ ⟨ εᴴ Γ₂ , εᵀ t₂ , εˢ S₂ ⟩
+stepᴸ l⊑A step = ε₁ᴾ-sim (yes l⊑A) step
 
-data _≈ᵀ_ {π τ} (t₁ t₂ : Term π τ) : Set where
-  εᵀ-refl : εᵀ t₁ ≡ εᵀ t₂ -> t₁ ≈ᵀ t₂
+-- data _≈ᴴ_ {ls} (Γ₁ Γ₂ : Heap ls) : Set where
+--   εᴴ-refl : εᴴ Γ₁ ≡ εᴴ Γ₂ -> Γ₁ ≈ᴴ Γ₂
 
-
--- Structural Low-equivalence
-data _⋍ᴾ_  {l ls τ} : (p₁ p₂ : Program l ls τ) -> Set where
-  ∙ : ∙ ⋍ᴾ ∙
-  ⟨_,_,_⟩ : ∀ {π τ' Γ₁ Γ₂ S₁ S₂} {t₁ t₂ : Term π τ'} -> Γ₁ ≈ᴴ Γ₂ -> t₁ ≈ᵀ t₂ -> S₁ ≈ˢ S₂ -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⋍ᴾ ⟨ Γ₂ , t₂ , S₂ ⟩
-
-open import Relation.Nullary
-
-⋍ᴾ-≈ᴾ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} -> p₁ ⋍ᴾ p₂ -> p₁ ≈ᴾ p₂
-⋍ᴾ-≈ᴾ ∙ = ε-refl refl
-⋍ᴾ-≈ᴾ {l} ⟨ x , y , z ⟩ = ε-refl (aux (_ ⊑? A) x y z)
-  where aux : ∀ {π τ τ' ls l} {Γ₁ Γ₂ : Heap ls} {S₁ S₂ : Stack l τ' τ} {t₁ t₂ : Term π τ'} ->
-                  (x : Dec (l ⊑ A)) -> Γ₁ ≈ᴴ Γ₂ -> t₁ ≈ᵀ t₂ -> S₁ ≈ˢ S₂ -> (ε₁ᴾ x ⟨ Γ₁ , t₁ , S₁ ⟩) ≡ (ε₁ᴾ x ⟨ Γ₂ , t₂ , S₂ ⟩)
-        aux (yes p) (εᴴ-refl eq₁) (εᵀ-refl eq₂) (εˢ-refl eq₃) rewrite eq₁ | eq₂ | eq₃ = refl
-        aux (no ¬p) eq₃ eq₄ eq₅ = refl
-
--- TODO we must use heterogeneous equality because in a single step the type and context of terms may change
-
-≈ᴾ-⋍ᴾ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} -> p₁ ≈ᴾ p₂ -> p₁ ⋍ᴾ p₂
-≈ᴾ-⋍ᴾ = {!!}
--- ≈ᴾ-⋍ᴾ {p₁ = ⟨ Γ , t , S ⟩} {⟨ Γ₁ , t₁ , S₁ ⟩} (ε-refl x) with εᴾ ⟨ Γ , t , S ⟩ | εᴾ ⟨ Γ₁ , t₁ , S₁ ⟩
--- ≈ᴾ-⋍ᴾ {l} {ls} {τ} {⟨ Γ , t , S ⟩} {⟨ Γ₁ , t₁ , S₁ ⟩} (ε-refl refl) | a | .a = {!⟨_,_,_⟩ ? ? ?!}
--- ≈ᴾ-⋍ᴾ {p₁ = ⟨ Γ , t , S ⟩} {∙} (ε-refl x) = {!!}
--- ≈ᴾ-⋍ᴾ {p₁ = ∙} {⟨ Γ , t , S ⟩} (ε-refl x) = {!!}
--- ≈ᴾ-⋍ᴾ {p₁ = ∙} {∙} (ε-refl refl) = ∙
-
-stepᴴ : ∀ {H ls τ} {p₁ p₂ : Program H ls τ} -> H ⋤ A -> p₁ ⟼ p₂ -> p₁ ⋍ᴾ p₂
-stepᴴ H⋤A (Pure l∈Γ step uᴴ) = {! ⟨ ? , ? , ? ⟩!}
-stepᴴ H⋤A (New H∈Γ uᴴ) = {!!}
-stepᴴ H⋤A New∙ = {!!}
-stepᴴ H⋤A (Write₂ H∈Γ uᴹ uᴴ) = {!!}
-stepᴴ H⋤A (Writeᴰ₂ H∈Γ uᴹ uᴴ) = {!!}
-stepᴴ H⋤A Write∙₂ = {!!}
-stepᴴ H⋤A (Read₂ l∈Γ n∈M) = {!!}
-stepᴴ H⋤A (Readᴰ₂ L∈Γ n∈M) = {!!}
-stepᴴ H⋤A (DeepDupˢ L⊏l L∈Γ t∈Δ) = {!!}
-stepᴴ H⋤A Hole = ∙
+-- projᴴ : ∀ {H ls τ₁ τ₂ τ π₁ π₂} {Γ₁ Γ₂ : Heap ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ τ } {S₂ : Stack _ _ _} ->
+--           H ⋤ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ≈ᴾ ⟨ Γ₂ , t₂ , S₂ ⟩ -> Γ₁ ≈ᴴ Γ₂
+-- projᴴ {H} H⋤A (εᴾ-refl x) = εᴴ-refl (aux (H ⊑? A) x)
+--  where aux : ∀ {ls τ₁ τ₂ τ π₁ π₂} {Γ₁ Γ₂ : Heap ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H τ₁ τ } {S₂ : Stack H τ₂ τ} ->
+--                (x : Dec (H ⊑ A)) -> ε₁ᴾ x ⟨ Γ₁ , t₁ , S₁ ⟩ ≡ ε₁ᴾ x ⟨ Γ₂ , t₂ , S₂ ⟩ -> εᴴ Γ₁ ≡ εᴴ Γ₂
+--        aux (yes p) eq = {!!}
+--        aux (no ¬p) refl = {!refl!}

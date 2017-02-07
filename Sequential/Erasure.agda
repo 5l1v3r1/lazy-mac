@@ -565,9 +565,3 @@ updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 
 εᴾ-sim : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} -> p₁ ⟼ p₂ -> εᴾ p₁ ⟼ εᴾ p₂
 εᴾ-sim {l} = ε₁ᴾ-sim (l ⊑? A)
-
-
--- Simulation of low-step (shows that we maintain the program structure)
-εᴾ-simᴸ : ∀ {ls π₁ π₂ τ l τ₁ τ₂} {Γ₁ Γ₂ : Heap ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l _ τ} {S₂ : Stack l _ τ}
-             -> l ⊑ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> ⟨ εᴴ Γ₁ , εᵀ t₁ , εˢ S₁ ⟩ ⟼ ⟨ εᴴ Γ₂ , εᵀ t₂ , εˢ S₂ ⟩
-εᴾ-simᴸ l⊑A step = ε₁ᴾ-sim (yes l⊑A) step

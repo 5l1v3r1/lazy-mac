@@ -265,19 +265,3 @@ stepᴾ-⊆ Write∙₂ = refl-⊆
 stepᴾ-⊆ (Read₂ l∈Γ n∈M) = refl-⊆
 stepᴾ-⊆ (Readᴰ₂ L∈Γ n∈M) = refl-⊆
 stepᴾ-⊆ (DeepDupˢ L⊏l L∈Γ t∈Δ) = refl-⊆
-
---------------------------------------------------------------------------------
--- TODO I am not sure if it is good to use this semantics because
--- program and state do not expose π and the type of the current term redex,
--- therefore we would need to always explicitly write them out.
-
--- Semantics with built-in weakening
-data _⇝ʷ_ {l τ} : (p₁ p₂ : State l τ) ->  Set where
-  Hole : ∙ ⇝ʷ ∙
-  ⌞_⌟ : ∀ {π₁ π₂ τ₁ τ₂} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l τ₁ τ} {S₂ : Stack l τ₂ τ} ->
-         (step : ⟨ Δ₁ , t₁ , S₁ ⟩  ⇝  ⟨ Δ₂ , t₂ , S₂ ⟩) -> ⟨ wkenᴱ Δ₁ (step-⊆ step) , wken t₁ (step-⊆ step) , S₁ ⟩ ⇝ʷ ⟨ Δ₂ , t₂ , S₂ ⟩
-
-data _⟼ʷ_ {l ls τ} : (p₁ p₂ : Program l ls τ) ->  Set where
-  Hole : ∙ ⟼ʷ ∙
-  ⌞_⌟ : ∀ {π₁ π₂ τ₁ τ₂} {Γ₁ Γ₂ : Heap ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l τ₁ τ} {S₂ : Stack l τ₂ τ} ->
-         (step : ⟨ Γ₁ , t₁ , S₁ ⟩  ⟼  ⟨ Γ₂ , t₂ , S₂ ⟩) -> ⟨ Γ₁ , wken t₁ (stepᴾ-⊆ step) , S₁ ⟩ ⟼ʷ ⟨ Γ₂ , t₂ , S₂ ⟩

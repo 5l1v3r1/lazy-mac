@@ -9,6 +9,7 @@ open import Types 𝓛
 open import Sequential.Calculus 𝓛
 open import Sequential.Semantics 𝓛
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
+open import Sequential.PINI 𝓛 A
 
 --------------------------------------------------------------------------------
 -- Temporarily side-step bug #2245
@@ -21,7 +22,7 @@ open CS 𝓛 𝓢
 -- open import Concurrent.Semantics 𝓛 𝓢 public
 --------------------------------------------------------------------------------
 
-open Scheduler.Security.NIˢ 𝓛 A 𝓝
+open Scheduler.Security.NIˢ 𝓛 A 𝓝 renaming (State to Stateˢ)
 
 εᵗ : ∀ {l} ->  Thread l -> Thread l
 εᵗ C.⟨ t , S ⟩ = ⟨ SE.εᵀ t , SE.εˢ S ⟩
@@ -113,29 +114,38 @@ newᴾ∙ T t H⋤A C.here | yes p = ⊥-elim (H⋤A p)
 newᴾ∙ T t H⋤A C.here | no ¬p = refl
 newᴾ∙ T t H⋤A (C.there x) rewrite newᴾ∙ T t H⋤A x = refl
 
+
+
 εᴳ-sim : ∀ {l n ls} {g₁ g₂ : Global ls} -> l ⊑ A -> (l P., n) ⊢ g₁ ↪ g₂ -> (l P., n) ⊢ (εᴳ g₁) ↪ (εᴳ g₂)
 εᴳ-sim l⊑A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ)
-  = step-∅ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᵀ¬Fork ¬fork) (εᴾ-simᴸ l⊑A step) (εˢ-simᴸ l⊑A sch) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A uᴾ)
-εᴳ-sim l⊑A (CS.fork {H = H} {tᴴ = tᴴ} {Tᴴ = Tᴴ} l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) with memberᵀ l⊑A t∈T | εᴾ-simᴸ l⊑A step | εˢ-simᴸ l⊑A sch
+  = step-∅ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᵀ¬Fork ¬fork) (stepᴸ l⊑A step) (εˢ-simᴸ l⊑A sch) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A uᴾ)
+εᴳ-sim l⊑A (CS.fork {H = H} {tᴴ = tᴴ} {Tᴴ = Tᴴ} l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) with memberᵀ l⊑A t∈T | stepᴸ l⊑A step | εˢ-simᴸ l⊑A sch
 ... | t∈T' | step' | sch' with H ⊑? A
 ... | yes H⊑A rewrite lengthᵀ-ε-≡ H⊑A Tᴴ
     = fork (memberᴾ l⊑A l∈P) t∈T' step' (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (memberᴾ H⊑A H∈P₂) sch' (updateᴾ-▻ Tᴴ (⟨ tᴴ , [] ⟩) H⊑A u₂ᴾ)
 εᴳ-sim l⊑A (CS.fork {tᴴ = tᴴ} {P₂ = P₂} {Tᴴ = Tᴴ} l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) | t∈T' | step' | sch' | no H⋤A
   rewrite newᴾ∙ Tᴴ ⟨ tᴴ , [] ⟩ H⋤A u₂ᴾ = fork∙ {P₂ = εᴾ P₂} (memberᴾ l⊑A l∈P) t∈T' step' (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) sch'
 εᴳ-sim l⊑A (CS.fork∙ l∈P t∈T step uᵀ u₁ᴾ sch)
-  = fork∙ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᴾ-simᴸ l⊑A step) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (εˢ-simᴸ l⊑A sch)
+  = fork∙ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (stepᴸ l⊑A step) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (εˢ-simᴸ l⊑A sch)
 εᴳ-sim l⊑A (CS.skip l∈P t∈T stuck sch) = skip (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (stuck-ε l⊑A stuck) (εˢ-simᴸ l⊑A sch)
 εᴳ-sim l⊑A (CS.done l∈P t∈T don sch) = done (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (done-ε l⊑A don) (εˢ-simᴸ l⊑A sch)
 
-data _≈ᴾ_ {ls} (P₁ P₂ : Pools ls) : Set where
-  εᴾ-refl : εᴾ P₁ ≡ εᴾ P₂ -> P₁ ≈ᴾ P₂
+data _≈ᴳ_ {ls} (g₁ g₂ : Global ls) : Set where
+  εᴳ-refl : εᴳ g₁ ≡ εᴳ g₂ -> g₁ ≈ᴳ g₂
 
-data _≈ᴳ_ {ls} : (g₁ g₂ : Global ls) -> Set where
-  ⟨_,_,_⟩ : ∀ {Σ₁ Σ₂ Γ₁ Γ₂ P₁ P₂} -> Γ₁ ≈ᴴ Γ₂ -> P₁ ≈ᴾ P₂ -> Σ₁ ≈ˢ Σ₂ -> C.⟨ Σ₁ , Γ₁ , P₁ ⟩ ≈ᴳ C.⟨ Σ₂ , Γ₂ , P₂ ⟩
+lift-εᴳ : ∀ {ls} {Σ₁ Σ₂ : Stateˢ} {Γ₁ Γ₂ : Heap ls} {P₁ P₂ : Pools ls} -> Σ₁ ≡ Σ₂ -> Γ₁ ≡ Γ₂ -> P₁ ≡ P₂ ->
+          _≡_ {_} {Global ls} ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
+lift-εᴳ eq₁ eq₂ eq₃ rewrite eq₁ | eq₂ | eq₃ = refl
+
+updateᴾ∙ : ∀ {H ls} {P₁ P₂ : Pools ls} {T : Pool H} -> H ⋤ A -> P₂ ≔ P₁ [ H ↦ T ]ᴾ -> εᴾ P₁ ≡  εᴾ P₂
+updateᴾ∙ {H} H⋤A C.here with H ⊑? A
+updateᴾ∙ H⋤A C.here | yes p = ⊥-elim (H⋤A p)
+updateᴾ∙ H⋤A C.here | no ¬p = refl
+updateᴾ∙ H⋤A (C.there x) rewrite updateᴾ∙ H⋤A x = refl
 
 εᴳ-simᴴ : ∀ {H n ls} {g₁ g₂ : Global ls} -> H ⋤ A -> (H P., n) ⊢ g₁ ↪ g₂ -> g₁ ≈ᴳ g₂
-εᴳ-simᴴ H⋤A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) = {!!}
-εᴳ-simᴴ H⋤A (CS.fork l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) = {!!}
-εᴳ-simᴴ H⋤A (CS.fork∙ l∈P t∈T step uᵀ u₁ᴾ sch) = {!!}
-εᴳ-simᴴ H⋤A (CS.skip l∈P t∈T stuck sch) = {!!}
-εᴳ-simᴴ H⋤A (CS.done l∈P t∈T don sch) = {!!}
+εᴳ-simᴴ H⋤A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) = εᴳ-refl (lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) {!stepᴴ H⋤A step!} (updateᴾ∙ H⋤A uᴾ))
+εᴳ-simᴴ H⋤A (CS.fork l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) = εᴳ-refl (lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) {!!} {!!})
+εᴳ-simᴴ H⋤A (CS.fork∙ l∈P t∈T step uᵀ u₁ᴾ sch) = εᴳ-refl (lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) {!stepᴴ H⋤A step!} (updateᴾ∙ H⋤A u₁ᴾ))
+εᴳ-simᴴ H⋤A (CS.skip l∈P t∈T stuck sch) = εᴳ-refl (lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) refl refl)
+εᴳ-simᴴ H⋤A (CS.done l∈P t∈T don sch) = εᴳ-refl (lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) refl refl)
