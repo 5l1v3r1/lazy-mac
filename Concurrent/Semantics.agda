@@ -71,16 +71,14 @@ _⊢_↪_ : ∀ {ls} -> Label × ℕ -> Global ls -> Global ls -> Set
 -- data _⊢ᴹ_↪_ {ls} : ∀ {l} -> Message l -> Global ls -> Global ls -> Set where
 --   withMsg : ∀ {l n g₁ g₂} -> (s : l , n ⊢ g₁ ↪ g₂) -> (l , n , (getEvent s)) ⊢ᴹ g₁ ↪ g₂
 
--- open import Data.Product
+-- Transitive closure of the concurrent small step
+data _↪⋆_ {ls : List Label} : Global ls -> Global ls -> Set where
 
--- -- Transitive closure of the concurrent small step
--- data _↪⋆_ {ls : List Label} : Global ls -> Global ls -> Set where
+  -- Zero steps
+  [] : ∀ {g} -> g ↪⋆ g
 
---   -- Zero steps
---   [] : ∀ {g} -> g ↪⋆ g
-
---   -- More steps
---   _∷_ : ∀ {l n g₁ g₂ g₃} -> l , n ⊢ g₁ ↪ g₂ -> g₂ ↪⋆ g₃ -> g₁ ↪⋆ g₃
+  -- More steps
+  _∷_ : ∀ {l n g₁ g₂ g₃} -> (l , n) ⊢ g₁ ↪ g₂ -> g₂ ↪⋆ g₃ -> g₁ ↪⋆ g₃
 
 
 -- -- Concatenates two multiple steps reductions

@@ -118,22 +118,31 @@ newᴾ∙ T t H⋤A (C.there x) rewrite newᴾ∙ T t H⋤A x = refl
 
 
 
-εᴳ-sim : ∀ {l n ls} {g₁ g₂ : Global ls} -> l ⊑ A -> (l P., n) ⊢ g₁ ↪ g₂ -> (l P., n) ⊢ (εᴳ g₁) ↪ (εᴳ g₂)
-εᴳ-sim l⊑A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ)
+εᴳ-simᴸ : ∀ {l n ls} {g₁ g₂ : Global ls} -> l ⊑ A -> (l P., n) ⊢ g₁ ↪ g₂ -> (l P., n) ⊢ (εᴳ g₁) ↪ (εᴳ g₂)
+εᴳ-simᴸ l⊑A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ)
   = step-∅ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᵀ¬Fork ¬fork) (stepᴸ l⊑A step) (εˢ-simᴸ l⊑A sch) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A uᴾ)
-εᴳ-sim l⊑A (CS.fork {H = H} {tᴴ = tᴴ} {Tᴴ = Tᴴ} l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) with memberᵀ l⊑A t∈T | stepᴸ l⊑A step | εˢ-simᴸ l⊑A sch
+εᴳ-simᴸ l⊑A (CS.fork {H = H} {tᴴ = tᴴ} {Tᴴ = Tᴴ} l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) with memberᵀ l⊑A t∈T | stepᴸ l⊑A step | εˢ-simᴸ l⊑A sch
 ... | t∈T' | step' | sch' with H ⊑? A
 ... | yes H⊑A rewrite lengthᵀ-ε-≡ H⊑A Tᴴ
     = fork (memberᴾ l⊑A l∈P) t∈T' step' (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (memberᴾ H⊑A H∈P₂) sch' (updateᴾ-▻ Tᴴ (⟨ tᴴ , [] ⟩) H⊑A u₂ᴾ)
-εᴳ-sim l⊑A (CS.fork {tᴴ = tᴴ} {P₂ = P₂} {Tᴴ = Tᴴ} l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) | t∈T' | step' | sch' | no H⋤A
+εᴳ-simᴸ l⊑A (CS.fork {tᴴ = tᴴ} {P₂ = P₂} {Tᴴ = Tᴴ} l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) | t∈T' | step' | sch' | no H⋤A
   rewrite newᴾ∙ Tᴴ ⟨ tᴴ , [] ⟩ H⋤A u₂ᴾ = fork∙ {P₂ = εᴾ P₂} (memberᴾ l⊑A l∈P) t∈T' step' (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) sch'
-εᴳ-sim l⊑A (CS.fork∙ l∈P t∈T step uᵀ u₁ᴾ sch)
+εᴳ-simᴸ l⊑A (CS.fork∙ l∈P t∈T step uᵀ u₁ᴾ sch)
   = fork∙ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (stepᴸ l⊑A step) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (εˢ-simᴸ l⊑A sch)
-εᴳ-sim l⊑A (CS.skip l∈P t∈T stuck sch) = skip (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (stuck-ε l⊑A stuck) (εˢ-simᴸ l⊑A sch)
-εᴳ-sim l⊑A (CS.done l∈P t∈T don sch) = done (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (done-ε l⊑A don) (εˢ-simᴸ l⊑A sch)
+εᴳ-simᴸ l⊑A (CS.skip l∈P t∈T stuck sch) = skip (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (stuck-ε l⊑A stuck) (εˢ-simᴸ l⊑A sch)
+εᴳ-simᴸ l⊑A (CS.done l∈P t∈T don sch) = done (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (done-ε l⊑A don) (εˢ-simᴸ l⊑A sch)
 
 data _≈ᴳ_ {ls} (g₁ g₂ : Global ls) : Set where
   εᴳ-refl : εᴳ g₁ ≡ εᴳ g₂ -> g₁ ≈ᴳ g₂
+
+refl-≈ᴳ : ∀ {ls} {g : Global ls} -> g ≈ᴳ g
+refl-≈ᴳ = εᴳ-refl refl
+
+sym-≈ᴳ : ∀ {ls} {g₁ g₂ : Global ls} -> g₁ ≈ᴳ g₂ -> g₂ ≈ᴳ g₁
+sym-≈ᴳ (εᴳ-refl x) = εᴳ-refl (sym x)
+
+trans-≈ᴳ : ∀ {ls} {g₁ g₂ g₃ : Global ls} -> g₁ ≈ᴳ g₂ -> g₂ ≈ᴳ g₃ -> g₁ ≈ᴳ g₃
+trans-≈ᴳ (εᴳ-refl eq₁) (εᴳ-refl eq₂) = εᴳ-refl (trans eq₁ eq₂)
 
 lift-εᴳ : ∀ {ls} {Σ₁ Σ₂ : Stateˢ} {Γ₁ Γ₂ : Heaps ls} {P₁ P₂ : Pools ls} -> Σ₁ ≡ Σ₂ -> Γ₁ ≡ Γ₂ -> P₁ ≡ P₂ ->
           _≡_ {_} {Global ls} ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
@@ -152,3 +161,10 @@ updateᴾ∙ H⋤A (C.there x) rewrite updateᴾ∙ H⋤A x = refl
 εᴳ-simᴴ H⋤A (CS.fork∙ l∈P t∈T step uᵀ u₁ᴾ sch) = εᴳ-refl (lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) (stepᴴ-Γ H⋤A step) (updateᴾ∙ H⋤A u₁ᴾ))
 εᴳ-simᴴ H⋤A (CS.skip l∈P t∈T stuck sch) = εᴳ-refl (lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) refl refl)
 εᴳ-simᴴ H⋤A (CS.done l∈P t∈T don sch) = εᴳ-refl (lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) refl refl)
+
+≈ᴳ-≈ˢ : ∀ {ls} {g₁ g₂ : Global ls} -> g₁ ≈ᴳ g₂ -> Σ g₁ ≈ˢ Σ g₂
+≈ᴳ-≈ˢ {g₁ = C.⟨ Σ , Γ , P ⟩} {C.⟨ Σ₁ , Γ₁ , P₁ ⟩} (εᴳ-refl x) = ⌜ aux x ⌝
+  where
+        aux : ∀ {ls} {Σ₁ Σ₂ : Stateˢ} {Γ₁ Γ₂ : Heaps ls} {P₁ P₂ : Pools ls} ->
+                 _≡_ {_} {Global ls} ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩ -> Σ₁ ≡ Σ₂
+        aux refl = refl
