@@ -49,3 +49,7 @@ Concurrent/.#Erasure.agda
 Concurrent/.#Semantics.agda
 Concurrent/PSNI.agdai
 Concurrent/PSNI.agda~
+Sequential/LowEq.agdai
+Sequential/LowEq.agda~
+Concurrent/LowEq.agdai
+Concurrent/LowEq.agda~

@@ -60,12 +60,12 @@ data _≈ᴱ_ {l} : ∀ {π} -> Env l π -> Env l π -> Set where
   ∙ : ∀ {π} -> ∙ {{π = π}} ≈ᴱ ∙
 
 _≅ᴱ_ : ∀ {π l} -> (Δ₁ Δ₂ : Env l π) -> Set
-_≅ᴱ_ = _≡_
+Δ₁ ≅ᴱ Δ₂ = εᴱ Δ₁ ≡ εᴱ Δ₂
 
-⌜_⌝ᴱ : ∀ {l π} {Δ₁ Δ₂ : Env l π} -> SE.εᴱ Δ₁ ≅ᴱ SE.εᴱ Δ₂ -> Δ₁ ≈ᴱ Δ₂
+⌜_⌝ᴱ : ∀ {l π} {Δ₁ Δ₂ : Env l π} -> Δ₁ ≅ᴱ Δ₂ -> Δ₁ ≈ᴱ Δ₂
 ⌜_⌝ᴱ {Δ₁ = SC.[]} {SC.[]} refl = []
 ⌜_⌝ᴱ {Δ₁ = SC.[]} {SC.∙} ()
-⌜_⌝ᴱ {Δ₁ = t SC.∷ Δ₁} {t₁ SC.∷ Δ₂} eq = ⌜ (proj₁ (split eq)) ⌝ᴹᵀ ∷ ⌜ proj₂ (split eq) ⌝ᴱ
+⌜_⌝ᴱ {Δ₁ = t SC.∷ Δ₁} {t₁ SC.∷ Δ₂} eq =  ⌜ (proj₁ (split eq)) ⌝ᴹᵀ ∷ ⌜ proj₂ (split eq) ⌝ᴱ
   where split : ∀ {l π τ} {mt₁ mt₂ : Maybe (Term π τ)} {Δ₁ Δ₂ : Env l π} -> (mt₁ ∷ Δ₁) ≡ᴱ (mt₂ ∷ Δ₂) -> mt₁ ≡ mt₂ × Δ₁ ≡ Δ₂
         split refl = refl P., refl
 ⌜_⌝ᴱ {Δ₁ = t SC.∷ Δ₁} {SC.∙} ()
@@ -76,7 +76,7 @@ _≅ᴱ_ = _≡_
 ⌞_⌟ᴱ : ∀ {l π} {Δ₁ Δ₂ : Env l π} -> Δ₁ ≈ᴱ Δ₂ -> Δ₁ ≅ᴱ Δ₂
 ⌞ [] ⌟ᴱ = refl
 ⌞ nothing ∷ eq ⌟ᴱ rewrite  ⌞ eq ⌟ᴱ = refl
-⌞ just x ∷ eq ⌟ᴱ rewrite  ⌞ x ⌟ᵀ | ⌞ eq ⌟ᴱ = {!!} -- refl
+⌞ just x ∷ eq ⌟ᴱ rewrite ⌞ x ⌟ᵀ | ⌞ eq ⌟ᴱ  = refl
 ⌞ ∙ ⌟ᴱ = refl
 
 --------------------------------------------------------------------------------
@@ -120,7 +120,9 @@ aux₂ (no ¬p) eq₁ = ∙
 
 ⌞_⌟ᴴ : ∀ {ls} {Γ₁ Γ₂ : Heaps ls} -> Γ₁ ≈ᴴ Γ₂ -> Γ₁ ≅ᴴ Γ₂
 ⌞ nil ⌟ᴴ = refl
-⌞ cons ._ ⟨ M , x ⟩ eq₂ ⌟ᴴ rewrite ⌞ x ⌟ᴱ | ⌞ eq₂ ⌟ᴴ = refl
+⌞ cons {l = l}  (yes l⊑A) ⟨ M , x ⟩ eq₂ ⌟ᴴ with l ⊑? A
+... | yes p rewrite ⌞ x ⌟ᴱ | ⌞ eq₂ ⌟ᴴ = refl
+... | no ¬p = ⊥-elim (¬p l⊑A)
 ⌞ cons ._ ∙ᴸ eq₂ ⌟ᴴ rewrite ⌞ eq₂ ⌟ᴴ = refl
 ⌞ cons {l = l} (no _) ∙ eq₂ ⌟ᴴ rewrite ⌞ eq₂ ⌟ᴴ with l ⊑? A
 ⌞ cons (no l⋤A) ∙ eq₂ ⌟ᴴ | yes p = ⊥-elim (l⋤A p)
