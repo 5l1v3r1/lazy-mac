@@ -180,47 +180,149 @@ unlift-ε ∙ = refl
 
 --------------------------------------------------------------------------------
 
-open import Data.Maybe
-
 data Eraseᶜ {l} : ∀ {τ₁ τ₂} -> Cont l τ₁ τ₂ -> Cont l τ₁ τ₂ -> Set where
  Var : ∀ {τ₁ τ₂} {{π : Context}} -> (τ∈π : τ₁ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ {τ₂ = τ₂} (Var τ∈π) (Var τ∈π)
  # :  ∀ {τ} {{π : Context}} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π)  -> Eraseᶜ (# τ∈π) (# τ∈π)
  Then_Else_ : ∀ {τ} {π : Context} {t₁ t₁' t₂ t₂' : Term π τ} -> Erase t₁ t₁' -> Erase t₂ t₂' -> Eraseᶜ (Then t₁ Else t₂) (Then t₁' Else t₂')
-
  Bind :  ∀ {τ₁ τ₂} {π : Context} {t t' : Term π (τ₁ => Mac l τ₂)} -> Erase t t' -> Eraseᶜ (Bind t) (Bind t')
  unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Eraseᶜ {τ₁ = Labeled l' τ} (unlabel p) (unlabel p)
  unId : ∀ {τ} -> Eraseᶜ {τ₂ = τ} unId unId
  write : ∀ {τ H} {{π : Context}} (l⊑H : l ⊑ H) (H⊑A : H ⊑ A) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ (write l⊑H τ∈π) (write l⊑H τ∈π)
  write' : ∀ {τ H} {{π : Context}} (l⊑H : l ⊑ H) (H⋤A : H ⋤ A) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ (write l⊑H τ∈π) (write∙ l⊑H τ∈π)
- write∙ : ∀ {τ H} {{π : Context}} (l⊑H : l ⊑ H) (H⊑A : H ⊑ A) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ (write∙ l⊑H τ∈π) (write∙ l⊑H τ∈π)
+ write∙ : ∀ {τ H} {{π : Context}} (l⊑H : l ⊑ H) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ (write∙ l⊑H τ∈π) (write∙ l⊑H τ∈π)
  read : ∀ {τ L} (L⊑H : L ⊑ l) -> Eraseᶜ (read {τ = τ} L⊑H) (read L⊑H)
+
+lift-εᶜ : ∀ {l τ₁ τ₂} -> (C : Cont l τ₁ τ₂) -> Eraseᶜ C (εᶜ C)
+lift-εᶜ (S.Var τ∈π) = Var τ∈π
+lift-εᶜ (S.# τ∈π) = # τ∈π
+lift-εᶜ (S.Then x Else x₁) = Then (lift-ε x) Else (lift-ε x₁)
+lift-εᶜ (S.Bind x) = Bind (lift-ε x)
+lift-εᶜ (S.unlabel p) = unlabel p
+lift-εᶜ S.unId = unId
+lift-εᶜ (S.write {H = H} x τ∈π) with H ⊑? A
+lift-εᶜ (S.write x τ∈π) | yes p = write x p τ∈π
+lift-εᶜ (S.write x τ∈π) | no ¬p = write' x ¬p τ∈π
+lift-εᶜ (S.write∙ x τ∈π) = write∙ x τ∈π
+lift-εᶜ (S.read x) = read x
+
+unlift-εᶜ : ∀ {l τ₁ τ₂} {C C' : Cont l τ₁ τ₂} -> Eraseᶜ C C' -> C' ≡ εᶜ C
+unlift-εᶜ (Var τ∈π) = refl
+unlift-εᶜ (# τ∈π) = refl
+unlift-εᶜ (Then x Else x₁)
+  rewrite unlift-ε x | unlift-ε x₁ = refl
+unlift-εᶜ (Bind x) rewrite unlift-ε x = refl
+unlift-εᶜ (unlabel p) = refl
+unlift-εᶜ unId = refl
+unlift-εᶜ (write {H = H} l⊑H H⊑A τ∈π) with H ⊑? A
+unlift-εᶜ (write l⊑H H⊑A τ∈π) | yes p = refl
+unlift-εᶜ (write l⊑H H⊑A τ∈π) | no ¬p = ⊥-elim (¬p H⊑A)
+unlift-εᶜ (write' {H = H} l⊑H H⋤A τ∈π) with H ⊑? A
+unlift-εᶜ (write' l⊑H H⋤A τ∈π) | yes p = ⊥-elim (H⋤A p)
+unlift-εᶜ (write' l⊑H H⋤A τ∈π) | no ¬p = refl
+unlift-εᶜ (write∙ l⊑H τ∈π) = refl
+unlift-εᶜ (read L⊑H) = refl
+
+--------------------------------------------------------------------------------
 
 data Eraseˢ {l} : ∀ {τ₁ τ₂} -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂ -> Set where
   [] : ∀ {τ} -> Eraseˢ ([] {τ = τ}) []
   _∷_ : ∀ {τ₁ τ₂ τ₃} {C₁ C₂ : Cont l τ₁ τ₂} {S₁ S₂ : Stack l τ₂ τ₃} -> Eraseᶜ C₁ C₂ -> Eraseˢ S₁ S₂ -> Eraseˢ (C₁ ∷ S₁) (C₂ ∷ S₂)
   ∙ : ∀ {τ} -> Eraseˢ (∙ {τ = τ}) ∙
 
+lift-εˢ : ∀ {l τ₁ τ₂} -> (S : Stack l τ₁ τ₂) -> Eraseˢ S (εˢ S)
+lift-εˢ S.[] = []
+lift-εˢ (x S.∷ S) = (lift-εᶜ x) ∷ (lift-εˢ S)
+lift-εˢ S.∙ = ∙
+
+unlift-εˢ : ∀ {l τ₁ τ₂} {S S' : Stack l τ₁ τ₂} -> Eraseˢ S S' -> S' ≡ εˢ S
+unlift-εˢ [] = refl
+unlift-εˢ (x ∷ x₁) rewrite unlift-εᶜ x | unlift-εˢ x₁ = refl
+unlift-εˢ ∙ = refl
+
+--------------------------------------------------------------------------------
+
+open import Data.Maybe as M
+
 data Eraseᴹ {π τ} : (mt₁ mt₂ : Maybe (Term π τ)) -> Set where
   nothing : Eraseᴹ nothing nothing
   just : ∀ {t₁ t₂} -> Erase t₁ t₂ -> Eraseᴹ (just t₁) (just t₂)
+
+lift-εᴹ : ∀ {π τ} (mt : Maybe (Term π τ)) -> Eraseᴹ mt (M.map εᵀ mt)
+lift-εᴹ (just x) = just (lift-ε x)
+lift-εᴹ nothing = nothing
+
+unlift-εᴹ : ∀ {π τ} {mt mt' : Maybe (Term π τ)} -> Eraseᴹ mt mt' -> mt' ≡ M.map εᵀ mt
+unlift-εᴹ nothing = refl
+unlift-εᴹ (just x) rewrite unlift-ε x = refl
+
+--------------------------------------------------------------------------------
 
 data Eraseᴱ {l} : ∀ {π} -> (Δ₁ Δ₂ : Env l π) -> Set where
   [] : Eraseᴱ [] []
   _∷_ : ∀ {π τ} {mt mt' : Maybe (Term π τ)} {Δ Δ' : Env l π} -> Eraseᴹ mt mt' -> Eraseᴱ Δ Δ' -> Eraseᴱ (mt ∷ Δ) (mt' ∷ Δ')
   ∙ : ∀ {π} -> Eraseᴱ {π = π} ∙ ∙
 
+lift-εᴱ : ∀ {l π} -> (Δ : Env l π) -> Eraseᴱ Δ (εᴱ Δ)
+lift-εᴱ S.[] = []
+lift-εᴱ (t S.∷ Δ) = (lift-εᴹ t) ∷ (lift-εᴱ Δ)
+lift-εᴱ S.∙ = ∙
+
+unlift-εᴱ : ∀ {l π} {Δ Δ' : Env l π} -> Eraseᴱ Δ Δ' -> Δ' ≡ εᴱ Δ
+unlift-εᴱ [] = refl
+unlift-εᴱ (x ∷ x₁) rewrite unlift-εᴹ x | unlift-εᴱ x₁ = refl
+unlift-εᴱ ∙ = refl
+
+--------------------------------------------------------------------------------
+
 data Eraseˣ {l} : (x : Dec (l ⊑ A)) (H₁ H₂ : Heap l) -> Set where
   ⟨_,_⟩ : ∀ {π} {M : Memory l} {Δ Δ' : Env l π} (l⊑A : l ⊑ A) -> Eraseᴱ Δ Δ' -> Eraseˣ (yes l⊑A) ⟨ M , Δ ⟩ ⟨ M , Δ' ⟩
-  ∙ᴸ : ∀ {H : Heap l} {l⊑A : l ⊑ A} -> Eraseˣ (yes l⊑A) H ∙
+  ∙ᴸ : {l⊑A : l ⊑ A} -> Eraseˣ (yes l⊑A) ∙ ∙
   ∙ : ∀ {H : Heap l} {l⋤A : l ⋤ A} -> Eraseˣ (no l⋤A) H ∙
+
+lift-εˣ : ∀ {l} (x : Dec (l ⊑ A)) (H : Heap l) -> Eraseˣ x H (εᴹ x H)
+lift-εˣ (yes p) S.⟨ x , x₁ ⟩ = ⟨ p , (lift-εᴱ x₁) ⟩
+lift-εˣ (yes p) S.∙ = ∙ᴸ
+lift-εˣ (no ¬p) H = ∙
+
+unlift-εˣ : ∀ {l} {H H' : Heap l} {x : Dec (l ⊑ A)} -> Eraseˣ x H H' -> H' ≡ εᴹ x H
+unlift-εˣ ⟨ l⊑A , x ⟩ rewrite unlift-εᴱ x = refl
+unlift-εˣ {l} ∙ᴸ with l ⊑? A
+unlift-εˣ ∙ᴸ | yes p = refl
+unlift-εˣ (∙ᴸ {l⊑A = l⊑A}) | no ¬p = ⊥-elim (¬p l⊑A)
+unlift-εˣ ∙ = refl
+
+--------------------------------------------------------------------------------
 
 data Eraseᴴ : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
   [] : Eraseᴴ [] []
-  _∷_ : ∀ {l ls} {u : Unique l ls} {H₁ H₂ : Heap l} {Γ₁ Γ₂ : Heaps ls} {x : Dec (l ⊑ A)}  ->
-          Eraseˣ x H₁ H₂ -> Eraseᴴ Γ₁ Γ₂ -> Eraseᴴ (H₁ ∷ Γ₁) (H₂ ∷ Γ₂)
+  _∷_ : ∀ {l ls} {u : Unique l ls} {H₁ H₂ : Heap l} {Γ₁ Γ₂ : Heaps ls}  ->
+          Eraseˣ (l ⊑? A) H₁ H₂ -> Eraseᴴ Γ₁ Γ₂ -> Eraseᴴ (H₁ ∷ Γ₁) (H₂ ∷ Γ₂)
 
-data Eraseᴾ {l ls τ} : Program l ls τ -> Program l ls τ -> Set where
+lift-εᴴ : ∀ {ls} (H : Heaps ls) -> Eraseᴴ H (εᴴ H)
+lift-εᴴ S.[] = []
+lift-εᴴ (x S.∷ H) = (lift-εˣ (_ ⊑? A) x) ∷ (lift-εᴴ H)
+
+unlift-εᴴ : ∀ {ls} {H H' : Heaps ls} -> Eraseᴴ H H' -> H' ≡ εᴴ H
+unlift-εᴴ [] = refl
+unlift-εᴴ {l ∷ ls} (x₁ ∷ x₂) rewrite unlift-εˣ x₁ | unlift-εᴴ x₂ = refl
+
+--------------------------------------------------------------------------------
+
+data Eraseᴾ {l ls τ} : Dec (l ⊑ A) -> Program l ls τ -> Program l ls τ -> Set where
   ⟨_,_,_⟩ : ∀ {τ' π Γ Γ'} {S S' : Stack l τ' τ} {t t' : Term π τ'} {l⊑A : l ⊑ A} ->
-              Eraseᴴ Γ Γ' -> Erase t t' -> Eraseˢ S S' -> Eraseᴾ ⟨ Γ , t , S ⟩ ⟨ Γ' , t' , S' ⟩
-  ∙ : ∀ {p} {l⋤A : l ⋤ A} -> Eraseᴾ p ∙
-  ∙ᴸ : Eraseᴾ ∙ ∙
+              Eraseᴴ Γ Γ' -> Erase t t' -> Eraseˢ S S' -> Eraseᴾ (yes l⊑A) ⟨ Γ , t , S ⟩ ⟨ Γ' , t' , S' ⟩
+  ∙ : ∀ {p} {l⋤A : l ⋤ A} -> Eraseᴾ (no l⋤A) p ∙
+  ∙ᴸ : ∀ {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) ∙ ∙
+
+lift-εᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) (p : Program l ls τ) -> Eraseᴾ x p (ε₁ᴾ x p)
+lift-εᴾ (yes p) S.⟨ Γ , t , S ⟩ = ⟨ (lift-εᴴ Γ) , (lift-ε t) , (lift-εˢ S) ⟩
+lift-εᴾ (yes p) S.∙ = ∙ᴸ
+lift-εᴾ (no ¬p) p = ∙
+
+unlift-εᴾ : ∀ {l ls τ} {p p' : Program l ls τ} {x : Dec (l ⊑ A)} -> Eraseᴾ x p p' -> p' ≡ ε₁ᴾ x p
+unlift-εᴾ ⟨ x , x₁ , x₂ ⟩
+  rewrite unlift-εᴴ x | unlift-ε x₁ | unlift-εˢ x₂ = refl
+unlift-εᴾ ∙ = refl
+unlift-εᴾ ∙ᴸ = refl
+
+--------------------------------------------------------------------------------
