@@ -15,12 +15,13 @@ data Event (l : Label) : Set where
 
 open Event public
 
-
 data Message : Label -> Set where
-   _,_,_ : (l : Label) (n : ℕ) (e : Event l) -> Message l
+   ⟪_,_,_⟫ : (l : Label) (n : ℕ) (e : Event l) -> Message l
 
 record Scheduler : Set₁ where
   field
     State : Set
     _⟶_↑_ : ∀ {l} -> State -> State -> Message l -> Set
-    determinismˢ : ∀ {l n e} {s₁ s₂ s₃ : State} -> s₁ ⟶ s₂ ↑ (l , n , e) -> s₁ ⟶ s₃ ↑ (l , n , e) -> s₂ ≡ s₃
+
+    -- TODO maybe this can be relaxed
+    determinismˢ : ∀ {l n e} {s₁ s₂ s₃ : State} -> s₁ ⟶ s₂ ↑ ⟪ l , n , e ⟫ -> s₁ ⟶ s₃ ↑ ⟪ l , n , e ⟫ -> s₂ ≡ s₃

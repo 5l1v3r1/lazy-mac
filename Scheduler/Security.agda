@@ -7,6 +7,7 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
   open Lattice.Lattice 𝓛
 
   open import Data.Nat
+  open import Data.Product
   open import Relation.Nullary
   open import Relation.Binary.PropositionalEquality
 
@@ -19,7 +20,7 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
 
   -- Erasure of labeled messages
   εᴹ : ∀ {l} -> Message l -> Message l
-  εᴹ (l , n , e) = l , n , εᴱ e
+  εᴹ ⟪ l , n , e ⟫ = ⟪ l , n , εᴱ e ⟫
 
 
   record NIˢ (𝓢 : S.Scheduler 𝓛) : Set₁ where
@@ -40,5 +41,10 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
       offset₂ : {Σ₁ Σ₂ : State} -> Σ₁ ≈ˢ Σ₂ -> ℕ
       align : ∀ {Σ₁ Σ₂} -> (eq : Σ₁ ≈ˢ Σ₂) -> Σ₁ ≈ˢ-⟨ offset₁ eq , offset₂ eq ⟩ Σ₂
       forget : ∀ {Σ₁ Σ₂ n m} -> Σ₁ ≈ˢ-⟨ n , m ⟩ Σ₂ -> Σ₁ ≈ˢ Σ₂
+
+      -- Starvation-free
+      squareˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , 0 ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
+            ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e ⟫ )
+
 
   open NIˢ

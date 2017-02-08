@@ -7,7 +7,7 @@ open import Types 𝓛
 open S.Scheduler 𝓛 𝓢
 
 open S.Message
-open S.Event
+open S.Event 𝓛
 
 open import Sequential.Calculus 𝓛
 open import Sequential.Semantics 𝓛
@@ -21,7 +21,7 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (t∈T : n ↦ ⟨ t₁ , S₁ ⟩ ∈ᵀ T₁)
            (¬fork : ¬ (IsFork t₁))
            (step : ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩)
-           (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Step) )
+           (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Step ⟫ )
            (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ t₂ , S₂ ⟩ ]ᵀ )
            (uᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ ) ->
            Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
@@ -34,7 +34,7 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ t₂ , S₂ ⟩ ]ᵀ )
            (u₁ᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ )
            (H∈P₂ : H ↦ Tᴴ ∈ᴾ P₂)
-           (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Fork H (lengthᵀ Tᴴ) l⊑H) )
+           (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Fork H (lengthᵀ Tᴴ) l⊑H ⟫ )
            (u₂ᴾ : P₃ ≔ P₂ [ H ↦ Tᴴ ▻ ⟨ tᴴ , [] ⟩ ]ᴾ ) ->  -- TODO must add deepDup!
            Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₃ ⟩
 
@@ -45,27 +45,43 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (step : ⟨ Γ₁ , fork∙ l⊑H tᴴ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩)
            (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ t₂ , S₂ ⟩ ]ᵀ )
            (uᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ )
-           (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Step)) ->
+           (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Step ⟫) ->
            Stepᶜ l n ⟨ Σ₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Γ₂ , P₂ ⟩
 
   skip : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heaps ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
             (t∈T : n ↦ ⟨ t , S ⟩ ∈ᵀ T)
             (stuck : Stuckᴾ ⟨ Γ , t , S ⟩)
-            (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Skip) ) ->
+            (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Skip ⟫ ) ->
             Stepᶜ l n ⟨ Σ₁ , Γ , P ⟩ ⟨ Σ₂ , Γ , P ⟩
 
   done : ∀ {Σ₁ Σ₂ τ π S} {t : Term π τ} {Γ : Heaps ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
             (t∈T : n ↦ ⟨ t , S ⟩ ∈ᵀ T)
             (don : Doneᴾ ⟨ Γ , t , S ⟩)
-            (sch : Σ₁ ⟶ Σ₂ ↑ (l , n , Done) ) ->
+            (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Done ⟫ ) ->
             Stepᶜ l n ⟨ Σ₁ , Γ , P ⟩ ⟨ Σ₂ , Γ , P ⟩
 
-open import Data.Product
+open import Data.Product hiding (Σ ; _,_)
 
 _⊢_↪_ : ∀ {ls} -> Label × ℕ -> Global ls -> Global ls -> Set
-(l , n) ⊢ g₁ ↪ g₂ = Stepᶜ l n g₁ g₂
+x ⊢ g₁ ↪ g₂ = Stepᶜ (proj₁ x) (proj₂ x) g₁ g₂
+
+open import Scheduler 𝓛 using (Event)
+
+getEvent : ∀ {ls x} {g₁ g₂ : Global ls} -> x ⊢ g₁ ↪ g₂ -> Event (proj₁ x)
+getEvent (step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) = Step
+getEvent (fork {H = H} {Tᴴ = Tᴴ} {l⊑H = l⊑H} l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) = Fork H (lengthᵀ Tᴴ) l⊑H
+getEvent (fork∙ l∈P t∈T step uᵀ uᴾ sch) = Step
+getEvent (skip l∈P t∈T stuck sch) = Skip
+getEvent (done l∈P t∈T don sch) = Done
+
+getSchStep : ∀ {ls x} {g₁ g₂ : Global ls} -> (s : x ⊢ g₁ ↪ g₂) -> Σ g₁ ⟶ Σ g₂ ↑ ⟪ proj₁ x , proj₂ x , getEvent s ⟫
+getSchStep (step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) = sch
+getSchStep (fork l∈P t∈T step uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) = sch
+getSchStep (fork∙ l∈P t∈T step uᵀ uᴾ sch) = sch
+getSchStep (skip l∈P t∈T stuck sch) = sch
+getSchStep (done l∈P t∈T don sch) = sch
 
 -- -- An auxiliary data type that externalizes a global-step event.
 -- data _⊢ᴹ_↪_ {ls} : ∀ {l} -> Message l -> Global ls -> Global ls -> Set where
@@ -78,7 +94,7 @@ data _↪⋆_ {ls : List Label} : Global ls -> Global ls -> Set where
   [] : ∀ {g} -> g ↪⋆ g
 
   -- More steps
-  _∷_ : ∀ {l n g₁ g₂ g₃} -> (l , n) ⊢ g₁ ↪ g₂ -> g₂ ↪⋆ g₃ -> g₁ ↪⋆ g₃
+  _∷_ : ∀ {g₁ g₂ g₃ x} -> x ⊢ g₁ ↪ g₂ -> g₂ ↪⋆ g₃ -> g₁ ↪⋆ g₃
 
 
 -- -- Concatenates two multiple steps reductions
