@@ -53,7 +53,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 ++[] [] = refl
 ++[] (x ∷ s) rewrite ++[] s = refl
 
-ε-sch-dist : ∀ {l s₁ s₂} {m : Message l} -> (x : Dec (l ⊑ A)) -> s₁ ⟶ s₂ ↑ m -> (εˢ s₁) ⟶ (εˢ s₂) ↑ (εᴹ x m)
+ε-sch-dist : ∀ {l s₁ s₂} {m : Message l} -> (x : Dec (l ⊑ A)) -> s₁ ⟶ s₂ ↑ m -> (εˢ s₁) ⟶ (εˢ s₂) ↑ (εᴹ m)
 ε-sch-dist = {!!}
 -- ε-sch-dist {s₁ = (l , n) ∷ s} (yes p) step with l ⊑? A
 -- ε-sch-dist {s₁ = (l , n) ∷ s} (yes p₁) step | yes p rewrite sym (εˢ-append-yes {{n}} s p) = step

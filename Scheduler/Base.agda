@@ -12,7 +12,6 @@ data Event (l : Label) : Set where
   Step : Event l
   Done : Event l
   Fork : (h : Label) (n : ℕ) -> l ⊑ h -> Event l
-  ∙ : Event l
 
 open Event public
 

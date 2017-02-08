@@ -30,7 +30,6 @@ determinism step step = refl
 determinism (fork p) (fork .p) = refl
 determinism done done = refl
 determinism skip skip = refl
-determinism hole hole = refl
 
 RR : Scheduler
 RR = record { State = State ; _⟶_↑_ = _⟶_↑_ ; determinismˢ = determinism }

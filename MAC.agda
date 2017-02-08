@@ -9,3 +9,4 @@ mac-is-pini : ∀ {l τ} {p₁ p₁' p₂ p₂' : Program l lh τ} -> p₁ ≈�
 mac-is-pini eq step = pini eq step
 
 open import Concurrent 2-point {!!}
+open import Concurrent.Erasure L {!!}

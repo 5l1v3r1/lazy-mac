@@ -18,9 +18,8 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
   εᴱ e = e
 
   -- Erasure of labeled messages
-  εᴹ : ∀ {l} -> Dec (l ⊑ A) -> Message l -> Message l
-  εᴹ (yes p) (l , n , e) = l , n , εᴱ e
-  εᴹ (no ¬p) (l , n , e) = l , n , ∙
+  εᴹ : ∀ {l} -> Message l -> Message l
+  εᴹ (l , n , e) = l , n , εᴱ e
 
 
   record NIˢ (𝓢 : S.Scheduler 𝓛) : Set₁ where
@@ -32,7 +31,7 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
       ⌞_⌟ : ∀ {Σ₁ Σ₂} -> Σ₁ ≈ˢ Σ₂ -> εˢ Σ₁ ≡ εˢ Σ₂
       ⌜_⌝ : ∀ {Σ₁ Σ₂} -> εˢ Σ₁ ≡ εˢ Σ₂ -> Σ₁ ≈ˢ Σ₂
 
-      εˢ-simᴸ : ∀ {Σ₁ Σ₂ : State} {l} {m : Message l} -> (l⊑A : l ⊑ A) -> Σ₁ ⟶ Σ₂ ↑ m -> (εˢ Σ₁) ⟶ (εˢ Σ₂) ↑ (εᴹ (yes l⊑A) m)
+      εˢ-simᴸ : ∀ {Σ₁ Σ₂ : State} {l} {m : Message l} -> (l⊑A : l ⊑ A) -> Σ₁ ⟶ Σ₂ ↑ m -> (εˢ Σ₁) ⟶ (εˢ Σ₂) ↑ (εᴹ m)
       εˢ-simᴴ : ∀ {Σ₁ Σ₂ l} {m : Message l} -> l ⋤ A -> Σ₁ ⟶ Σ₂ ↑ m -> Σ₁ ≈ˢ Σ₂
 
       -- Annotated low-equivalence
