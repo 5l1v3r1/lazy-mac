@@ -55,3 +55,9 @@ Concurrent/LowEq.agdai
 Concurrent/LowEq.agda~
 Sequential/Graph.agdai
 Sequential/Graph.agda~
+Scheduler/RoundRobin.agdai
+Scheduler/RoundRobin.agda~
+Scheduler/RoundRobin/Base.agdai
+Scheduler/RoundRobin/Base.agda~
+Scheduler/RoundRobin/Security.agdai
+Scheduler/RoundRobin/Security.agda~
