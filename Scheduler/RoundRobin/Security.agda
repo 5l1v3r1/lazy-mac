@@ -25,13 +25,13 @@ open import Data.Product
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 
-εˢ-append-yes : ∀ {l} {{n}} -> (xs : State) -> l ⊑ A -> εˢ xs ++ [ l , n ] ≡ εˢ (xs ++ [ l , n ])
-εˢ-append-yes {l} [] ¬p with l ⊑? A
-εˢ-append-yes [] p' | yes p = refl
-εˢ-append-yes [] p | no ¬p = ⊥-elim (¬p p)
-εˢ-append-yes {{n}} ((l' , n') ∷ xs) p with l' ⊑? A
-... | yes p' rewrite εˢ-append-yes {{n}} xs p = refl
-... | no ¬p rewrite εˢ-append-yes {{n}} xs p = refl
+εˢ-append-yes : (xs : State) (l : Label) (n : ℕ) -> l ⊑ A -> εˢ (xs ++ [ l , n ]) ≡ εˢ xs ++ [ l , n ]
+εˢ-append-yes [] l n ¬p with l ⊑? A
+εˢ-append-yes [] l n p' | yes p = refl
+εˢ-append-yes [] l n p | no ¬p = ⊥-elim (¬p p)
+εˢ-append-yes ((l' , n') ∷ xs) l n p with l' ⊑? A
+... | yes p' rewrite εˢ-append-yes xs _ n p = refl
+... | no ¬p rewrite εˢ-append-yes xs _ n p = refl
 
 
 εˢ-append-no : ∀ {l} {{n}} -> (xs : State) -> ¬ (l ⊑ A) -> εˢ xs ≡ εˢ (xs ++ [ l , n ])
@@ -42,140 +42,154 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 ... | yes p rewrite εˢ-append-no {{n}} xs ¬p  = refl
 ... | no ¬p' rewrite εˢ-append-no {{n}} xs ¬p  = refl
 
--- TODO use this more general concept instead of append-yes or append-no
 ε-++ : (s₁ s₂ : State) -> εˢ (s₁ ++ s₂) ≡ (εˢ s₁) ++ (εˢ s₂)
 ε-++ [] s₂ = refl
 ε-++ ((l , n) ∷ s₁) s₂ with l ⊑? A
 ε-++ ((l , n) ∷ s₁) s₂ | yes p rewrite ε-++ s₁ s₂ = refl
 ε-++ ((l , n) ∷ s₁) s₂ | no ¬p = ε-++ s₁ s₂
 
-++[] :  (s : State) -> s ++ [] ≡ s
-++[] [] = refl
-++[] (x ∷ s) rewrite ++[] s = refl
+εˢ-simᴸ : ∀ {L} {Σ₁ Σ₂ : State} {m : Message L} -> (L⊑A : L ⊑ A) -> Σ₁ ⟶ Σ₂ ↑ m -> (εˢ Σ₁) ⟶ (εˢ Σ₂) ↑ (εᴹ m)
+εˢ-simᴸ L⊑A (R.step l n) with l ⊑? A
+εˢ-simᴸ L⊑A (R.step {Σ} l n) | yes p rewrite εˢ-append-yes Σ l n L⊑A = step l n
+εˢ-simᴸ L⊑A (R.step l n) | no ¬p = ⊥-elim (¬p L⊑A)
+εˢ-simᴸ L⊑A (R.fork L n p) with L ⊑? A
+εˢ-simᴸ L⊑A (R.fork {Σ} {H} {m} L n p₁) | yes p
+  rewrite ε-++ Σ ((H , m) ∷ ((L , n) ∷ [])) with H ⊑? A
+εˢ-simᴸ L⊑A (R.fork L n p₂) | yes p₁ | yes p with L ⊑? A
+εˢ-simᴸ L⊑A (R.fork L n p₃) | yes p₂ | yes p₁ | yes p = R.fork L n p₃
+εˢ-simᴸ L⊑A (R.fork L n p₂) | yes p₁ | yes p | no ¬p = ⊥-elim (¬p L⊑A)
+εˢ-simᴸ L⊑A (R.fork L n p₁) | yes p | no ¬p with L ⊑? A
+εˢ-simᴸ L⊑A (R.fork L n p₂) | yes p₁ | no ¬p | yes p = R.step L n
+εˢ-simᴸ L⊑A (R.fork L n p₁) | yes p | no ¬p₁ | no ¬p = ⊥-elim (¬p L⊑A)
+εˢ-simᴸ L⊑A (R.fork L n p) | no ¬p = ⊥-elim (¬p L⊑A)
+εˢ-simᴸ L⊑A (R.done L n) with L ⊑? A
+εˢ-simᴸ L⊑A (R.done L n) | yes p = R.done L n
+εˢ-simᴸ L⊑A (R.done L n) | no ¬p = ⊥-elim (¬p L⊑A)
+εˢ-simᴸ L⊑A (R.skip L n) with L ⊑? A
+εˢ-simᴸ L⊑A (R.skip {Σ} L n) | yes p rewrite εˢ-append-yes Σ L n L⊑A = R.skip L n
+εˢ-simᴸ L⊑A (R.skip L n) | no ¬p = ⊥-elim (¬p L⊑A)
 
-ε-sch-dist : ∀ {l s₁ s₂} {m : Message l} -> (x : Dec (l ⊑ A)) -> s₁ ⟶ s₂ ↑ m -> (εˢ s₁) ⟶ (εˢ s₂) ↑ (εᴹ m)
-ε-sch-dist = {!!}
--- ε-sch-dist {s₁ = (l , n) ∷ s} (yes p) step with l ⊑? A
--- ε-sch-dist {s₁ = (l , n) ∷ s} (yes p₁) step | yes p rewrite sym (εˢ-append-yes {{n}} s p) = step
--- ε-sch-dist {s₁ = (l , n) ∷ s} (yes p) step | no ¬p = ⊥-elim (¬p p)
--- ε-sch-dist {s₁ = (l , n) ∷ s₁} (no ¬p) step with l ⊑? A
--- ε-sch-dist {s₁ = (l , n) ∷ s₁} (no ¬p) step | yes p = ⊥-elim (¬p p)
--- ε-sch-dist {s₁ = (l , n) ∷ s₁} (no ¬p₁) step | no ¬p rewrite εˢ-append-no {{n}} s₁ ¬p = hole
--- ε-sch-dist  (yes p) (fork {s} {l} {n} {h} {m} p') rewrite ε-++ s (((h , m) ∷ (l , n) ∷ [])) with l ⊑? A | h ⊑? A
--- ε-sch-dist  (yes p₂) (fork {l = l} p') | yes p | yes p₁ with l ⊑? A
--- ε-sch-dist (yes p₃) (fork p') | yes p₁ | yes p₂ | yes p = fork p'
--- ε-sch-dist (yes p₂) (fork p') | yes p | yes p₁ | no ¬p = ⊥-elim (¬p p₂)
--- ε-sch-dist (yes p₁) (fork {l = l} p') | yes p | no ¬p with l ⊑? A
--- ε-sch-dist (yes p₂) (fork p') | yes p₁ | no ¬p | yes p = step
--- ε-sch-dist (yes p₁) (fork p') | yes p | no ¬p₁ | no ¬p = ⊥-elim (¬p p₁)
--- ε-sch-dist (yes p) (fork p') | no ¬p | b = ⊥-elim (¬p p)
--- ε-sch-dist (no ¬p) (fork {s} {l} {n} p') with l ⊑? A
--- ε-sch-dist (no ¬p) (fork p') | yes p = ⊥-elim (¬p p)
--- ε-sch-dist (no ¬p₁) (fork {s} {l} {n} {h} {m} p') | no ¬p rewrite ε-++ s (((h , m) ∷ (l , n) ∷ [])) with h ⊑? A
--- ... | yes p = ⊥-elim (trans-⋢ p' ¬p₁ p)
--- ... | no ¬p' with l ⊑? A
--- ... | yes p'' = ⊥-elim (¬p₁ p'')
--- ... | no ¬p'' rewrite ++[] (εˢ s) = hole
--- ε-sch-dist {l} {A} (yes p) done = ?
--- -- with l ⊑? A
--- ε-sch-dist (yes p₁) done | yes p = done
--- ε-sch-dist (yes p) done | no ¬p = ⊥-elim (¬p p)
--- ε-sch-dist {l} {A} (no ¬p) done with l ⊑? A
--- ε-sch-dist (no ¬p) done | yes p = ⊥-elim (¬p p)
--- ε-sch-dist (no ¬p₁) done | no ¬p = hole
--- ε-sch-dist {l} {A} (yes p) skip with l ⊑? A
--- ε-sch-dist (yes p₁) (skip {s = s} {n = n}) | yes p rewrite sym (εˢ-append-yes {{n}} s p) = skip
--- ε-sch-dist (yes p) (skip {s = s} {n = n}) | no ¬p = ⊥-elim (¬p p)
--- ε-sch-dist {l} {A} (no ¬p) skip with l ⊑? A
--- ε-sch-dist (no ¬p) skip | yes p = ⊥-elim (¬p p)
--- ε-sch-dist (no ¬p₁) (skip {s = s} {n = n}) | no ¬p rewrite εˢ-append-no {{n}} s ¬p = hole
--- ε-sch-dist (yes p) hole = hole
--- ε-sch-dist (no ¬p) hole = hole
+data _≈ˢ_ : State -> State -> Set where
+  nil : [] ≈ˢ []
+  consᴸ : ∀ {l n Σ₁ Σ₂} -> (p : l ⊑ A) ->  Σ₁ ≈ˢ Σ₂ -> ((l , n) ∷ Σ₁) ≈ˢ ((l , n) ∷ Σ₂)
+  cons₁ᴴ : ∀ {h n Σ₁ Σ₂ } -> (¬p  : ¬ (h ⊑ A)) -> Σ₁ ≈ˢ Σ₂ -> ((h , n) ∷ Σ₁) ≈ˢ Σ₂
+  cons₂ᴴ : ∀ {h n Σ₁ Σ₂} -> (¬p  : ¬ (h ⊑ A)) -> Σ₁ ≈ˢ Σ₂ -> Σ₁ ≈ˢ ((h , n) ∷ Σ₂)
 
--- mutual
---   data _≈ˢ_ {{l : Label}} : State -> State -> Set where
---     nil : [] ≈ˢ []
---     consᴸ : ∀ {l n s₁ s₂} -> (p : l ⊑ A) ->  s₁ ≈ˢ-⟨ ⟩ s₂ -> ((l , n) ∷ s₁) ≈ˢ ((l , n) ∷ s₂)
---     cons₁ᴴ : ∀ {h n s₁ s₂ } -> (¬p  : ¬ (h ⊑ A)) -> s₁ ≈ˢ-⟨ ⟩ s₂ -> ((h , n) ∷ s₁) ≈ˢ s₂
---     cons₂ᴴ : ∀ {h n s₁ s₂} -> (¬p  : ¬ (h ⊑ A)) -> s₁ ≈ˢ-⟨ ⟩ s₂ -> s₁ ≈ˢ ((h , n) ∷ s₂)
 
---   _≈ˢ-⟨_⟩_ : State -> Label -> State -> Set
---   s₁ ≈ˢ-⟨ ⟩ s₂ = s₁ ≈ˢ s₂
+⌜_⌝ : ∀ {Σ₁ Σ₂} -> εˢ Σ₁ ≡ εˢ Σ₂ -> Σ₁ ≈ˢ Σ₂
+⌜_⌝ = aux _ _
+  where
+    ∷-≡ : ∀ {x y : Label × ℕ} {s₁ s₂ : State} -> _≡_ {A = State} (x ∷ s₁) (y ∷ s₂) -> x ≡ y × s₁ ≡ s₂
+    ∷-≡ refl = refl , refl
 
--- ≈ˢ-≡ : ∀ {s₁ s₂} -> s₁ ≈ˢ s₂ -> εˢ s₁ ≡ εˢ s₂
--- ≈ˢ-≡ nil = refl
--- ≈ˢ-≡ {A} (consᴸ {l} p x) with l ⊑? A
--- ≈ˢ-≡ (consᴸ p₁ x) | yes p rewrite ≈ˢ-≡ x = refl
--- ≈ˢ-≡ (consᴸ p x) | no ¬p = ⊥-elim (¬p p)
--- ≈ˢ-≡ {A} (cons₁ᴴ {h} ¬p x) with h ⊑? A
--- ≈ˢ-≡ (cons₁ᴴ ¬p x) | yes p = ⊥-elim (¬p p)
--- ≈ˢ-≡ (cons₁ᴴ ¬p₁ x) | no ¬p =  ≈ˢ-≡ x
--- ≈ˢ-≡ {A} (cons₂ᴴ {h} ¬p x) with h ⊑? A
--- ≈ˢ-≡ (cons₂ᴴ ¬p x) | yes p = ⊥-elim (¬p p)
--- ≈ˢ-≡ (cons₂ᴴ ¬p₁ x) | no ¬p = ≈ˢ-≡ x
+    aux : ∀ (Σ₁ Σ₂ : _) -> εˢ Σ₁ ≡ εˢ Σ₂ -> Σ₁ ≈ˢ Σ₂
 
--- ∷-≡ : ∀ {x y : Label × ℕ} {s₁ s₂ : State} -> _≡_ {A = State} (x ∷ s₁) (y ∷ s₂) -> x ≡ y × s₁ ≡ s₂
--- ∷-≡ refl = refl , refl
 
--- ≡-≈ˢ : ∀ {s₁ s₂} -> εˢ s₁ ≡ εˢ s₂ -> s₁ ≈ˢ s₂
+    aux₁ : ∀ {l n} (Σ₁ Σ₂ : State) -> (l , n) ∷ εˢ Σ₁ ≡ εˢ Σ₂ -> ((l , n) ∷ Σ₁) ≈ˢ Σ₂
+    aux₁ Σ₃ [] ()
+    aux₁ Σ₃ ((l' , n) ∷ Σ₄) eq with l' ⊑? A
+    aux₁ Σ₃ ((l' , n₁) ∷ Σ₄) eq | yes p with ∷-≡ eq
+    aux₁ Σ₃ ((l , n₁) ∷ Σ₄) eq | yes p | refl , eq' = consᴸ p (aux Σ₃ Σ₄ eq')
+    aux₁ Σ₃ ((l' , n₁) ∷ Σ₄) eq | no ¬p = cons₂ᴴ ¬p (aux₁ Σ₃ Σ₄ eq)
 
--- ≡-≈ˢ₁ : ∀ {l n s₁ s₂} -> l ⊑ -> (l , n) ∷ εˢ s₁ ≡ εˢ s₂ -> ((l , n) ∷ s₁) ≈ˢ-⟨ ⟩ s₂
--- ≡-≈ˢ₁ {s₂ = []} p ()
--- ≡-≈ˢ₁ {A} {s₂ = (l' , n') ∷ s₂} p eq with l' ⊑? A
--- ≡-≈ˢ₁ {A} {l} {n} {s₁} {(l' , n') ∷ s₂} p₁ eq | yes p with ∷-≡ eq
--- ≡-≈ˢ₁ {A} {l'} {n'} {s₁} {(.l' , .n') ∷ s₂} p₁ eq | yes p | refl , eq₂ = consᴸ p₁ (≡-≈ˢ eq₂)
--- ≡-≈ˢ₁ {A} {l} {n} {s₁} {(l' , n') ∷ s₂} p eq | no ¬p = cons₂ᴴ ¬p (≡-≈ˢ₁ p eq)
 
--- ≡-≈ˢ {s₁ = []} {[]} eq = nil
--- ≡-≈ˢ {A} {s₁ = []} {(l , n) ∷ s₂} eq with l ⊑? A
--- ≡-≈ˢ {A} {[]} {(l , n) ∷ s₂} () | yes p
--- ≡-≈ˢ {A} {[]} {(l , n) ∷ s₂} eq | no ¬p = cons₂ᴴ ¬p (≡-≈ˢ eq)
--- ≡-≈ˢ {A} {s₁ = (l , n) ∷ s₁} {[]} eq with l ⊑? A
--- ≡-≈ˢ {A} {(l , n) ∷ s₁} {[]} () | yes p
--- ≡-≈ˢ {A} {(l , n) ∷ s₁} {[]} eq | no ¬p = cons₁ᴴ ¬p (≡-≈ˢ eq)
--- ≡-≈ˢ {A} {s₁ = (l , n) ∷ s₁} {(l' , n') ∷ s₂} eq with l ⊑? A
--- ≡-≈ˢ {A} {(l , n) ∷ s₁} {(l' , n') ∷ s₂} eq | yes p with l' ⊑? A
--- ≡-≈ˢ {A} {(l , n) ∷ s₁} {(l' , n') ∷ s₂} eq | yes p₁ | yes p with ∷-≡ eq
--- ≡-≈ˢ {A} {(l' , n) ∷ s₁} {(.l' , .n) ∷ s₂} eq | yes p₁ | yes p | refl , eq₂ = consᴸ p₁ (≡-≈ˢ eq₂)
--- ≡-≈ˢ {A} {(l , n) ∷ s₁} {(l' , n') ∷ s₂} eq | yes p | no ¬p = cons₂ᴴ ¬p (≡-≈ˢ₁ p eq)
--- ≡-≈ˢ {A} {(l , n) ∷ s₁} {(l' , n') ∷ s₂} eq | no ¬p = cons₁ᴴ ¬p (≡-≈ˢ eq)
+    aux [] [] eq = nil
+    aux [] ((l , n) ∷ Σ₂) eq with l ⊑? A
+    aux [] ((l , n) ∷ Σ₂) () | yes p
+    aux [] ((l , n) ∷ Σ₂) eq | no ¬p = cons₂ᴴ ¬p (aux [] Σ₂ eq)
+    aux ((l , n) ∷ Σ₁) Σ₂ eq with l ⊑? A
+    aux ((l , n) ∷ Σ₃) [] () | yes p
+    aux ((l , n) ∷ Σ₃) ((l' , m) ∷ Σ₄) eq | yes p with l' ⊑? A
+    aux ((l , n) ∷ Σ₃) ((l' , m) ∷ Σ₄) eq | yes p₁ | yes p with ∷-≡ eq
+    aux ((l' , m) ∷ Σ₃) ((.l' , .m) ∷ Σ₄) eq | yes p₁ | yes p | refl , eq₂ = consᴸ p₁ (aux Σ₃ Σ₄ eq₂)
+    aux ((l , n) ∷ Σ₃) ((l' , m) ∷ Σ₄) eq | yes p | no ¬p = cons₂ᴴ ¬p (aux₁ Σ₃ Σ₄ eq)
+    aux ((l , n) ∷ Σ₃) Σ₄ eq | no ¬p = cons₁ᴴ ¬p (aux Σ₃ Σ₄ eq)
+
+
+
+⌞_⌟ : ∀ {Σ₁ Σ₂} -> Σ₁ ≈ˢ Σ₂ -> εˢ Σ₁ ≡ εˢ Σ₂
+⌞ nil ⌟ = refl
+⌞ (consᴸ {l} p x) ⌟ with l ⊑? A
+⌞ (consᴸ p₁ x) ⌟ | yes p rewrite ⌞_⌟ x = refl
+⌞ (consᴸ p x) ⌟ | no ¬p = ⊥-elim (¬p p)
+⌞ (cons₁ᴴ {h} ¬p x) ⌟ with h ⊑? A
+⌞ (cons₁ᴴ ¬p x) ⌟ | yes p = ⊥-elim (¬p p)
+⌞ (cons₁ᴴ ¬p₁ x) ⌟ | no ¬p =  ⌞_⌟ x
+⌞ (cons₂ᴴ {h} ¬p x) ⌟ with h ⊑? A
+⌞ (cons₂ᴴ ¬p x) ⌟ | yes p = ⊥-elim (¬p p)
+⌞ (cons₂ᴴ ¬p₁ x) ⌟ | no ¬p = ⌞ x ⌟
+
+refl-≈ˢ : ∀ {Σ} -> Σ ≈ˢ Σ
+refl-≈ˢ = ⌜ refl ⌝
+
+sym-≈ˢ : ∀ {Σ₁ Σ₂} -> Σ₁ ≈ˢ Σ₂ -> Σ₂ ≈ˢ Σ₁
+sym-≈ˢ eq = ⌜ (sym ⌞ eq ⌟) ⌝
+
+trans-≈ˢ : ∀ {Σ₁ Σ₂ Σ₃} -> Σ₁ ≈ˢ Σ₂ -> Σ₂ ≈ˢ Σ₃ -> Σ₁ ≈ˢ Σ₃
+trans-≈ˢ eq₁ eq₂ = ⌜ (trans ⌞ eq₁ ⌟ ⌞ eq₂ ⌟) ⌝
+
+open import Data.List.All
+open import Lemmas
+
+append-≈ˢ : ∀ {Σ₁ Σ₂ Σ₃} -> All (λ x → proj₁ x ⋤ A) Σ₃ -> Σ₁ ≈ˢ Σ₂ -> Σ₁ ≈ˢ (Σ₂ ++ Σ₃)
+append-≈ˢ [] nil = nil
+append-≈ˢ (px ∷ xs) nil = cons₂ᴴ px (append-≈ˢ xs nil)
+append-≈ˢ xs (consᴸ p eq) = consᴸ p (append-≈ˢ xs eq)
+append-≈ˢ xs (cons₁ᴴ ¬p eq) = cons₁ᴴ ¬p (append-≈ˢ xs eq)
+append-≈ˢ xs (cons₂ᴴ ¬p eq) = cons₂ᴴ ¬p (append-≈ˢ xs eq)
+
+εˢ-simᴴ : ∀ {Σ₁ Σ₂ H} {m : Message H} -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ m -> Σ₁ ≈ˢ Σ₂
+εˢ-simᴴ H⋤A (R.step l n) = cons₁ᴴ H⋤A (append-≈ˢ (H⋤A ∷ []) refl-≈ˢ)
+εˢ-simᴴ H⋤A (R.fork H n p) = cons₁ᴴ H⋤A (append-≈ˢ ((trans-⋢ p H⋤A) ∷ (H⋤A ∷ [])) refl-≈ˢ)
+εˢ-simᴴ H⋤A (R.done l n) = cons₁ᴴ H⋤A refl-≈ˢ
+εˢ-simᴴ H⋤A (R.skip l n) = cons₁ᴴ H⋤A (append-≈ˢ (H⋤A ∷ []) refl-≈ˢ)
 
 -- open import Function
 
--- offset₁ : ∀ {s₁ s₂ A} -> s₁ ≈ˢ-⟨ ⟩ s₂ -> ℕ
--- offset₁ nil = 0
--- offset₁ (consᴸ p x) = 0
--- offset₁ (cons₁ᴴ ¬p x) = suc (offset₁ x)
--- offset₁ (cons₂ᴴ ¬p x) = offset₁ x
+offset₁ : ∀ {s₁ s₂} -> s₁ ≈ˢ s₂ -> ℕ
+offset₁ nil = 0
+offset₁ (consᴸ p x) = 0
+offset₁ (cons₁ᴴ ¬p x) = suc (offset₁ x)
+offset₁ (cons₂ᴴ ¬p x) = offset₁ x
 
--- offset₂ : ∀ {s₁ s₂ A} -> s₁ ≈ˢ-⟨ ⟩ s₂ -> ℕ
--- offset₂ nil = 0
--- offset₂ (consᴸ p x) = 0
--- offset₂ (cons₁ᴴ ¬p x) = offset₂ x
--- offset₂ (cons₂ᴴ ¬p x) = suc (offset₂ x)
+offset₂ : ∀ {s₁ s₂} -> s₁ ≈ˢ s₂ -> ℕ
+offset₂ nil = 0
+offset₂ (consᴸ p x) = 0
+offset₂ (cons₁ᴴ ¬p x) = offset₂ x
+offset₂ (cons₂ᴴ ¬p x) = suc (offset₂ x)
 
+data _≈ˢ-⟨_,_⟩_ : State -> ℕ -> ℕ -> State -> Set where
+  nil : [] ≈ˢ-⟨ 0 , 0 ⟩ []
+  consᴸ : ∀ {l n s₁ s₂} -> (p : l ⊑ A) ->  s₁ ≈ˢ s₂ -> ((l , n) ∷ s₁) ≈ˢ-⟨ 0 , 0 ⟩ ((l , n) ∷ s₂)
+  cons₁ᴴ : ∀ {h n s₁ s₂ i j} -> (¬p  : ¬ (h ⊑ A)) -> s₁ ≈ˢ-⟨ i , j ⟩ s₂ -> ((h , n) ∷ s₁) ≈ˢ-⟨ suc i , j ⟩ s₂
+  cons₂ᴴ : ∀ {h n s₁ s₂ i j} -> (¬p  : ¬ (h ⊑ A)) -> s₁ ≈ˢ-⟨ i , j ⟩ s₂ -> s₁ ≈ˢ-⟨ i , suc j ⟩ ((h , n) ∷ s₂)
 
--- mutual
---   data _≈ˢ-⟨_~_⟩_ {{l : Label}} : State -> ℕ -> ℕ -> State -> Set where
---        nil : [] ≈ˢ-⟨ 0 ~ 0 ⟩ []
---        consᴸ : ∀ {l n s₁ s₂} -> (p : l ⊑ A) ->  s₁ ≈ˢ-⟨ ⟩ s₂ -> ((l , n) ∷ s₁) ≈ˢ-⟨ 0 ~ 0 ⟩ ((l , n) ∷ s₂)
---        cons₁ᴴ : ∀ {h n s₁ s₂ i j} -> (¬p  : ¬ (h ⊑ A)) -> s₁ ≈ˢ-⟨ i ~ ~ j ⟩ s₂ -> ((h , n) ∷ s₁) ≈ˢ-⟨ suc i ~ j ⟩ s₂
---        cons₂ᴴ : ∀ {h n s₁ s₂ i j} -> (¬p  : ¬ (h ⊑ A)) -> s₁ ≈ˢ-⟨ i ~ ~ j ⟩ s₂ -> s₁ ≈ˢ-⟨ i ~ suc j ⟩ ((h , n) ∷ s₂)
+align : ∀ {s₁ s₂} -> (eq : s₁ ≈ˢ s₂) -> s₁ ≈ˢ-⟨ offset₁ eq , offset₂ eq ⟩ s₂
+align nil = nil
+align (consᴸ p x) = consᴸ p x
+align (cons₁ᴴ ¬p x) = cons₁ᴴ ¬p (align x)
+align (cons₂ᴴ ¬p x) = cons₂ᴴ ¬p (align x)
 
---   _≈ˢ-⟨_~_~_⟩_ : State -> ℕ -> Label -> ℕ -> State -> Set
---   _≈ˢ-⟨_~_~_⟩_ s₁ n m s₂ = s₁ ≈ˢ-⟨ n ~ m ⟩ s₂
+forget : ∀ {s₁ s₂ i j} -> s₁ ≈ˢ-⟨ i , j ⟩ s₂ -> s₁ ≈ˢ s₂
+forget nil = nil
+forget (consᴸ p x) = consᴸ p x
+forget (cons₁ᴴ ¬p x) = cons₁ᴴ ¬p (forget x)
+forget (cons₂ᴴ ¬p x) = cons₂ᴴ ¬p (forget x)
 
--- align : ∀ {s₁ s₂} -> (eq : s₁ ≈ˢ-⟨ ⟩ s₂) -> s₁ ≈ˢ-⟨ offset₁ eq ~ ~ offset₂ eq ⟩ s₂
--- align nil = nil
--- align (consᴸ p x) = consᴸ p x
--- align (cons₁ᴴ ¬p x) = cons₁ᴴ ¬p (align x)
--- align (cons₂ᴴ ¬p x) = cons₂ᴴ ¬p (align x)
-
--- dealign : ∀ {s₁ s₂ i j} -> s₁ ≈ˢ-⟨ i ~ ~ j ⟩ s₂ -> s₁ ≈ˢ-⟨ ⟩ s₂
--- dealign nil = nil
--- dealign (consᴸ p x) = consᴸ p x
--- dealign (cons₁ᴴ ¬p x) = cons₁ᴴ ¬p (dealign x)
--- dealign (cons₂ᴴ ¬p x) = cons₂ᴴ ¬p (dealign x)
+RR-is-NI : NIˢ RR
+RR-is-NI = record
+             { εˢ = εˢ
+             ; _≈ˢ_ = _≈ˢ_
+             ; ⌞_⌟ = ⌞_⌟
+             ; ⌜_⌝ = ⌜_⌝
+             ; εˢ-simᴸ = εˢ-simᴸ
+             ; εˢ-simᴴ = εˢ-simᴴ
+             ; _≈ˢ-⟨_,_⟩_ = _≈ˢ-⟨_,_⟩_
+             ; offset₁ = offset₁
+             ; offset₂ = offset₂
+             ; align = align
+             ; forget = forget
+             }
 
 -- open import Concurrent.Security.Scheduler State _⟶_↑_ εˢ _≈ˢ-⟨_⟩_ _≈ˢ-⟨_~_~_⟩_
 
@@ -243,7 +257,7 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 -- highˢ p done e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
 -- highˢ p skip e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
 -- highˢ p hole e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (e≠∙ refl)
--- highˢ {s₁} {(h , n) ∷ s₁'} {s₂} {l} {A} {e} {n'} {n₁} {n₂} p s e≠∙ (cons₂ᴴ  ¬p x) with lemma {n = n} ¬p p s e≠∙ x
+-- highˢ {s₁} {(h , n) ∷ s₁'} {s₂} {l} {e} {n'} {n₁} {n₂} p s e≠∙ (cons₂ᴴ  ¬p x) with lemma {n = n} ¬p p s e≠∙ x
 -- ... | eq' = h , (n , aux)
 --   where aux : (e : Event h) -> e ≢ ∙ -> HighStep h n e s₁ s₂ ((h , n) ∷ s₁') n₁ n₂
 --         aux NoStep e≠∙₁ = high ¬p skip eq'
