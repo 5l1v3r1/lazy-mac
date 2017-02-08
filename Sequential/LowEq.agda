@@ -37,6 +37,15 @@ postulate ⌜_⌝ᵀ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≅ᵀ t₂ 
 
 --------------------------------------------------------------------------------
 
+_≅ˢ_ : ∀ {l τ₁ τ₂} (S₁ S₂ : Stack l τ₁ τ₂) -> Set
+S₁ ≅ˢ S₂ = εˢ S₁ ≡ εˢ S₂
+
+postulate _≈ˢ_ : ∀ {l τ₁ τ₂} -> (S₁ S₂ : Stack l τ₁ τ₂) -> Set
+postulate ⌞_⌟ˢ : ∀ {l τ₁ τ₂} {S₁ S₂ : Stack l τ₁ τ₂} -> S₁ ≈ˢ S₂ -> S₁ ≅ˢ S₂
+postulate ⌜_⌝ˢ : ∀ {l τ₁ τ₂} {S₁ S₂ : Stack l τ₁ τ₂} -> S₁ ≅ˢ S₂ -> S₁ ≈ˢ S₂
+
+--------------------------------------------------------------------------------
+
 data _≈ᴹᵀ_ {π τ} : Maybe (Term π τ) -> Maybe (Term π τ) -> Set where
   nothing : nothing ≈ᴹᵀ nothing
   just : ∀ {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> just t₁ ≈ᴹᵀ just t₂
@@ -83,7 +92,6 @@ _≅ᴱ_ : ∀ {π l} -> (Δ₁ Δ₂ : Env l π) -> Set
 
 data _≈ˣ⟨_⟩_ {l} : Heap l -> Dec (l ⊑ A) -> Heap l -> Set where
   ⟨_,_⟩ : ∀ {π} {l⊑A : l ⊑ A} {Δ₁ Δ₂ : Env l π} -> (M : Memory l) -> Δ₁ ≈ᴱ Δ₂ -> ⟨ M , Δ₁ ⟩ ≈ˣ⟨ yes l⊑A ⟩ ⟨ M , Δ₂ ⟩
-  -- TODO do we need to model bullet ∙ heaps ?
   ∙ᴸ : {l⊑A : l ⊑ A} -> ∙ ≈ˣ⟨ yes l⊑A ⟩ ∙
   ∙ : ∀ {H₁ H₂ : Heap l} {l⋤A : l ⋤ A} -> H₁ ≈ˣ⟨ no l⋤A ⟩ H₂
 
@@ -113,6 +121,7 @@ aux₂ {H₁ = SC.⟨ x , x₁ ⟩} {SC.∙} (yes p) ()
 aux₂ {H₁ = SC.∙} {SC.⟨ x , x₁ ⟩} (yes p) ()
 aux₂ {H₁ = SC.∙} {SC.∙} (yes p) refl = ∙ᴸ
 aux₂ (no ¬p) eq₁ = ∙
+
 ⌜_⌝ᴴ : ∀ {ls} {Γ₁ Γ₂ : Heaps ls} -> Γ₁ ≅ᴴ Γ₂ -> Γ₁ ≈ᴴ Γ₂
 ⌜_⌝ᴴ {Γ₁ = []} {[]} refl = nil
 ⌜_⌝ᴴ {Γ₁ = H₁ ∷ Γ₁} {H₂ ∷ Γ₂} eq with split eq
