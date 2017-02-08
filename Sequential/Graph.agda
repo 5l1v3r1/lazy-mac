@@ -177,3 +177,50 @@ unlift-ε (fork' l⊑h h⋤A x) | no ¬p rewrite unlift-ε x = refl
 unlift-ε (fork∙ l⊑h x) rewrite unlift-ε x = refl
 unlift-ε (deepDup x) rewrite unlift-ε x = refl
 unlift-ε ∙ = refl
+
+--------------------------------------------------------------------------------
+
+open import Data.Maybe
+
+data Eraseᶜ {l} : ∀ {τ₁ τ₂} -> Cont l τ₁ τ₂ -> Cont l τ₁ τ₂ -> Set where
+ Var : ∀ {τ₁ τ₂} {{π : Context}} -> (τ∈π : τ₁ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ {τ₂ = τ₂} (Var τ∈π) (Var τ∈π)
+ # :  ∀ {τ} {{π : Context}} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π)  -> Eraseᶜ (# τ∈π) (# τ∈π)
+ Then_Else_ : ∀ {τ} {π : Context} {t₁ t₁' t₂ t₂' : Term π τ} -> Erase t₁ t₁' -> Erase t₂ t₂' -> Eraseᶜ (Then t₁ Else t₂) (Then t₁' Else t₂')
+
+ Bind :  ∀ {τ₁ τ₂} {π : Context} {t t' : Term π (τ₁ => Mac l τ₂)} -> Erase t t' -> Eraseᶜ (Bind t) (Bind t')
+ unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Eraseᶜ {τ₁ = Labeled l' τ} (unlabel p) (unlabel p)
+ unId : ∀ {τ} -> Eraseᶜ {τ₂ = τ} unId unId
+ write : ∀ {τ H} {{π : Context}} (l⊑H : l ⊑ H) (H⊑A : H ⊑ A) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ (write l⊑H τ∈π) (write l⊑H τ∈π)
+ write' : ∀ {τ H} {{π : Context}} (l⊑H : l ⊑ H) (H⋤A : H ⋤ A) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ (write l⊑H τ∈π) (write∙ l⊑H τ∈π)
+ write∙ : ∀ {τ H} {{π : Context}} (l⊑H : l ⊑ H) (H⊑A : H ⊑ A) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ (write∙ l⊑H τ∈π) (write∙ l⊑H τ∈π)
+ read : ∀ {τ L} (L⊑H : L ⊑ l) -> Eraseᶜ (read {τ = τ} L⊑H) (read L⊑H)
+
+data Eraseˢ {l} : ∀ {τ₁ τ₂} -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂ -> Set where
+  [] : ∀ {τ} -> Eraseˢ ([] {τ = τ}) []
+  _∷_ : ∀ {τ₁ τ₂ τ₃} {C₁ C₂ : Cont l τ₁ τ₂} {S₁ S₂ : Stack l τ₂ τ₃} -> Eraseᶜ C₁ C₂ -> Eraseˢ S₁ S₂ -> Eraseˢ (C₁ ∷ S₁) (C₂ ∷ S₂)
+  ∙ : ∀ {τ} -> Eraseˢ (∙ {τ = τ}) ∙
+
+data Eraseᴹ {π τ} : (mt₁ mt₂ : Maybe (Term π τ)) -> Set where
+  nothing : Eraseᴹ nothing nothing
+  just : ∀ {t₁ t₂} -> Erase t₁ t₂ -> Eraseᴹ (just t₁) (just t₂)
+
+data Eraseᴱ {l} : ∀ {π} -> (Δ₁ Δ₂ : Env l π) -> Set where
+  [] : Eraseᴱ [] []
+  _∷_ : ∀ {π τ} {mt mt' : Maybe (Term π τ)} {Δ Δ' : Env l π} -> Eraseᴹ mt mt' -> Eraseᴱ Δ Δ' -> Eraseᴱ (mt ∷ Δ) (mt' ∷ Δ')
+  ∙ : ∀ {π} -> Eraseᴱ {π = π} ∙ ∙
+
+data Eraseˣ {l} : (x : Dec (l ⊑ A)) (H₁ H₂ : Heap l) -> Set where
+  ⟨_,_⟩ : ∀ {π} {M : Memory l} {Δ Δ' : Env l π} (l⊑A : l ⊑ A) -> Eraseᴱ Δ Δ' -> Eraseˣ (yes l⊑A) ⟨ M , Δ ⟩ ⟨ M , Δ' ⟩
+  ∙ᴸ : ∀ {H : Heap l} {l⊑A : l ⊑ A} -> Eraseˣ (yes l⊑A) H ∙
+  ∙ : ∀ {H : Heap l} {l⋤A : l ⋤ A} -> Eraseˣ (no l⋤A) H ∙
+
+data Eraseᴴ : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
+  [] : Eraseᴴ [] []
+  _∷_ : ∀ {l ls} {u : Unique l ls} {H₁ H₂ : Heap l} {Γ₁ Γ₂ : Heaps ls} {x : Dec (l ⊑ A)}  ->
+          Eraseˣ x H₁ H₂ -> Eraseᴴ Γ₁ Γ₂ -> Eraseᴴ (H₁ ∷ Γ₁) (H₂ ∷ Γ₂)
+
+data Eraseᴾ {l ls τ} : Program l ls τ -> Program l ls τ -> Set where
+  ⟨_,_,_⟩ : ∀ {τ' π Γ Γ'} {S S' : Stack l τ' τ} {t t' : Term π τ'} {l⊑A : l ⊑ A} ->
+              Eraseᴴ Γ Γ' -> Erase t t' -> Eraseˢ S S' -> Eraseᴾ ⟨ Γ , t , S ⟩ ⟨ Γ' , t' , S' ⟩
+  ∙ : ∀ {p} {l⋤A : l ⋤ A} -> Eraseᴾ p ∙
+  ∙ᴸ : Eraseᴾ ∙ ∙

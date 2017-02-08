@@ -85,18 +85,17 @@ updateᴾ l⊑A (C.there x) = C.there (updateᴾ l⊑A x)
 done-ε : ∀ {l ls τ} {p : Program l ls τ} -> (l⊑A : l ⊑ A) -> Doneᴾ p -> Doneᴾ (SE.ε₁ᴾ (yes l⊑A) p)
 done-ε l⊑A (Done isVal) = Done (εᵀ-Val isVal)
 
--- Will probably need the graph of the function
+ε¬redex : ∀ {l ls τ} {p : Program l ls τ} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
+ε¬redex {p = SC.∙} l⊑A ¬redex redex-ε = ⊥-elim (¬redex redex-ε)
+ε¬redex {p = SC.⟨ Γ , t , S ⟩} l⊑A ¬redex redex-ε = {!!}
+
 stuck-ε : ∀ {l ls τ} {p : Program l ls τ} -> (l⊑A : l ⊑ A) -> Stuckᴾ p -> Stuckᴾ (SE.ε₁ᴾ (yes l⊑A) p)
-stuck-ε {l} {ls} {τ} l⊑A (¬done P., ¬redex) = ε¬done ¬done P., ε¬redex ¬redex
+stuck-ε {l} {ls} {τ} l⊑A (¬done P., ¬redex) = ε¬done ¬done P., ε¬redex l⊑A ¬redex
   where ε¬done : {p : Program l ls τ} -> ¬ (Doneᴾ p) -> ¬ (Doneᴾ (ε₁ᴾ (yes l⊑A) p))
         ε¬done {⟨ Γ , t , [] ⟩} ¬done₁ (Done isVal) = εᵀ¬Val (¬Done⇒¬Val ¬done₁) isVal
         ε¬done {⟨ Γ , t , x ∷ S ⟩} ¬done₁ ()
         ε¬done {⟨ Γ , t , ∙ ⟩} ¬done₁ ()
         ε¬done {∙} ¬done₁ ()
-
-        -- Lengthy boring proof, I will probably need the graph of the function εᴾ
-        postulate ε¬redex : ∀ {p : Program l ls τ} -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
-
 
 lengthᵀ-ε-≡ : ∀ {l} (l⊑A : l ⊑ A) (T : Pool l) -> lengthᵀ T ≡ lengthᵀ (εᵀ (yes l⊑A) T)
 lengthᵀ-ε-≡ l⊑A C.[] = refl
