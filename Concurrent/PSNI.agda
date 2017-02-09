@@ -60,6 +60,10 @@ open import Data.Nat
 memberᴾ-≈ : ∀ {ls L} {T₁ : Pool L} {P₁ P₂ : Pools ls} -> (L⊑A : L ⊑ A) -> L ↦ T₁ ∈ᴾ P₁ -> P₁ ≈ᴾ P₂ -> ∃ (λ T₂ -> T₁ ≈ᵀ⟨ yes L⊑A ⟩ T₂ × L ↦ T₂ ∈ᴾ P₂)
 memberᴾ-≈ = {!!}
 
+memberᴾ-≈' : ∀ {ls H} {T₁ : Pool H} {P₁ P₂ : Pools ls} -> (H⋤A : H ⋤ A) -> H ↦ T₁ ∈ᴾ P₁ -> P₁ ≈ᴾ P₂ -> ∃ (λ T₂ -> T₁ ≈ᵀ⟨ no H⋤A ⟩ T₂ × H ↦ T₂ ∈ᴾ P₂)
+memberᴾ-≈' = {!!}
+
+
 memberᵀ-≈ : ∀ {n L} {T₁ T₂ : Pool L} {t₁ : Thread L} -> (L⊑A : L ⊑ A) -> n ↦ t₁ ∈ᵀ T₁ -> T₁ ≈ᵀ⟨ yes L⊑A ⟩ T₂ -> ∃ (λ t₂ → (t₁ ≈ᵗ t₂) × n ↦ t₂ ∈ᵀ T₂)
 memberᵀ-≈ = {!!}
 
@@ -87,6 +91,11 @@ redex-≈ = {!!}
 
 lengthᵀ-≈ : ∀ {l} {T₁ T₂ : Pool l} -> (l⊑A : l ⊑ A) -> T₁ ≈ᵀ⟨ yes l⊑A ⟩ T₂ -> lengthᵀ T₁ ≡ lengthᵀ T₂
 lengthᵀ-≈ = {!!}
+
+
+-- No Way!
+-- lengthᵀ-≈' : ∀ {H} {T₁ T₂ : Pool H} -> (H⋤A : H ⋤ A) -> T₁ ≈ᵀ⟨ no H⋤A ⟩ T₂ -> lengthᵀ T₁ ≡ lengthᵀ T₂
+-- lengthᵀ-≈' x L₁.∙ = {!!}
 
 newᵀ-≈ : ∀ {l} {T₁ T₂ : Pool l} {t₁ t₂ : Thread l} -> (l⊑A : l ⊑ A) -> T₁ ≈ᵀ⟨ yes l⊑A ⟩ T₂ -> t₁ ≈ᵗ t₂ -> (T₁ ▻ t₁) ≈ᵀ⟨ yes l⊑A ⟩ (T₂ ▻ t₂)
 newᵀ-≈ = {!!}
@@ -128,15 +137,39 @@ open import Sequential.Graph 𝓛 A
   rewrite lengthᵀ-≈ h⊑A Tᴴ₂≈T₁ᴴ with updateᴾ-≈ h⊑A u₁ᴾ' P₁'≈P₂' (newᵀ-≈ h⊑A Tᴴ₂≈T₁ᴴ L₁.⟨ ⟨ e₁ , e₂ ⟩ , [] ⟩)
 ... | P₂'' P., P₂''≈P₁'' P., uᴾ₂′ = Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , P₂''≈P₁'' , Γ₁'≈Γ₂' ⟩ (fork l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ H∈P₂ sch' uᴾ₂′ ∷ [])
 
-εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₂ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
+εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
   -- Fork∙
   | Σ₂' P., sch' P., Σ₁'≈Σ₂' | T₂ P., T₁≈T₂ P., l∈P₂
-  | ._ P., L₁.⟨ ⟨ G.fork' l⊑H h⋤A e₁ , G.fork' .l⊑H h⋤A₁ e₂ ⟩ , S₁'≈S₂' ⟩ P., t∈T₂ = {!!}
+  | ._ P., L₁.⟨ ⟨ G.fork' l⊑H h⋤A e₁ , G.fork' .l⊑H h⋤A₁ e₂ ⟩ , S₁≈S₂ ⟩ P., t∈T₂
+    with redex-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , ⟨ ( G.fork' l⊑H h⋤A e₁) , G.fork' l⊑H h⋤A₁ e₂ ⟩ , S₁≈S₂ ⟩ step₁
+... | _ P., L₂.⟨ Γ₁'≈Γ₂' , t₁'≈t₂' , S₁'≈S₂' ⟩  P., step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ L₁.⟨ t₁'≈t₂' , S₁'≈S₂' ⟩
+... | T₂' P., T₁'≈T₂' P., u₂ᵀ with updateᴾ-≈ L⊑A u₁ᴾ P₁≈P₂ T₁'≈T₂'
+... | P₂' P., P₁'≈P₂' P., u₂ᴾ with memberᴾ-≈' h⋤A H∈P₁ P₁'≈P₂'
+... | Tᴴ₂ P., Tᴴ₂≈T₁ᴴ P., H∈P₂ = Cᴳ {!!} {!!} (? ∷ [])
+-- (fork l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ H∈P₂ {!sch'!} {!!} ∷ [])
+-- Now I am stuck because Tᴴ₁ and Tᴴ₂ have different lengths, hence the fork event (in the non-erased world)
+-- is different lengthᵀ Tᴴ₁ ≠ lengthᵀ Tᴴ₂.
+-- Maybe I can fix it by making Pool a vector and use the index as length
+-- (low-equivalence is defined over terms with the same type, hence I'd get the property I need
+-- from P₁'≈P₂'.
+-- Would this break single step simulation? (when forking high it'd lead to pools with different sizes)
+-- Maybe fork∙ should increase the counter (while killing the thread pool ∙)
 
-εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₂ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
+-- Note that in this hole fork∙ does not work because the original term was a fork (which was then erased to fork∙)
+
+εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
   -- Fork∙ (?)
   | Σ₂' P., sch' P., Σ₁'≈Σ₂' | T₂ P., T₁≈T₂ P., l∈P₂
-  | ._ P., L₁.⟨ ⟨ G.fork' l⊑H h⋤A e₁ , G.fork∙ .l⊑H e₂ ⟩ , S₁'≈S₂' ⟩ P., t∈T₂ = {!!}
+  | ._ P., L₁.⟨ ⟨ G.fork' l⊑H h⋤A e₁ , G.fork∙ .l⊑H e₂ ⟩ , S₁≈S₂ ⟩ P., t∈T₂
+       with redex-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , ⟨ ( G.fork' l⊑H h⋤A e₁) , G.fork∙ l⊑H e₂ ⟩ , S₁≈S₂ ⟩ step₁
+... | _ P., L₂.⟨ Γ₁'≈Γ₂' , t₁'≈t₂' , S₁'≈S₂' ⟩  P., step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ L₁.⟨ t₁'≈t₂' , S₁'≈S₂' ⟩
+... | T₂' P., T₁'≈T₂' P., u₂ᵀ with updateᴾ-≈ L⊑A u₁ᴾ P₁≈P₂ T₁'≈T₂'
+... | P₂' P., P₁'≈P₂' P., u₂ᴾ = Cᴳ {!!} {!!} (fork∙ l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ {!sch'!} ∷ [])
+  -- Here the problem is that the scheduler sch' predicts Fork, while fork∙ wants Step.
+  -- I think that this could be fixed, since the scheduler is oblivious to the events
+  -- I should be able to decide the event.
+  -- The requirement would be something along the lines of:
+  -- Σ₁ ⟶ Σ₁' ↑ (L , n , fork H m) ⇒ ∃ Σ₁'' .  Σ₁ ⟶ Σ₁'' ↑ (L , n , Step) ∧ Σ₁'' ≈ˢ Σ₁'
 
 εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.fork∙ l∈P t∈T step uᵀ uᴾ sch) g₁'≈g₂' | sch' = {!!}
 
