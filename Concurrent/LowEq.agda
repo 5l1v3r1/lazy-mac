@@ -143,6 +143,15 @@ splitᴾ refl = refl P., refl P., refl
 ⌞ [] ⌟ᴾ = refl
 ⌞ x ◅ eq ⌟ᴾ = cong₂ _◅_ ⌞ x ⌟ᵀ ⌞ eq ⌟ᴾ
 
+refl-≈ᴾ : ∀ {ls} {P : Pools ls} ->  P ≈ᴾ P
+refl-≈ᴾ = ⌜ refl ⌝ᴾ
+
+sym-≈ᴾ :  ∀ {ls} {P₁ P₂ : Pools ls} -> P₁ ≈ᴾ P₂ -> P₂ ≈ᴾ P₁
+sym-≈ᴾ x  = ⌜ sym ⌞ x ⌟ᴾ ⌝ᴾ
+
+trans-≈ᴾ :  ∀ {ls} {P₁ P₂ P₃ : Pools ls} -> P₁ ≈ᴾ P₂ -> P₂ ≈ᴾ P₃ -> P₁ ≈ᴾ P₃
+trans-≈ᴾ x y = ⌜ trans ⌞ x ⌟ᴾ ⌞ y ⌟ᴾ ⌝ᴾ
+
 --------------------------------------------------------------------------------
 
 -- structural low-equivalence for global configuration

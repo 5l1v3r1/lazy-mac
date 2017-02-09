@@ -38,8 +38,8 @@ open Scheduler.Security.NIˢ 𝓛 A 𝓝 renaming (State to Stateˢ)
 open import Concurrent.Erasure A 𝓝
 open import Concurrent.Lemmas A 𝓝
 
-import Concurrent.LowEq as L₁
-open L₁ A 𝓝
+import Concurrent.LowEq  A 𝓝 as L₁
+open L₁
 
 import Sequential.LowEq  𝓛 A as L₂
 open L₂
@@ -152,19 +152,17 @@ open import Sequential.Graph 𝓛 A
 ... | Σ₂'' P., sch'' P., Σ₂'≈Σ₂'' with updateᴾ-≈' h⋤A u₁ᴾ' P₁'≈P₂' (newᵀ-≈' h⋤A Tᴴ₂≈T₁ᴴ L₁.⟨ ⟨ e₁ , e₂ ⟩ , [] ⟩)
 ... | P₂'' P., P₂''≈P₁'' P., uᴾ₂′ = Cᴳ _ L₁.⟨ trans-≈ˢ Σ₁'≈Σ₂' Σ₂'≈Σ₂'' , P₂''≈P₁'' , Γ₁'≈Γ₂' ⟩ (fork l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ H∈P₂ sch'' uᴾ₂′ ∷ [])
 
-εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
-  -- Fork∙ (?)
+εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.fork {Tᴴ = T₁ᴴ} l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
+  -- Fork∙
   | Σ₂' P., sch' P., Σ₁'≈Σ₂' | T₂ P., T₁≈T₂ P., l∈P₂
   | ._ P., L₁.⟨ ⟨ G.fork' l⊑H h⋤A e₁ , G.fork∙ .l⊑H e₂ ⟩ , S₁≈S₂ ⟩ P., t∈T₂
        with redex-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , ⟨ ( G.fork' l⊑H h⋤A e₁) , G.fork∙ l⊑H e₂ ⟩ , S₁≈S₂ ⟩ step₁
 ... | _ P., L₂.⟨ Γ₁'≈Γ₂' , t₁'≈t₂' , S₁'≈S₂' ⟩  P., step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ L₁.⟨ t₁'≈t₂' , S₁'≈S₂' ⟩
 ... | T₂' P., T₁'≈T₂' P., u₂ᵀ with updateᴾ-≈ L⊑A u₁ᴾ P₁≈P₂ T₁'≈T₂'
-... | P₂' P., P₁'≈P₂' P., u₂ᴾ = Cᴳ {!!} {!!} (fork∙ l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ {!sch'!} ∷ [])
-  -- Here the problem is that the scheduler sch' predicts Fork, while fork∙ wants Step.
-  -- I think that this could be fixed, since the scheduler is oblivious to the events
-  -- I should be able to decide the event.
-  -- The requirement would be something along the lines of:
-  -- Σ₁ ⟶ Σ₁' ↑ (L , n , fork H m) ⇒ ∃ Σ₁'' .  Σ₁ ⟶ Σ₁'' ↑ (L , n , Step) ∧ Σ₁'' ≈ˢ Σ₁'
+... | P₂' P., P₁'≈P₂' P., u₂ᴾ with fork-≈ˢ l⊑H L⊑A h⋤A sch'
+... | Σ₂'' P., sch'' P., Σ₂'≈Σ₂'' with updateᴾ-≈' {T₂ = T₁ᴴ} h⋤A u₁ᴾ' P₁'≈P₂' L₁.∙
+... | P₂'' P., P₁''≈P₂'' P., uᴾ₂′
+  = Cᴳ _ L₁.⟨ (trans-≈ˢ Σ₁'≈Σ₂' Σ₂'≈Σ₂'') , trans-≈ᴾ P₁''≈P₂'' L₁.⌜ sym (updateᴾ∙ h⋤A uᴾ₂′) ⌝ᴾ , Γ₁'≈Γ₂' ⟩ (fork∙ l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ sch'' ∷ [])
 
 εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.fork∙ l∈P t∈T step uᵀ uᴾ sch) g₁'≈g₂' | sch' = {!!}
 

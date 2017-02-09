@@ -46,6 +46,10 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
       id-≈ˢ : ∀ {Σ₁ Σ₂ L m₁ n H} -> (m₂ : ℕ) (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ S.⟪ L , n , (Fork H m₁ L⊑H) ⟫
               -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ S.⟪ L , n , (Fork H m₂ L⊑H) ⟫ × Σ₂ ≈ˢ Σ₂')
 
+      -- Forking a high thread should be (low) equivalent as non forking
+      fork-≈ˢ : ∀ {Σ₁ Σ₂ L H n m} -> (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ ⟪ L , n , Fork H m L⊑H ⟫
+              -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ S.⟪ L , n , Step ⟫ × Σ₂ ≈ˢ Σ₂')
+
       -- Starvation-free
       squareˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , 0 ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
             ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e ⟫ × Σ₁' ≈ˢ Σ₂')
