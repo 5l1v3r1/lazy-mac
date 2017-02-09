@@ -89,9 +89,6 @@ done-ε l⊑A (Done isVal) = Done (εᵀ-Val isVal)
 import Sequential.Graph as S₂
 open S₂ 𝓛 A
 
-ε¬redex : ∀ {l ls τ} {p : Program l ls τ} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
-ε¬redex {l} {ls} {τ} {p = p} l⊑A = ? -- aux (lift-εᴾ (yes l⊑A) p)
-
 stuck-ε : ∀ {l ls τ} {p : Program l ls τ} -> (l⊑A : l ⊑ A) -> Stuckᴾ p -> Stuckᴾ (SE.ε₁ᴾ (yes l⊑A) p)
 stuck-ε {l} {ls} {τ} l⊑A (¬done P., ¬redex) = ε¬done ¬done P., ε¬redex l⊑A ¬redex
   where ε¬done : {p : Program l ls τ} -> ¬ (Doneᴾ p) -> ¬ (Doneᴾ (ε₁ᴾ (yes l⊑A) p))
@@ -99,6 +96,11 @@ stuck-ε {l} {ls} {τ} l⊑A (¬done P., ¬redex) = ε¬done ¬done P., ε¬rede
         ε¬done {⟨ Γ , t , x ∷ S ⟩} ¬done₁ ()
         ε¬done {⟨ Γ , t , ∙ ⟩} ¬done₁ ()
         ε¬done {∙} ¬done₁ ()
+
+        -- open import Sequential.Lemmas Sequential.Lemmas 𝓛 A -- simᴾ is almost completed
+        postulate ε¬redex : ∀ {l ls τ} {p : Program l ls τ} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
+        -- ε¬redex {l} {ls} {τ} {p = p} l⊑A ¬redex redex = simᴾ (lift-εᴾ (yes l⊑A) p) ¬redex redex
+
 
 lengthᵀ-ε-≡ : ∀ {l} (l⊑A : l ⊑ A) (T : Pool l) -> lengthᵀ T ≡ lengthᵀ (εᵀ (yes l⊑A) T)
 lengthᵀ-ε-≡ l⊑A C.[] = refl

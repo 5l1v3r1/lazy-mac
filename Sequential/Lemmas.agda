@@ -111,14 +111,14 @@ writeᴴ H⊑A (x ∷ eᴴ) S.here | yes p = _ P., here
 writeᴴ H⊑A (x ∷ eᴴ) S.here | no ¬p = ⊥-elim (¬p H⊑A)
 writeᴴ H⊑A (x ∷ eᴴ) (S.there u) = P.map (_∷_ _) there (writeᴴ H⊑A eᴴ u)
 
-aux : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
+simᴾ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
 
-aux {l⊑A = l⊑A} ⟨ e₁ᴴ  , eᵀ₁ , e₁ˢ  ⟩ ¬redex (S₁.Step (S₁.Pure l∈Γ' step' uᴴ')) with memberᴴ l⊑A e₁ᴴ l∈Γ'
+simᴾ {l⊑A = l⊑A} ⟨ e₁ᴴ  , eᵀ₁ , e₁ˢ  ⟩ ¬redex (S₁.Step (S₁.Pure l∈Γ' step' uᴴ')) with memberᴴ l⊑A e₁ᴴ l∈Γ'
 ... | Δ P., ⟨ ._ , e₁ᴱ ⟩ P., l∈Γ with sim⇝ l⊑A  e₁ᴱ eᵀ₁ e₁ˢ step'
 ... | Step step ⟨ e₂ᴱ , e₂ᵀ , e₂ˢ ⟩ with updateᴴ l⊑A e₁ᴴ ⟨ l⊑A , e₂ᴱ ⟩ uᴴ'
 ... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Pure l∈Γ step uᴴ)))
 
-aux ⟨ x , new l⊑h h⊑A (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.New H∈Γ' uᴴ')) with memberᴴ h⊑A x H∈Γ'
+simᴾ ⟨ x , new l⊑h h⊑A (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.New H∈Γ' uᴴ')) with memberᴴ h⊑A x H∈Γ'
 ... | Δ P., eˣ P., H∈Γ with updateᴴ h⊑A x (newˣ ∥ l⊑h , τ∈π ∥ eˣ) uᴴ'
 ... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (New H∈Γ uᴴ)))
 
@@ -126,31 +126,31 @@ aux ⟨ x , new l⊑h h⊑A (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.Ne
 -- world I have lost all information about it, hence I cannot recreate the original step.
 -- I believe that this could be fixed by keeping H∈Γ and uᴴ around in New∙ (without actually making the change)
 -- in order to replicate the step as I did for New.
-aux ⟨ x , new' l⊑h h⋤A (Var ._) , x₂ ⟩ ¬redex (S₁.Step S₁.New∙) = ⊥-elim (¬redex (Step (New {!!} {!!})))
+simᴾ ⟨ x , new' l⊑h h⋤A (Var ._) , x₂ ⟩ ¬redex (S₁.Step S₁.New∙) = ⊥-elim (¬redex (Step (New {!!} {!!})))
 
-aux ⟨ x , new∙ l⊑h (Var ._) , x₂ ⟩ ¬redex (Step New∙) = ⊥-elim (¬redex (Step New∙))
+simᴾ ⟨ x , new∙ l⊑h (Var ._) , x₂ ⟩ ¬redex (Step New∙) = ⊥-elim (¬redex (Step New∙))
 
-aux ⟨ x , Res x₁ #[ n ] , write l⊑H H⊑A τ∈π ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Write₂ H∈Γ' u'ᴹ u'ᴴ)) with memberᴴ H⊑A x H∈Γ'
+simᴾ ⟨ x , Res x₁ #[ n ] , write l⊑H H⊑A τ∈π ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Write₂ H∈Γ' u'ᴹ u'ᴴ)) with memberᴴ H⊑A x H∈Γ'
 ... | Δ P., _ P., H∈Γ with writeᴴ {Δ = Δ} H⊑A x u'ᴴ
 ... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Write₂ H∈Γ u'ᴹ uᴴ)))
 
-aux ⟨ x , Res x₁ #[ n ]ᴰ , write l⊑H H⊑A ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Writeᴰ₂ H∈Γ' u'ᴹ u'ᴴ)) with memberᴴ H⊑A x H∈Γ'
+simᴾ ⟨ x , Res x₁ #[ n ]ᴰ , write l⊑H H⊑A ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Writeᴰ₂ H∈Γ' u'ᴹ u'ᴴ)) with memberᴴ H⊑A x H∈Γ'
 ... | Δ P., _ P., H∈Γ with writeᴴ {Δ = Δ} H⊑A x u'ᴴ
 ... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Writeᴰ₂ H∈Γ u'ᴹ uᴴ)))
 
-aux ⟨ x , Res x₁ x₂ , write' l⊑H H⋤A ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
-aux ⟨ x , Res x₁ x₂ , write∙ l⊑H ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (Step Write∙₂))
+simᴾ ⟨ x , Res x₁ x₂ , write' l⊑H H⋤A ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
+simᴾ ⟨ x , Res x₁ x₂ , write∙ l⊑H ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (Step Write∙₂))
 
-aux ⟨ x , Res∙ x₁ , write' l⊑H H⋤A ._ ∷ x₂ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
-aux ⟨ x , Res∙ x₁ , write∙ l⊑H ._ ∷ x₂ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step Write∙₂))
+simᴾ ⟨ x , Res∙ x₁ , write' l⊑H H⋤A ._ ∷ x₂ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
+simᴾ ⟨ x , Res∙ x₁ , write∙ l⊑H ._ ∷ x₂ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step Write∙₂))
 
-aux {l⊑A = l⊑A} ⟨ x , Res x₁ #[ n ] , read ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Read₂ l∈Γ' n∈M)) with memberᴴ l⊑A x l∈Γ'
+simᴾ {l⊑A = l⊑A} ⟨ x , Res x₁ #[ n ] , read ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Read₂ l∈Γ' n∈M)) with memberᴴ l⊑A x l∈Γ'
 ... | Δ P., ⟨ ._ , eᴱ ⟩ P., l∈Γ = ⊥-elim (¬redex (S₁.Step (Read₂ l∈Γ n∈M)))
-aux {l⊑A = l⊑A} ⟨ x , Res x₁ #[ n ]ᴰ , read L⊑l ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Readᴰ₂ L∈Γ' n∈M)) with memberᴴ (trans-⊑ L⊑l l⊑A) x L∈Γ'
+simᴾ {l⊑A = l⊑A} ⟨ x , Res x₁ #[ n ]ᴰ , read L⊑l ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Readᴰ₂ L∈Γ' n∈M)) with memberᴴ (trans-⊑ L⊑l l⊑A) x L∈Γ'
 ... | Δ P., ⟨ ._ , eᴱ ⟩ P., l∈Γ = ⊥-elim (¬redex (S₁.Step (Readᴰ₂ l∈Γ n∈M)))
 
-aux {l⊑A = l⊑A}⟨ x , deepDup (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.DeepDupˢ {Δ = Δ'} L⊏l L∈Γ' t∈Δ')) with memberᴴ (trans-⊑ (proj₁ L⊏l) l⊑A) x L∈Γ'
+simᴾ {l⊑A = l⊑A}⟨ x , deepDup (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.DeepDupˢ {Δ = Δ'} L⊏l L∈Γ' t∈Δ')) with memberᴴ (trans-⊑ (proj₁ L⊏l) l⊑A) x L∈Γ'
 ... | Δ P., ⟨ ._ , eᴱ ⟩ P., L∈Γ with memberᴱ τ∈π eᴱ t∈Δ'
 ... | t P., eᵀ P., t∈Δ = ⊥-elim (¬redex (S₁.Step (DeepDupˢ L⊏l L∈Γ t∈Δ)))
 
-aux ∙ᴸ ¬redex (S₁.Step x₃) = ¬redex (S₁.Step x₃)
+simᴾ ∙ᴸ ¬redex (S₁.Step x₃) = ¬redex (S₁.Step x₃)
