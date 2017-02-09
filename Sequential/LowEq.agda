@@ -281,3 +281,35 @@ aux₂ (no ¬p) eq₁ = ∙
 ⌞ cons (no _) ∙ eq₂ ⌟ᴴ | no ¬p = refl
 
 --------------------------------------------------------------------------------
+
+_≅ᴾ⟨_⟩_ : ∀ {l ls τ} -> Program l ls τ -> Dec (l ⊑ A) -> Program l ls τ -> Set
+p₁ ≅ᴾ⟨ x ⟩ p₂ = ε₁ᴾ x p₁ ≡ ε₁ᴾ x p₂
+
+-- Program low-equivalence
+data _≈ᴾ⟨_⟩_ {l ls τ} : Program l ls τ -> Dec (l ⊑ A) -> Program l ls τ -> Set where
+  ⟨_,_,_⟩ : ∀ {π τ'} {Γ₁ Γ₂ : Heaps ls} {t₁ t₂ : Term π τ'} {S₁ S₂ : Stack l _ τ} {l⊑A : l ⊑ A} ->
+            Γ₁ ≈ᴴ Γ₂ -> t₁ ≈ᵀ t₂ -> S₁ ≈ˢ S₂ -> ⟨ Γ₁ , t₁ , S₁ ⟩ ≈ᴾ⟨ yes l⊑A ⟩ ⟨ Γ₂ , t₂ , S₂ ⟩
+  ∙ᴸ : ∀ {l⊑A : l ⊑ A} -> ∙ ≈ᴾ⟨ yes l⊑A ⟩ ∙
+  ∙ : ∀ {p₁ p₂} {l⋤A : l ⋤ A} -> p₁ ≈ᴾ⟨ no l⋤A ⟩ p₂
+
+splitᴾ : ∀ {l ls τ τ₁ τ₂ π₁ π₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heaps ls} {S₁ : Stack _ _ _} {S₂ : Stack _ _ _}
+         -> _≡_ {_} {Program l ls τ} ⟨ Γ₁ , t₁ , S₁ ⟩ ⟨ Γ₂ , t₂ , S₂ ⟩ -> π₁ ≡ π₂ × τ₁ ≡ τ₂
+splitᴾ refl = refl P., refl
+
+split₂ᴾ : ∀ {l ls τ τ' π} {t₁ t₂ : Term π τ'} {Γ₁ Γ₂ : Heaps ls} {S₁ S₂ : Stack _ _ _}
+         -> _≡_ {_} {Program l ls τ} ⟨ Γ₁ , t₁ , S₁ ⟩ ⟨ Γ₂ , t₂ , S₂ ⟩ -> Γ₁ ≡ Γ₂ × t₁ ≡ t₂ × S₁ ≡ S₂
+split₂ᴾ refl = refl P., refl P., refl
+
+⌜_⌝ᴾ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} {x : Dec _} -> p₁ ≅ᴾ⟨ x ⟩ p₂ -> p₁ ≈ᴾ⟨ x ⟩ p₂
+⌜_⌝ᴾ {p₁ = SC.⟨ Γ , t , S ⟩} {SC.⟨ Γ₁ , t₁ , S₁ ⟩} {yes p} eq with splitᴾ eq
+... | eq₁ P., eq₂ rewrite eq₁ | eq₂ with split₂ᴾ eq
+... | eq₃ P., eq₄ P., eq₅ = ⟨ ⌜ eq₃ ⌝ᴴ , ⌜ eq₄ ⌝ᵀ , ⌜ eq₅ ⌝ˢ ⟩
+⌜_⌝ᴾ {p₁ = SC.⟨ Γ , t , S ⟩} {SC.∙} {yes p} ()
+⌜_⌝ᴾ {p₁ = SC.∙} {SC.⟨ Γ , t , S ⟩} {yes p} ()
+⌜_⌝ᴾ {p₁ = SC.∙} {SC.∙} {yes p} refl = ∙ᴸ
+⌜_⌝ᴾ {x = no ¬p} refl = ∙
+
+⌞_⌟ᴾ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} {x : Dec _} -> p₁ ≈ᴾ⟨ x ⟩ p₂ -> p₁ ≅ᴾ⟨ x ⟩ p₂
+⌞ ⟨ x , x₁ , x₂ ⟩ ⌟ᴾ rewrite ⌞ x ⌟ᴴ | ⌞ x₁ ⌟ᵀ | ⌞ x₂ ⌟ˢ = refl
+⌞ ∙ᴸ ⌟ᴾ = refl
+⌞ ∙ ⌟ᴾ = refl
