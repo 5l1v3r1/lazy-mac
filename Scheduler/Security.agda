@@ -47,8 +47,13 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
               -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ S.⟪ L , n , (Fork H m₂ L⊑H) ⟫ × Σ₂ ≈ˢ Σ₂')
 
       -- Forking a high thread should be (low) equivalent as non forking
-      fork-≈ˢ : ∀ {Σ₁ Σ₂ L H n m} -> (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ ⟪ L , n , Fork H m L⊑H ⟫
+      step-≈ˢ : ∀ {Σ₁ Σ₂ L H n m} -> (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ ⟪ L , n , Fork H m L⊑H ⟫
               -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ S.⟪ L , n , Step ⟫ × Σ₂ ≈ˢ Σ₂')
+
+      -- The converse property, at any time you if you step I should be able to fork a high thread
+      fork-≈ˢ : ∀ {Σ₁ Σ₂ L H n} -> (m : ℕ) (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ ⟪ L , n , Step ⟫
+              -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ S.⟪ L , n , Fork H m L⊑H ⟫ × Σ₂ ≈ˢ Σ₂')
+
 
       -- Starvation-free
       squareˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , 0 ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
