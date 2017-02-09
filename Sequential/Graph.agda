@@ -219,6 +219,10 @@ valᴱ (Res∙ x) (S.Res .S.∙) = S.Res _
 valᴱ #[ n ] S.#[ .n ] = S.#[ n ]
 valᴱ #[ n ]ᴰ S.#[ .n ]ᴰ = S.#[ n ]ᴰ
 
+val₁ᴱ : ∀ {π τ} {t t' : Term π τ} -> Erase t t' -> Value t -> Value t'
+val₁ᴱ e val with εᵀ-Val val
+... | val' rewrite unlift-ε e = val'
+
 --------------------------------------------------------------------------------
 
 data Eraseᶜ {l} : ∀ {τ₁ τ₂} -> Cont l τ₁ τ₂ -> Cont l τ₁ τ₂ -> Set where

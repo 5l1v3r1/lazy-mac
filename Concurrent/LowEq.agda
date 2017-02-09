@@ -81,20 +81,6 @@ data _≈ᵀ⟨_⟩_ {l : Label} : Pool l -> Dec (l ⊑ A) -> Pool l -> Set wher
   ∙ᴸ : ∀ {l⊑A : l ⊑ A} -> ∙ ≈ᵀ⟨ yes l⊑A ⟩ ∙
   ∙ : ∀ {T₁ T₂ : Pool l} {l⋤A : l ⋤ A} -> T₁ ≈ᵀ⟨ no l⋤A ⟩ T₂
 
--- ⌜_⌝ᵀ : ∀ {l} {T₁ T₂ : Pool l} -> T₁ ≌ᵀ⟨ l ⊑? A ⟩ T₂ -> T₁ ≈ᵀ⟨ l ⊑? A ⟩ T₂
--- ⌜_⌝ᵀ {l}  eq with l ⊑? A
--- ⌜_⌝ᵀ {l} {C.[]} {C.[]} eq | yes p = nil p
--- ⌜_⌝ᵀ {l} {C.[]} {t C.◅ T₂} () | yes p
--- ⌜_⌝ᵀ {l} {C.[]} {C.∙} () | yes p
--- ⌜_⌝ᵀ {l} {t C.◅ T₁} {C.[]} () | yes p
--- ⌜_⌝ᵀ {l} {t C.◅ T₁} {t₁ C.◅ T₂} eq | yes p = {!!}
---   -- rewrite εᵀ-ext-≡ (yes p) (l ⊑? A) T₁ | εᵀ-ext-≡ (yes p) (l ⊑? A) T₂ = cons p {!!} {!⌜ ? ⌝ᵀ!}
--- ⌜_⌝ᵀ {l} {t C.◅ T₁} {C.∙} () | yes p
--- ⌜_⌝ᵀ {l} {C.∙} {C.[]} () | yes p
--- ⌜_⌝ᵀ {l} {C.∙} {t C.◅ T₂} () | yes p
--- ⌜_⌝ᵀ {l} {C.∙} {C.∙} refl | yes p = ∙ᴸ
--- ⌜ eq ⌝ᵀ | no ¬p = ∙
-
 open import Data.Product using (_×_)
 
 splitᵀ : ∀ {l} {t₁ t₂ : Thread l} {T₁ T₂ : Pool l} -> _≡_ {_} {Pool l} (t₁ ◅ T₁) (t₂ ◅ T₂) -> t₁ ≡ t₂ × T₁ ≡ T₂
@@ -118,6 +104,14 @@ splitᵀ refl = refl P., refl
 ⌞ cons l⊑A x eq ⌟ᵀ = cong₂ _◅_ ⌞ x ⌟ᵗ ⌞ eq ⌟ᵀ
 ⌞ ∙ᴸ ⌟ᵀ = refl
 ⌞ ∙ ⌟ᵀ = refl
+
+ext-≈ᵀ : ∀ {l} {T₁ T₂ : Pool l} {x : Dec _} -> T₁ ≈ᵀ⟨ x ⟩ T₂ -> (y : Dec _) -> T₁ ≈ᵀ⟨ y ⟩ T₂
+ext-≈ᵀ {x = yes .l⊑A} (nil l⊑A) (yes p₁) = nil p₁
+ext-≈ᵀ {x = yes .p} (cons p x eq) (yes p₁) = cons p₁ x (ext-≈ᵀ  eq (yes p₁))
+ext-≈ᵀ {x = yes p} ∙ᴸ (yes p₁) = ∙ᴸ
+ext-≈ᵀ {x = yes p} eq (no ¬p) = ⊥-elim (¬p p)
+ext-≈ᵀ {x = no ¬p} eq (yes p) = ⊥-elim (¬p p)
+ext-≈ᵀ {x = no ¬p} ∙ (no ¬p₁) = ∙
 
 --------------------------------------------------------------------------------
 
