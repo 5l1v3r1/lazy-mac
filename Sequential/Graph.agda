@@ -365,6 +365,13 @@ newˣ : ∀ {L τ π M} {L⊑A : L ⊑ A} {Δ Δ' : Env L π} -> (c : Cell L τ)
          Eraseˣ (yes L⊑A) ⟨ M , Δ  ⟩ ⟨ M , Δ' ⟩ -> Eraseˣ (yes L⊑A) ⟨ (newᴹ c M) , Δ ⟩ ⟨ (newᴹ c M) , Δ' ⟩
 newˣ c ⟨ L⊑A , x ⟩ = ⟨ L⊑A , x ⟩
 
+writeᴴ : ∀ {h π ls} {M' : Memory h} {Δ Δ' : Env h π} {Γ₁ Γ₁' Γ₂' : Heaps ls} (h⊑A : h ⊑ A) ->
+          Eraseᴴ Γ₁ Γ₁' -> Γ₂' ≔ Γ₁' [ h ↦ ⟨ M' , Δ' ⟩ ]ᴴ -> ∃ (λ Γ₂ -> Γ₂ ≔ Γ₁ [ h ↦ ⟨ M' , Δ ⟩ ]ᴴ)
+writeᴴ {L} H⊑A (x ∷ eᴴ) S.here with L ⊑? A
+writeᴴ H⊑A (x ∷ eᴴ) S.here | yes p = _ P., here
+writeᴴ H⊑A (x ∷ eᴴ) S.here | no ¬p = ⊥-elim (¬p H⊑A)
+writeᴴ H⊑A (x ∷ eᴴ) (S.there u) = P.map (_∷_ _) there (writeᴴ H⊑A eᴴ u)
+
 aux : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
 aux ⟨ x , x₁ , x₂ ⟩ ¬redex (S₁.Step (S₁.Pure l∈Γ step uᴴ)) = ⊥-elim (¬redex (S₁.Step {!!}))
 
@@ -373,8 +380,13 @@ aux ⟨ x , new l⊑h h⊑A (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.Ne
 ... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (New H∈Γ uᴴ)))
 
 aux ⟨ x , new' l⊑h h⋤A (Var ._) , x₂ ⟩ ¬redex (S₁.Step S₁.New∙) = ⊥-elim (¬redex (Step (New {!!} {!!})))
+
 aux ⟨ x , new∙ l⊑h (Var ._) , x₂ ⟩ ¬redex (Step New∙) = ⊥-elim (¬redex (Step New∙))
-aux ⟨ x , Res x₁ #[ n ] , write l⊑H H⊑A ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Write₂ H∈Γ uᴹ uᴴ)) = ⊥-elim (¬redex (S₁.Step (Write₂ {!!} {!!} {!!})))
+
+aux ⟨ x , Res x₁ #[ n ] , write l⊑H H⊑A τ∈π ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Write₂ {M' = M'} H∈Γ' u'ᴹ u'ᴴ)) with memberᴴ H⊑A x H∈Γ'
+... | Δ P., _ P., H∈Γ with writeᴴ {Δ = Δ} H⊑A x u'ᴴ
+... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Write₂ H∈Γ u'ᴹ uᴴ)))
+
 aux ⟨ x , Res x₁ #[ n ]ᴰ , write l⊑H H⊑A ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Writeᴰ₂ H∈Γ uᴹ uᴴ)) = ⊥-elim (¬redex (S₁.Step (Writeᴰ₂ {!!} {!!} {!!})))
 aux ⟨ x , Res x₁ x₂ , write' l⊑H H⋤A ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
 aux ⟨ x , Res x₁ x₂ , write∙ l⊑H ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = {!!} -- In the semantics we assume that the address is in whnf
