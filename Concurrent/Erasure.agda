@@ -7,7 +7,8 @@ module Concurrent.Erasure {𝓛 : L.Lattice} {𝓢 : S.Scheduler 𝓛} (A : L.La
 open import Relation.Nullary
 open import Types 𝓛
 
-open import Sequential.Semantics 𝓛
+import Sequential.Semantics as S₁
+open S₁ 𝓛
 
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
 open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-Γ)
@@ -85,9 +86,11 @@ updateᴾ l⊑A (C.there x) = C.there (updateᴾ l⊑A x)
 done-ε : ∀ {l ls τ} {p : Program l ls τ} -> (l⊑A : l ⊑ A) -> Doneᴾ p -> Doneᴾ (SE.ε₁ᴾ (yes l⊑A) p)
 done-ε l⊑A (Done isVal) = Done (εᵀ-Val isVal)
 
+import Sequential.Graph as S₂
+open S₂ 𝓛 A
+
 ε¬redex : ∀ {l ls τ} {p : Program l ls τ} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
-ε¬redex {p = SC.∙} l⊑A ¬redex redex-ε = ⊥-elim (¬redex redex-ε)
-ε¬redex {p = SC.⟨ Γ , t , S ⟩} l⊑A ¬redex redex-ε = {!!}
+ε¬redex {l} {ls} {τ} {p = p} l⊑A = ? -- aux (lift-εᴾ (yes l⊑A) p)
 
 stuck-ε : ∀ {l ls τ} {p : Program l ls τ} -> (l⊑A : l ⊑ A) -> Stuckᴾ p -> Stuckᴾ (SE.ε₁ᴾ (yes l⊑A) p)
 stuck-ε {l} {ls} {τ} l⊑A (¬done P., ¬redex) = ε¬done ¬done P., ε¬redex l⊑A ¬redex
