@@ -62,6 +62,9 @@ memberᵀ-≈ = {!!}
 val-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ L₂.≈ᵀ t₂ -> Value t₁ -> Value t₂
 val-≈ = {!!}
 
+stuck-≈ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (l⊑A : l ⊑ A) -> p₁ L₂.≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Stuckᴾ p₁ -> Stuckᴾ p₂
+stuck-≈ = {!!}
+
 εᴳ-simᴸ⋆ : ∀ {L n n₁ ls} {Σ₁ Σ₁' Σ₂ : Stateˢ} {Γ₁ Γ₁' Γ₂ : Heaps ls} {P₁ P₁' P₂ : Pools ls} ->
                (n₂ : SC.ℕ) ->
                Σ₁ ≈ˢ-⟨ n₁ , n₂ ⟩ Σ₂ ->
@@ -69,6 +72,7 @@ val-≈ = {!!}
                    g₁' = ⟨ Σ₁' , Γ₁' , P₁' ⟩
                    g₂ = ⟨ Σ₂ , Γ₂ , P₂ ⟩ in
                L ⊑ A -> (L P., n)  ⊢ g₁ ↪ g₁' -> g₁ ≈ᴳ g₂ -> g₂ ↪⋆-≈ᴳ g₁'
+
 εᴳ-simᴸ⋆ SC.zero Σ₁≈Σ₂ L⊑A step g₁'≈g₂' with squareˢ L⊑A Σ₁≈Σ₂ (getSchStep step)
 
 εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) g₁'≈g₂' | sch' = {!!}
@@ -77,7 +81,10 @@ val-≈ = {!!}
 
 εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.fork∙ l∈P t∈T step uᵀ uᴾ sch) g₁'≈g₂' | sch' = {!!}
 
-εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.skip l∈P t∈T stuck sch) g₁'≈g₂' | sch' = {!!}
+εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.skip l∈P₁ t∈T₁ stuck₁ sch) L₁.⟨ Σ₁≈Σ₂' , P₁≈P₂ , Γ₁≈Γ₂ ⟩ | Σ₂' P., sch' P., Σ₁'≈Σ₂' with memberᴾ-≈ L⊑A l∈P₁ P₁≈P₂
+... | T₂ P., T₁≈T₂ P., l∈P₂ with memberᵀ-≈ L⊑A t∈T₁ T₁≈T₂
+... | ._ P., ⟨ t₁≈t₂ , S₁≈S₂ ⟩ P., t∈T₂
+  = Cᴳ C.⟨ Σ₂' , _ , _ ⟩ L₁.⟨ Σ₁'≈Σ₂' , P₁≈P₂ , Γ₁≈Γ₂ ⟩ (skip l∈P₂ t∈T₂ (stuck-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , t₁≈t₂ , S₁≈S₂ ⟩ stuck₁) sch' ∷ [])
 
 εᴳ-simᴸ⋆ zero Σ₁≈Σ₂ L⊑A (CS.done l∈P₁ t∈T₁ (Done isVal) sch) L₁.⟨ Σ₁≈Σ₂' , P₁≈P₂ , Γ₁≈Γ₂ ⟩ | Σ₂' P., sch' P., Σ₁'≈Σ₂' with memberᴾ-≈ L⊑A l∈P₁ P₁≈P₂
 ... | T₂ P., T₁≈T₂ P., l∈P₂ with memberᵀ-≈ L⊑A t∈T₁ T₁≈T₂
