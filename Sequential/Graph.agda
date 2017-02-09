@@ -6,10 +6,12 @@ import Lattice as L
 
 module Sequential.Graph (𝓛 : L.Lattice) (A : L.Label 𝓛) where
 
-open import Types 𝓛
-import Sequential.Calculus as S
+import Types as T
+open T 𝓛
+
+import Sequential.Calculus as S hiding (wkenᴱ)
 open S 𝓛
-open import Sequential.Erasure 𝓛 A as SE hiding (memberᴴ ; updateᴴ)
+open import Sequential.Erasure 𝓛 A as SE hiding (memberᴴ ; updateᴴ ; memberᴱ)
 
 open import Relation.Nullary
 
@@ -110,7 +112,7 @@ lift-ε (S.fork∙ l⊑h t) = fork∙ l⊑h (lift-ε t)
 lift-ε (S.deepDup t) = deepDup (lift-ε t)
 lift-ε S.∙ = ∙
 
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality hiding (subst)
 open import Data.Empty
 
 unlift-ε : ∀ {π τ} {t t' : Term π τ} -> Erase t t' -> εᵀ t ≡ t'
@@ -177,6 +179,45 @@ unlift-ε (fork' l⊑h h⋤A x) | no ¬p rewrite unlift-ε x = refl
 unlift-ε (fork∙ l⊑h x) rewrite unlift-ε x = refl
 unlift-ε (deepDup x) rewrite unlift-ε x = refl
 unlift-ε ∙ = refl
+
+wkenᴱ : ∀ {π₁ π₂ τ} {t t' : Term π₁ τ} -> Erase t t' -> (p : π₁ ⊆ π₂) ->  Erase (wken t p) (wken t' p)
+wkenᴱ {π₁} {π₂} {τ} {t} e p with lift-ε (wken t p)
+... | x rewrite unlift-ε e = x
+
+substᴱ :  ∀ {π α β} {x x' : Term π α} {t t' : Term (α ∷ π) β} -> Erase x x' -> Erase t t' -> Erase (subst x t) (subst x' t')
+substᴱ {x = x} {t = t} e₁ e₂ with lift-ε (subst x t)
+... | e rewrite unlift-ε e₁ | unlift-ε e₂ = e
+
+deepDupᵀᴱ : ∀ {π τ} {t t' : Term π τ} -> Erase t t' -> Erase (deepDupᵀ t) (deepDupᵀ t')
+deepDupᵀᴱ {t = t} e with lift-ε (deepDupᵀ t)
+... | e' rewrite unlift-ε e = e'
+
+¬valᴱ : ∀ {π τ} {t t' : Term π τ} -> Erase t t' -> ¬ (Value t') -> ¬ (Value t)
+¬valᴱ （） ¬val S.（） = ¬val S.（）
+¬valᴱ True ¬val S.True = ¬val S.True
+¬valᴱ False ¬val S.False = ¬val S.False
+¬valᴱ (Abs x) ¬val (S.Abs t) = ¬val (S.Abs _)
+¬valᴱ (Id x) ¬val (S.Id t) = ¬val (S.Id _)
+¬valᴱ (Mac x) ¬val (S.Mac t) = ¬val (S.Mac _)
+¬valᴱ (Res x x₁) ¬val (S.Res t) = ¬val (S.Res _)
+¬valᴱ (Res∙ x) ¬val (S.Res t) = ¬val (S.Res _)
+¬valᴱ #[ n ] ¬val S.#[ .n ] = ¬val S.#[ n ]
+¬valᴱ #[ n ]ᴰ ¬val S.#[ .n ]ᴰ = ¬val S.#[ n ]ᴰ
+
+¬varᴱ : ∀ {π τ} {t t' : Term π τ} -> Erase t t' -> ¬ (IsVar t') -> ¬ (IsVar t)
+¬varᴱ (Var τ∈π) ¬var (S.Var .τ∈π) = ¬var (S.Var τ∈π)
+
+valᴱ : ∀ {π τ} {t t' : Term π τ} -> Erase t t' -> Value t' -> Value t
+valᴱ （） S.（） = S.（）
+valᴱ True S.True = S.True
+valᴱ False S.False = S.False
+valᴱ (Abs e) (S.Abs t₁) = S.Abs _
+valᴱ (Id e) (S.Id t₁) = S.Id _
+valᴱ (Mac e) (S.Mac t₁) = S.Mac _
+valᴱ (Res x e) (S.Res t₁) = S.Res _
+valᴱ (Res∙ x) (S.Res .S.∙) = S.Res _
+valᴱ #[ n ] S.#[ .n ] = S.#[ n ]
+valᴱ #[ n ]ᴰ S.#[ .n ]ᴰ = S.#[ n ]ᴰ
 
 --------------------------------------------------------------------------------
 
@@ -327,72 +368,8 @@ unlift-εᴾ ∙ᴸ = refl
 
 --------------------------------------------------------------------------------
 
-import Sequential.Semantics as S₁
-open S₁ 𝓛
-
--- aux' : ∀ {l π₁ π₂ τ₁ τ₂} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ S₂ : Stack l _ _}
---          ? ⇝ ? -> ?
-
--- Need lemmas about references
-
--- memberᴴ : ∀ {h π ls} {M M' : Memory h} {Δ Δ' : Env h π} {Γ Γ' : Heaps ls} {h⊑A : h ⊑ A} ->
---           Eraseᴴ Γ Γ' -> Eraseˣ (yes h⊑A) ⟨ M , Δ ⟩ ⟨ M' , Δ' ⟩ -> h ↦ ⟨ M' , Δ' ⟩ ∈ᴴ Γ' -> h ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ
--- memberᴴ {H} (x ∷ e₁) ⟨ h⊑A , x₁ ⟩ S.here with H ⊑? A
--- memberᴴ (⟨ p , x ⟩ ∷ e₁) ⟨ h⊑A , x₁ ⟩ S.here | yes .p = {!!}
--- memberᴴ (x ∷ e₁) ⟨ h⊑A , x₁ ⟩ S.here | no ¬p = ⊥-elim (¬p h⊑A)
--- memberᴴ (x ∷ e₁) e₂ (S.there x₁) = S.there (memberᴴ e₁ e₂ x₁)
-
-open import Data.Product using (∃ ; Σ ; _×_)
-import Data.Product as P
-open import Function
-
-memberᴴ : ∀ {h π ls} {M : Memory h} {Δ' : Env h π} {Γ Γ' : Heaps ls} (h⊑A : h ⊑ A) ->
-          Eraseᴴ Γ Γ' -> h ↦ ⟨ M , Δ' ⟩ ∈ᴴ Γ' -> Σ (Env h π) (λ Δ -> Eraseˣ (yes h⊑A) ⟨ M , Δ ⟩ ⟨ M , Δ' ⟩ × h ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ)
-memberᴴ {H} h⊑A (x ∷ e) S.here with H ⊑? A
-memberᴴ h⊑A (⟨ p , x ⟩ ∷ e) S.here | yes .p = _ P., ⟨ h⊑A , x ⟩ P., here
-memberᴴ h⊑A (() ∷ e) S.here | no ¬p
-memberᴴ h⊑A (x ∷ e) (S.there x₁) = P.map id (P.map id there) (memberᴴ h⊑A e x₁)
-
-updateᴴ : ∀ {h π ls} {M : Memory h} {Δ Δ' : Env h π} {Γ₁ Γ₁' Γ₂' : Heaps ls} (h⊑A : h ⊑ A) ->
-          Eraseᴴ Γ₁ Γ₁' -> Eraseˣ (yes h⊑A) ⟨ M , Δ ⟩ ⟨ M , Δ' ⟩ -> Γ₂' ≔ Γ₁' [ h ↦ ⟨ M , Δ' ⟩  ]ᴴ -> ∃ (λ Γ₂ -> Γ₂ ≔ Γ₁ [ h ↦ ⟨ M , Δ ⟩ ]ᴴ)
-updateᴴ {H} h⊑A (x ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here with H ⊑? A
-updateᴴ h⊑A (⟨ p , x ⟩ ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here | yes .p = _ P., here
-updateᴴ h⊑A (∙ᴸ ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here | yes p = _ P., here
-updateᴴ h⊑A (∙ ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here | no ¬p = ⊥-elim (¬p h⊑A)
-updateᴴ h⊑A (x ∷ eᴴ) eˣ (S.there u₁) = P.map (_∷_ _) there (updateᴴ h⊑A eᴴ eˣ u₁)
-
-newˣ : ∀ {L τ π M} {L⊑A : L ⊑ A} {Δ Δ' : Env L π} -> (c : Cell L τ) ->
-         Eraseˣ (yes L⊑A) ⟨ M , Δ  ⟩ ⟨ M , Δ' ⟩ -> Eraseˣ (yes L⊑A) ⟨ (newᴹ c M) , Δ ⟩ ⟨ (newᴹ c M) , Δ' ⟩
-newˣ c ⟨ L⊑A , x ⟩ = ⟨ L⊑A , x ⟩
-
-writeᴴ : ∀ {h π ls} {M' : Memory h} {Δ Δ' : Env h π} {Γ₁ Γ₁' Γ₂' : Heaps ls} (h⊑A : h ⊑ A) ->
-          Eraseᴴ Γ₁ Γ₁' -> Γ₂' ≔ Γ₁' [ h ↦ ⟨ M' , Δ' ⟩ ]ᴴ -> ∃ (λ Γ₂ -> Γ₂ ≔ Γ₁ [ h ↦ ⟨ M' , Δ ⟩ ]ᴴ)
-writeᴴ {L} H⊑A (x ∷ eᴴ) S.here with L ⊑? A
-writeᴴ H⊑A (x ∷ eᴴ) S.here | yes p = _ P., here
-writeᴴ H⊑A (x ∷ eᴴ) S.here | no ¬p = ⊥-elim (¬p H⊑A)
-writeᴴ H⊑A (x ∷ eᴴ) (S.there u) = P.map (_∷_ _) there (writeᴴ H⊑A eᴴ u)
-
-aux : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
-aux ⟨ x , x₁ , x₂ ⟩ ¬redex (S₁.Step (S₁.Pure l∈Γ step uᴴ)) = ⊥-elim (¬redex (S₁.Step {!!}))
-
-aux ⟨ x , new l⊑h h⊑A (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.New H∈Γ' uᴴ')) with memberᴴ h⊑A x H∈Γ'
-... | Δ P., eˣ P., H∈Γ with updateᴴ h⊑A x (newˣ ∥ l⊑h , τ∈π ∥ eˣ) uᴴ'
-... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (New H∈Γ uᴴ)))
-
-aux ⟨ x , new' l⊑h h⋤A (Var ._) , x₂ ⟩ ¬redex (S₁.Step S₁.New∙) = ⊥-elim (¬redex (Step (New {!!} {!!})))
-
-aux ⟨ x , new∙ l⊑h (Var ._) , x₂ ⟩ ¬redex (Step New∙) = ⊥-elim (¬redex (Step New∙))
-
-aux ⟨ x , Res x₁ #[ n ] , write l⊑H H⊑A τ∈π ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Write₂ {M' = M'} H∈Γ' u'ᴹ u'ᴴ)) with memberᴴ H⊑A x H∈Γ'
-... | Δ P., _ P., H∈Γ with writeᴴ {Δ = Δ} H⊑A x u'ᴴ
-... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Write₂ H∈Γ u'ᴹ uᴴ)))
-
-aux ⟨ x , Res x₁ #[ n ]ᴰ , write l⊑H H⊑A ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Writeᴰ₂ H∈Γ uᴹ uᴴ)) = ⊥-elim (¬redex (S₁.Step (Writeᴰ₂ {!!} {!!} {!!})))
-aux ⟨ x , Res x₁ x₂ , write' l⊑H H⋤A ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
-aux ⟨ x , Res x₁ x₂ , write∙ l⊑H ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = {!!} -- In the semantics we assume that the address is in whnf
-aux ⟨ x , Res∙ x₁ , write' l⊑H H⋤A ._ ∷ x₂ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
-aux ⟨ x , Res∙ x₁ , write∙ l⊑H ._ ∷ x₂ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step Write∙₂))
-aux ⟨ x , Res x₁ #[ n ] , read ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Read₂ l∈Γ n∈M)) = ⊥-elim (¬redex (S₁.Step (Read₂ {!!} {!!})))
-aux ⟨ x , Res x₁ #[ n ]ᴰ , read L⊑l ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Readᴰ₂ L∈Γ n∈M)) = ⊥-elim (¬redex (S₁.Step (Readᴰ₂ {!!} {!!})))
-aux ⟨ x , deepDup (Var ._) , x₂ ⟩ ¬redex (S₁.Step (S₁.DeepDupˢ L⊏l L∈Γ t∈Δ)) = ⊥-elim (¬redex (S₁.Step (DeepDupˢ L⊏l {!!} t∈Δ)))
-aux ∙ᴸ ¬redex (S₁.Step x₃) = ¬redex (S₁.Step x₃)
+data Eraseˢ′ {l τ} : Dec (l ⊑ A) -> State l τ -> State l τ -> Set where
+  ⟨_,_,_⟩ : ∀ {l⊑A : l ⊑ A} {π τ'} {Δ Δ' : Env l π} {t t' : Term π τ'} {S S' : Stack _ _ _} ->
+              Eraseᴱ Δ Δ' -> Erase t t' -> Eraseˢ S S' -> Eraseˢ′ (yes l⊑A) ⟨ Δ , t , S ⟩ ⟨ Δ' , t' , S' ⟩
+  ∙ᴸ : ∀ {l⊑A : l ⊑ A} ->  Eraseˢ′ (yes l⊑A) ∙ ∙
+  ∙ : ∀ {l⋤A : l ⋤ A} {p} ->  Eraseˢ′ (no l⋤A) p ∙

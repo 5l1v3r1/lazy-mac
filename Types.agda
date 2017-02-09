@@ -70,6 +70,8 @@ record _∈⟨_⟩_ (τ : Ty) (l : Label) (π : Context) : Set where
   constructor ⟪_⟫
   field τ∈π : τ ∈ π
 
+open _∈⟨_⟩_ public
+
 infixl 2 ⟪_⟫
 
 _∈⟨_⟩ᴿ_  : Ty -> Label -> Context -> Set
