@@ -201,8 +201,10 @@ open import Data.Empty
 ¬Done⇒¬Val :  ∀ {l π ls τ} {Γ : Heaps ls} {t : Term π τ} -> ¬ (Doneᴾ {l} ⟨ Γ , t , [] ⟩) -> ¬ Value t
 ¬Done⇒¬Val x v = ⊥-elim (x (Done v))
 
-Stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Set
-Stateᴾ p = (Doneᴾ p) × ((Redexᴾ p) × (Stuckᴾ p))
+data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
+  isD :  Doneᴾ p -> Stateᴾ p
+  isR : Redexᴾ p -> Stateᴾ p
+  isS : Stuckᴾ p -> Stateᴾ p
 
 --------------------------------------------------------------------------------
 -- Lemmas
