@@ -126,7 +126,7 @@ simᴾ ⟨ x , new l⊑h h⊑A (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁
 -- world I have lost all information about it, hence I cannot recreate the original step.
 -- I believe that this could be fixed by keeping H∈Γ and uᴴ around in New∙ (without actually making the change)
 -- in order to replicate the step as I did for New.
-simᴾ ⟨ x , new' l⊑h h⋤A (Var ._) , x₂ ⟩ ¬redex (S₁.Step S₁.New∙) = ⊥-elim (¬redex (Step (New {!!} {!!})))
+simᴾ ⟨ x , new' l⊑h h⋤A (Var ._) , x₂ ⟩ ¬redex (S₁.Step S₁.New∙) = ⊥-elim (¬redex (Step {!!}))  -- new x is a redex
 
 simᴾ ⟨ x , new∙ l⊑h (Var ._) , x₂ ⟩ ¬redex (Step New∙) = ⊥-elim (¬redex (Step New∙))
 

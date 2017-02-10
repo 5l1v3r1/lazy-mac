@@ -393,5 +393,5 @@ data IsVar {π} {τ} : Term π τ -> Set where
   Var : ∀ {l} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> IsVar (Var τ∈π)
 
 data IsFork {π} : ∀ {τ} -> Term π τ -> Set where
-  Fork : ∀ {l h} (p : l ⊑ h) (t : Term π _) -> IsFork (fork p t)
-  Fork∙ : ∀ {l h} (p : l ⊑ h) (t : Term π _) -> IsFork (fork∙ p t)
+  Fork : ∀ {l h} (p : l ⊑ h) (t : Term π (Mac h _)) -> IsFork (fork p t)
+  Fork∙ : ∀ {l h} (p : l ⊑ h) (t : Term π (Mac h _)) -> IsFork (fork∙ p t)
