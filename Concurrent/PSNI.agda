@@ -29,7 +29,7 @@ open CS 𝓛 𝓢
 -- open import Concurrent.Semantics 𝓛 𝓢 public
 
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
-open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-Γ)
+open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-Γ ; stepᴴ)
 
 
 --------------------------------------------------------------------------------
@@ -37,7 +37,7 @@ open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-Γ)
 open Scheduler.Security.NIˢ 𝓛 A 𝓝 renaming (State to Stateˢ)
 open import Scheduler.Base 𝓛
 
-open import Concurrent.Erasure A 𝓝
+open import Concurrent.Erasure A 𝓝 hiding (updateᵀ ; updateᴾ)
 open import Concurrent.Lemmas A 𝓝
 
 import Concurrent.LowEq  A 𝓝 as L₁
@@ -115,6 +115,7 @@ newᵀ-≈ (cons l⊑A x T₁≈T₂) t₁≈t₂ = cons l⊑A x (newᵀ-≈ T�
 newᵀ-≈ ∙ᴸ t₁≈t₂ = ∙ᴸ
 newᵀ-≈ ∙ t₁≈t₂ = ∙
 
+postulate trans-≈ᴴ : ∀ {ls} {H₁ H₂ H₃ : Heaps ls} -> H₁ ≈ᴴ H₂ -> H₂ ≈ᴴ H₃ -> H₁ ≈ᴴ H₃
 
 -- This is consistent with the fact that our lists are truly mappings
 -- they are not defined so becuase they are inconvinient to reason with
@@ -127,8 +128,18 @@ lookupᴾ (there q) (T' C.◅ P) = P.map id there (lookupᴾ q P)
 -- The scheduler gives me only valid thread id
 postulate lookupᵀ : ∀ {l} -> (n : SC.ℕ) (T : Pool l) -> ∃ (λ t → n ↦ t ∈ᵀ T)
 
+updateᵀ : ∀ {l n} {t : Thread l} {T : Pool l} -> n ↦ t ∈ᵀ T -> (t' : Thread l) -> ∃ (λ T' → T' ≔ T [ n ↦ t' ]ᵀ)
+updateᵀ C.here t' = _ P., here
+updateᵀ (C.there x) t' = P.map (_◅_ _) there (updateᵀ x t')
+
+updateᴾ : ∀ {l ls} {T : Pool l} {P : Pools ls} -> l ↦ T ∈ᴾ P -> (T' : Pool l) -> ∃ (λ P' → P' ≔ P [ l ↦ T' ]ᴾ)
+updateᴾ = {!!}
+
 -- TODO move to Semantics
 postulate stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Stateᴾ p
+
+isFork? : ∀ {π τ} (t : Term π τ) -> Dec (IsFork t)
+isFork? t = {!!}
 
 open import Sequential.Graph 𝓛 A
 
@@ -226,25 +237,43 @@ open import Sequential.Graph 𝓛 A
 
 εᴳ-simᴸ⋆ SC.zero = {!!}
 εᴳ-simᴸ⋆ {ls = ls} {Γ₂ = Γ₂} {P₂ = P₂} (SC.suc n₂) Σ₁≈Σ₂ L⊑A step L₁.⟨ _ , P₁≈P₂ , Γ₁≈Γ₂ ⟩  with triangleˢ L⊑A Σ₁≈Σ₂ (getSchStep step)
-... | Σ₂' P., H P., m P., H⊑A P., Σ₂≈Σ₂' P., nextˢ  with lookupᴾ (H ∈ᴸ ls) P₂
+... | Σ₂' P., H P., m P., H⋤A P., Σ₂≈Σ₂' P., nextˢ  with lookupᴾ (H ∈ᴸ ls) P₂
 ... | T₂ P., T∈P₂ with lookupᵀ m T₂
 ... | ⟨ t₂ , S₂ ⟩ P., t∈T₂ with stateᴾ ⟨ Γ₂ , t₂ , S₂ ⟩
 
 εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
   -- Done
-  |  Σ₂' P., H P., m P., H⊑A P., Σ₂≈Σ₂' P., nextˢ | T₂ P., T∈P₂
+  |  Σ₂' P., H P., m P., H⋤A P., Σ₂≈Σ₂' P., nextˢ | T₂ P., T∈P₂
   | C.⟨ t₂ , S₂ ⟩ P., t∈T₂ | isD don with εᴳ-simᴸ⋆ n₂ Σ₂≈Σ₂' L⊑A step ⟨ forget Σ₂≈Σ₂' , P₁≈P₂ , Γ₁≈Γ₂ ⟩
-... | Cᴳ g₂' ⟨ Σ₂'≈Σ₂'' , t₂'≈t₂'' , Γ₂'≈Γ₂'' ⟩  ss = Cᴳ _ ⟨ trans-≈ˢ refl-≈ˢ Σ₂'≈Σ₂'' , t₂'≈t₂'' , Γ₂'≈Γ₂'' ⟩ (done T∈P₂ t∈T₂ don (nextˢ Done) ∷ ss)
+... | Cᴳ g₂' ⟨ Σ₂'≈Σ₂'' , t₂'≈t₂'' , Γ₂'≈Γ₂'' ⟩ ss = Cᴳ _ ⟨ Σ₂'≈Σ₂'' , t₂'≈t₂'' , Γ₂'≈Γ₂'' ⟩ (done T∈P₂ t∈T₂ don (nextˢ Done) ∷ ss)
 
 εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
-  -- Redex
+  | Σ₂' P., H P., m P., H⋤A P., Σ₂≈Σ₂' P., nextˢ | T₂ P., T∈P₂
+  | C.⟨ t₂ , S₂ ⟩ P., t∈T₂ | isR (Step {p' = ∙} ())
+
+εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
+  | Σ₂' P., H P., m P., H⋤A P., Σ₂≈Σ₂' P., nextˢ | T₂ P., T∈P₂
+  | C.⟨ t₂ , S₂ ⟩ P., t∈T₂ | isR (Step {p' = ⟨ a , b , c ⟩} step') with isFork? t₂
+
+
+εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
+  | Σ₂' P., H P., m P., H⋤A P., Σ₂≈Σ₂' P., nextˢ | T₂ P., T∈P₂
+  | C.⟨ t₂ , S₂ ⟩ P., t∈T₂ | isR (Step {p' = ⟨ Γ₂' , t₂' , S₂' ⟩} step₂) | no ¬fork with updateᵀ t∈T₂ ⟨ t₂' , S₂' ⟩
+... | T₂' P., uᵀ with updateᴾ T∈P₂ T₂'
+... | P₂' P., uᴾ with  ⟨ forget Σ₂≈Σ₂' , trans-≈ᴾ P₁≈P₂ L₁.⌜ updateᴾ∙ H⋤A uᴾ ⌝ᴾ , trans-≈ᴴ Γ₁≈Γ₂ ⌜ stepᴴ-Γ H⋤A step₂ ⌝ᴴ ⟩
+... | g₂≈g₂' with εᴳ-simᴸ⋆ n₂ Σ₂≈Σ₂' L⊑A step g₂≈g₂'
+... | Cᴳ g₂'' g₂'≈g₂'' ss  = Cᴳ _ g₂'≈g₂'' (step-∅ T∈P₂ t∈T₂ ¬fork step₂ (nextˢ Step) uᵀ uᴾ ∷ ss)
+
+εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
   | Σ₂' P., H P., m P., H⊑A P., Σ₂≈Σ₂' P., nextˢ | T₂ P., T∈P₂
-  | C.⟨ t₂ , S₂ ⟩ P., t∈T₂ | isR x = {!!}
+  | C.⟨ t₂ , S₂ ⟩ P., t∈T₂ | isR (Step {p' = ⟨ a , b , c ⟩} step') | yes isF = {!!}
+
 
   -- Stuck
 εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
   | Σ₂' P., H P., m P., H⊑A P., Σ₂≈Σ₂' P., nextˢ | T₂ P., T∈P₂
-  | C.⟨ t₂ , S₂ ⟩ P., t∈T₂ | isS x = {!!}
+  | C.⟨ t₂ , S₂ ⟩ P., t∈T₂ | isS stuck with εᴳ-simᴸ⋆ n₂ Σ₂≈Σ₂' L⊑A step ⟨ forget Σ₂≈Σ₂' , P₁≈P₂ , Γ₁≈Γ₂ ⟩
+... | Cᴳ g₂' ⟨ Σ₂'≈Σ₂'' , t₂'≈t₂'' , Γ₂'≈Γ₂'' ⟩ ss = Cᴳ _ ⟨ Σ₂'≈Σ₂'' , t₂'≈t₂'' , Γ₂'≈Γ₂'' ⟩ (skip T∈P₂ t∈T₂ stuck (nextˢ Skip) ∷ ss)
 
 εᴳ-sim⋆ : ∀ {l n ls} {g₁ g₁' g₂ : Global ls} -> Dec (l ⊑ A) -> ( l P., n ) ⊢ g₁ ↪ g₁' -> g₁ ≈ᴳ g₂ -> g₂ ↪⋆-≈ᴳ g₁'
 εᴳ-sim⋆ (yes L⊑A) step x = εᴳ-simᴸ⋆ _ (align (Σ₁≈Σ₂ x)) L⊑A step x

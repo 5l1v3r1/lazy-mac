@@ -313,3 +313,12 @@ split₂ᴾ refl = refl P., refl P., refl
 ⌞ ⟨ x , x₁ , x₂ ⟩ ⌟ᴾ rewrite ⌞ x ⌟ᴴ | ⌞ x₁ ⌟ᵀ | ⌞ x₂ ⌟ˢ = refl
 ⌞ ∙ᴸ ⌟ᴾ = refl
 ⌞ ∙ ⌟ᴾ = refl
+
+_≅ᴾ_ : ∀ {l ls τ} -> Program l ls τ -> Program l ls τ -> Set
+p₁ ≅ᴾ p₂ = p₁ ≅ᴾ⟨ (_ ⊑? A) ⟩ p₂
+
+
+-- ≈ᴾ-≈ᴴ : ∀ {l ls τ' τ π} {Γ₁ Γ₂ : Heaps ls} {t₁ t₂ : Term π τ'} {S₁ S₂ : Stack l τ' τ} {x : Dec _} ->
+--           ⟨ Γ₁ , t₁ , S₁ ⟩ ≈ᴾ⟨ x ⟩ ⟨ Γ₂ , t₂ , S₂ ⟩ -> Γ₁ ≈ᴴ Γ₂
+-- ≈ᴾ-≈ᴴ ⟨ x , x₁ , x₂ ⟩ = x
+-- ≈ᴾ-≈ᴴ ∙ = {!!}  -- Γ₁ and Γ₂ are arbitrary heaps, they are not related!
