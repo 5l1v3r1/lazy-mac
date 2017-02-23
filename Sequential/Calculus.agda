@@ -175,6 +175,7 @@ data Cont (l : Label) : Ty -> Ty -> Set where
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
 -- by an input type and an output type.
 -- It transforms the former in the latter according to the continuations.
+-- TODO can parametrize the stack with π? (remember that π only grows)
 data Stack (l : Label) : Ty -> Ty -> Set where
  [] : ∀ {τ} -> Stack l τ τ
  _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont l τ₁ τ₂ -> Stack l τ₂ τ₃ -> Stack l τ₁ τ₃
