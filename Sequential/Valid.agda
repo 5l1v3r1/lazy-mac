@@ -260,10 +260,21 @@ valid-memberᴴ : ∀ {l ls} {Γ : Heaps ls} {H : Heap l} -> validᴴ Γ -> l �
 valid-memberᴴ (proj₁ , proj₂) S.here = proj₁
 valid-memberᴴ (proj₁ , proj₂) (S.there l∈Γ) = wkenᴴ₂ (drop refl-⊆ᴴ) (valid-memberᴴ proj₂ l∈Γ)
 
+valid-memberᴱ : ∀ {l τ π₁ π₂ ls} {Γ : Heaps ls} {Δ : Env l π₁} {t : Term π₂ τ} {x : τ ∈⟨ l ⟩ᴿ π₁} -> validᴱ Γ Δ -> x ↦ t ∈ᴱ Δ -> validᵀ Γ t
+valid-memberᴱ {x = T.⟪ τ∈π ⟫} = aux
+  where aux : ∀ {l τ π₁ π₂ ls} {Γ : Heaps ls} {Δ : Env l π₁} {t : Term π₂ τ} {x : τ ∈⟨ l ⟩ π₁} -> validᴱ Γ Δ -> Memberᴱ (just t) x Δ -> validᵀ Γ t
+        aux (proj₁ , proj₂) S.here = proj₁
+        aux {Δ = just x S.∷ Δ} (_ , Δⱽ) (S.there t∈Δ) = aux Δⱽ t∈Δ
+        aux {Δ = nothing S.∷ Δ} Δⱽ (S.there t∈Δ) = aux Δⱽ t∈Δ
+
 valid-newᴹ : ∀ {l τ} (c : Cell l τ) (M : Memory l) -> validᴹ M -> validᴹ (newᴹ c M) × (lengthᴹ M ≤ lengthᴹ (newᴹ c M))
 valid-newᴹ c S.[] ok-M = tt , z≤n
 valid-newᴹ c (cᴸ S.∷ M) ok-M = P.map id s≤s (valid-newᴹ c M ok-M)
 valid-newᴹ c S.∙ ()
+
+valid-writeᴹ : ∀ {l τ} {c : Cell l τ} {M M' : Memory l} {n} -> M' ≔ M [ n ↦ c ]ᴹ -> validᴹ M -> validᴹ M' × lengthᴹ M ≤ lengthᴹ M'
+valid-writeᴹ {M = _ ∷ M} S.here Mⱽ = Mⱽ , s≤s refl-≤
+valid-writeᴹ (S.there u) Mⱽ = P.map id s≤s (valid-writeᴹ u Mⱽ)
 
 valid-new-Addr : ∀ {l ls τ π} {Γ Γ' : Heaps ls} {Δ : Env l π} {M : Memory l} -> validᴹ M -> (c : Cell l τ) ->
               (uᴴ : Γ' ≔ Γ [ l ↦ ⟨ newᴹ c M , Δ ⟩ ]ᴴ) -> validAddr (lookupᴹ (update-∈ uᴴ) Γ') (lengthᴹ M)
@@ -389,15 +400,20 @@ update-validᴴ {Γ = S.⟨ M' , Δ' ⟩ S.∷ Γ} (S.there a) (S.there b) M₁�
 update-validᴴ {Γ = S.∙ S.∷ Γ} (S.there a) (S.there b) M₁≤M₂ M₂ⱽ (() , proj₂)
 
 valid⟼ : ∀ {ls τ l} {p₁ p₂ : Program l ls τ} -> validᴾ p₁ -> p₁ ⟼ p₂ -> validᴾ p₂
-valid⟼ ok (SS.Pure l∈Γ step uᴴ) = {!!}
+valid⟼ (proj₁ , proj₂) (SS.Pure l∈Γ step uᴴ) = {!!}
 valid⟼ (proj₁ , proj₃ , proj₂) (SS.New {M = M} {τ∈π = τ∈π} {l⊑h = l⊑h} H∈Γ uᴴ) with valid-memberᴴ proj₁ H∈Γ
 ... | Mⱽ , Δⱽ with valid-newᴹ ∥ l⊑h ,  τ∈π ∥ M Mⱽ
 ... | M'ⱽ , ok-Addr = update-validᴴ H∈Γ uᴴ ok-Addr M'ⱽ proj₁ , (((update-∈ uᴴ) , valid-new-Addr {M = M} Mⱽ ∥ l⊑h ,  τ∈π ∥ uᴴ) , update-validˢ H∈Γ uᴴ (newᴹ-≤ M ∥ l⊑h ,  τ∈π ∥) proj₂)
 valid⟼ (proj₁ , () , proj₂) SS.New∙
-valid⟼ ok (SS.Write₂ H∈Γ uᴹ uᴴ) = {!!}
-valid⟼ ok (SS.Writeᴰ₂ H∈Γ uᴹ uᴴ) = {!!}
+valid⟼ (proj₁ , proj₂ , proj₃ , proj₄) (SS.Write₂ H∈Γ uᴹ uᴴ) with valid-memberᴴ proj₁ H∈Γ
+... | Mⱽ , Δⱽ with valid-writeᴹ uᴹ Mⱽ
+... | M'ⱽ , M₁≤M₂ = (update-validᴴ H∈Γ uᴴ M₁≤M₂ M'ⱽ proj₁) , (tt , (update-validˢ H∈Γ uᴴ M₁≤M₂ proj₄))
+valid⟼ (proj₁ , proj₂ , proj₃ , proj₄) (SS.Writeᴰ₂ H∈Γ uᴹ uᴴ) with valid-memberᴴ proj₁ H∈Γ
+... | Mⱽ , Δⱽ with valid-writeᴹ uᴹ Mⱽ
+... | M'ⱽ , M₁≤M₂ = (update-validᴴ H∈Γ uᴴ M₁≤M₂ M'ⱽ proj₁) , (tt , (update-validˢ H∈Γ uᴴ M₁≤M₂ proj₄))
 valid⟼ (proj₁ , proj₃ , () , proj₂) SS.Write∙₂
-valid⟼ ok (SS.Read₂ l∈Γ n∈M) = {!!}
-valid⟼ ok (SS.Readᴰ₂ L∈Γ n∈M) = {!!}
-valid⟼ ok (SS.DeepDupˢ L⊏l L∈Γ t∈Δ) = {!!}
+valid⟼ (proj₁ , proj₃ , proj₂ , proj₄) (SS.Read₂ l∈Γ n∈M) = proj₁ , (T.tt , proj₄)
+valid⟼ (proj₁ , proj₂ , proj₃ , proj₄) (SS.Readᴰ₂ L∈Γ n∈M) = proj₁ , T.tt , proj₄
+valid⟼ (proj₁ , proj₃ , proj₂) (SS.DeepDupˢ {Δ = Δ} {τ∈π = τ∈π} L⊏l L∈Γ t∈Δ) with valid-memberᴴ proj₁ L∈Γ
+... | Mⱽ , Δⱽ  = proj₁ , (valid-memberᴱ {Δ = Δ} {x = τ∈π} Δⱽ t∈Δ , proj₂)
 valid⟼ () SS.Hole
