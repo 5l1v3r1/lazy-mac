@@ -126,7 +126,7 @@ data _⊆ᴱ_ {l} : ∀ {π₁ π₂} -> Env l π₁ -> Env l π₂ -> Set where
   ∙ : ∀ {π} -> (∙ {{π}}) ⊆ᴱ (∙ {{π}})
 
 data _⊆'ᴴ_ {l} : Heap l -> Heap l -> Set where
- ⟨_,_⟩ : ∀ {π₁ π₂} {M₁ M₂ : Memory l} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} ->
+ ⟨_,_⟩  : ∀ {π₁ π₂} {M₁ M₂ : Memory l} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} ->
          lengthᴹ M₁ ≤ lengthᴹ M₂ -> Δ₁ ⊆ᴱ Δ₂ -> ⟨ M₁ , Δ₁ ⟩ ⊆'ᴴ ⟨ M₂ , Δ₂ ⟩
  ∙ : ∙ ⊆'ᴴ ∙
 
@@ -209,9 +209,27 @@ wkenᴱ {Δ = just t S.∷ Δ} Γ₁⊆Γ₂  (tⱽ , Δᴱ) = wkenᵀ Γ₁⊆�
 wkenᴱ {Δ = nothing S.∷ Δ} Γ₁⊆Γ₂  Δᴱ = wkenᴱ {Δ = Δ} Γ₁⊆Γ₂  Δᴱ
 wkenᴱ {Δ = S.∙} _ ()
 
-wkenᴴ : ∀ {l ls₁ ls₂} {Γ₁ : Heaps ls₁} {Γ₂ : Heaps ls₂} {H : Heap l} -> Γ₁ ⊆ᴴ Γ₂ -> validᴴ₂ Γ₁ H -> validᴴ₂ Γ₂ H
-wkenᴴ {H = S.⟨ M , Δ ⟩} Γ₁⊆Γ₂ (a , b) = a , wkenᴱ {Δ = Δ} Γ₁⊆Γ₂ b
-wkenᴴ {H = S.∙} _ ()
+-- wkenᴹ : ∀ {l} {M₁ M₂ : Memory l} -> lengthᴹ M₁ ≤ lengthᴹ M₂ -> validᴹ M₁ -> validᴹ M₂
+-- wkenᴹ {M₂ = S.[]} x x₁ = tt
+-- wkenᴹ {M₂ = cᴸ S.∷ M₂} x x₁ = {!!}
+-- wkenᴹ {M₁ = S.[]} {S.∙} z≤n x₁ = {!!}  -- No! :-(
+-- wkenᴹ {M₁ = cᴸ S.∷ M₁} {S.∙} () x₁
+-- wkenᴹ {M₁ = S.∙} {S.∙} z≤n ()
+
+wkenᴴ₂ : ∀ {l ls₁ ls₂} {Γ₁ : Heaps ls₁} {Γ₂ : Heaps ls₂} {H : Heap l} -> Γ₁ ⊆ᴴ Γ₂ -> validᴴ₂ Γ₁ H -> validᴴ₂ Γ₂ H
+wkenᴴ₂ {H = S.⟨ M , Δ ⟩} Γ₁⊆Γ₂ (a , b) = a , wkenᴱ {Δ = Δ} Γ₁⊆Γ₂ b
+wkenᴴ₂ {H = S.∙} _ ()
+
+-- wkenᴴ₂' : ∀ {l ls₁ ls₂} {Γ₁ : Heaps ls₁} {Γ₂ : Heaps ls₂} {H₁ H₂ : Heap l} -> Γ₁ ⊆ᴴ Γ₂ -> H₁ ⊆'ᴴ H₂ -> validᴴ₂ Γ₁ H₁ -> validᴴ₂ Γ₂ H₂
+-- wkenᴴ₂' a ⟨ x , x₁ ⟩ (proj₁ , proj₂) = {!!} , {!!}
+-- wkenᴴ₂' a ∙ ()
+-- {H = S.⟨ M , Δ ⟩} Γ₁⊆Γ₂ (a , b) = a , wkenᴱ {Δ = Δ} Γ₁⊆Γ₂ b
+-- wkenᴴ₂' {H = S.∙} _ ()
+
+-- wkenᴴ : ∀ {ls₁ ls₂} {Γ₁ : Heaps ls₁} {Γ₂ : Heaps ls₂} -> Γ₁ ⊆ᴴ Γ₂ -> validᴴ Γ₁ -> validᴴ Γ₂
+-- wkenᴴ nil x = tt
+-- wkenᴴ (cons x x₁) (proj₁ , proj₂) = (wkenᴴ₂' (cons x x₁) x proj₁) , wkenᴴ x₁ proj₂
+-- wkenᴴ {Γ₁ = Γ₁} (drop x) x₁ = {!!} , (wkenᴴ x x₁)
 
 validᴴ₀ : ∀ {ls : List Label} {{us : valid-𝓛 ls}} -> validᴴ {ls} Γ₀
 validᴴ₀ {T.[]} = tt
@@ -238,9 +256,9 @@ open SS 𝓛
 
 open import Relation.Binary.PropositionalEquality
 
-valid-memberᴴ : ∀ {l ls} {Γ : Heaps ls} {H : Heap l} -> validᴴ Γ -> l ↦ H ∈ᴴ Γ -> validᴴ₂ Γ H --  M × validᴱ Γ Δ
+valid-memberᴴ : ∀ {l ls} {Γ : Heaps ls} {H : Heap l} -> validᴴ Γ -> l ↦ H ∈ᴴ Γ -> validᴴ₂ Γ H
 valid-memberᴴ (proj₁ , proj₂) S.here = proj₁
-valid-memberᴴ (proj₁ , proj₂) (S.there l∈Γ) = wkenᴴ (drop refl-⊆ᴴ) (valid-memberᴴ proj₂ l∈Γ)
+valid-memberᴴ (proj₁ , proj₂) (S.there l∈Γ) = wkenᴴ₂ (drop refl-⊆ᴴ) (valid-memberᴴ proj₂ l∈Γ)
 
 valid-newᴹ : ∀ {l τ} (c : Cell l τ) (M : Memory l) -> validᴹ M -> validᴹ (newᴹ c M) × (lengthᴹ M ≤ lengthᴹ (newᴹ c M))
 valid-newᴹ c S.[] ok-M = tt , z≤n
@@ -346,18 +364,15 @@ update-validˢ {S = S.[]} l∈Γ u M₁≤M₂ Sⱽ = tt
 update-validˢ {S = C S.∷ S} l∈Γ u M₁≤M₂ (Cⱽ , Sⱽ) = update-validᶜ {C = C} l∈Γ u M₁≤M₂ Cⱽ , (update-validˢ l∈Γ u M₁≤M₂ Sⱽ)
 update-validˢ {S = S.∙} l∈Γ u M₁≤M₂ ()
 
-
-wken-updateᵀ : ∀ {π τ ls} {t : Term π τ} {Γ : Heaps ls} -> validᵀ Γ t -> validᵀ {!!} {!!}
-wken-updateᵀ = {!!}
-
-wken-updateᴱ : ∀ {l π ls} {{u : Unique l ls}} {Γ : Heaps ls} {Δ : Env l π} {M₁ M₂ : Memory l} ->
-                 validᴱ (⟨ M₁ , Δ ⟩ ∷ Γ) Δ ->
-                 (lengthᴹ M₁) ≤ (lengthᴹ M₂) ->
-                 validᴱ (⟨ M₂ , Δ ⟩ ∷ Γ) Δ
-wken-updateᴱ {Δ = S.[]} v M₁≤M₂ = tt
-wken-updateᴱ {Δ = just x S.∷ Δ} (proj₁ , proj₂) M₁≤M₂ = {!!} , {!!}
-wken-updateᴱ {Δ = nothing S.∷ Δ} v M₁≤M₂ = {!wken-updateᴱ {Δ = Δ} v M₁≤M₂!}
-wken-updateᴱ {Δ = S.∙} () M₁≤M₂
+update-⊆ᴴ : ∀ {l π ls} {Γ Γ' : Heaps ls} {Δ : Env l π} {M₁ M₂ : Memory l} ->
+              l ↦ ⟨ M₁ , Δ ⟩ ∈ᴴ Γ ->
+                Γ' ≔ Γ [ l ↦ ⟨ M₂ , Δ ⟩ ]ᴴ ->
+                (lengthᴹ M₁) ≤ (lengthᴹ M₂) ->
+                Γ ⊆ᴴ Γ'
+update-⊆ᴴ S.here S.here M₁≤M₂ = cons (⟨ M₁≤M₂ , refl-⊆ᴱ ⟩) refl-⊆ᴴ
+update-⊆ᴴ S.here (S.there {u = u} uᴴ) M₁≤M₂ = ⊥-elim (∈-not-unique (update-∈ uᴴ) u)
+update-⊆ᴴ (S.there {u = u} l∈Δ) S.here M₁≤M₂ = ⊥-elim (∈-not-unique (member-∈ l∈Δ) u)
+update-⊆ᴴ (S.there l∈Δ) (S.there u₁) M₁≤M₂ = cons refl-⊆'ᴴ (update-⊆ᴴ l∈Δ u₁ M₁≤M₂)
 
 update-validᴴ : ∀ {l π ls} {Γ Γ' : Heaps ls} {Δ : Env l π} {M₁ M₂ : Memory l} ->
                   l ↦ ⟨ M₁ , Δ ⟩ ∈ᴴ Γ ->
@@ -366,10 +381,11 @@ update-validᴴ : ∀ {l π ls} {Γ Γ' : Heaps ls} {Δ : Env l π} {M₁ M₂ :
                   validᴹ M₂ ->
                   validᴴ Γ -> validᴴ Γ'
 update-validᴴ {Γ = _ ∷ Γ} {Δ = Δ} {M₁} {M₂} S.here S.here M₁≤M₂ M₂ⱽ ((proj₁ , proj₂) , proj₃)
-  = (M₂ⱽ , wken-updateᴱ {Γ = Γ} {Δ} {M₁} {M₂} proj₂ M₁≤M₂) , proj₃
+  = (M₂ⱽ , wkenᴱ {Δ = Δ} (cons (⟨ M₁≤M₂ , refl-⊆ᴱ ⟩) refl-⊆ᴴ) proj₂ ) , proj₃
 update-validᴴ {Γ = S._∷_ {{u}} _ _} S.here (S.there b) M₁≤M₂ M₂ⱽ Γⱽ = ⊥-elim (∈-not-unique (update-∈ b) u)
 update-validᴴ {Γ = S._∷_ {{u}} _ _} (S.there a) S.here M₁≤M₂ M₂ⱽ Γⱽ = ⊥-elim (∈-not-unique (member-∈ a) u)
-update-validᴴ {Γ = S.⟨ x , x₁ ⟩ S.∷ Γ} (S.there a) (S.there b) M₁≤M₂ M₂ⱽ ((proj₁ , proj₂) , proj₃) = (proj₁ , {!!}) , (update-validᴴ a b M₁≤M₂ M₂ⱽ proj₃)
+update-validᴴ {Γ = S.⟨ M' , Δ' ⟩ S.∷ Γ} (S.there a) (S.there b) M₁≤M₂ M₂ⱽ ((proj₁ , proj₂) , proj₃)
+  = (proj₁ , wkenᴱ {Δ = Δ'} (update-⊆ᴴ (there a) (there b) M₁≤M₂) proj₂) , (update-validᴴ a b M₁≤M₂ M₂ⱽ proj₃)
 update-validᴴ {Γ = S.∙ S.∷ Γ} (S.there a) (S.there b) M₁≤M₂ M₂ⱽ (() , proj₂)
 
 valid⟼ : ∀ {ls τ l} {p₁ p₂ : Program l ls τ} -> validᴾ p₁ -> p₁ ⟼ p₂ -> validᴾ p₂
