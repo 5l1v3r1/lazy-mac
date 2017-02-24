@@ -296,6 +296,21 @@ update-∈ : ∀ {l ls} {x : Heap l} {Γ Γ' : Heaps ls} -> Γ' ≔ Γ [ l ↦ x
 update-∈ here = here
 update-∈ (there x) = there (update-∈ x)
 
+lookupᴴ : ∀ {l ls} -> l ∈ ls -> Heaps ls -> Heap l
+lookupᴴ here (x ∷ Γ) = x
+lookupᴴ (there l∈ls) (x ∷ Γ) = lookupᴴ l∈ls Γ
+
+lookupᴹ : ∀ {l ls} -> l ∈ ls -> Heaps ls -> Memory l
+lookupᴹ l∈ls Γ with lookupᴴ l∈ls Γ
+lookupᴹ l∈ls Γ | ⟨ M , _ ⟩ = M
+lookupᴹ l∈ls Γ | ∙ = ∙
+
+lookupᴴ-≡ : ∀ {l ls} {H : Heap l} {Γ : Heaps ls} -> (l∈ls : l ∈ ls) -> l ↦ H ∈ᴴ Γ -> lookupᴴ l∈ls Γ ≡ H
+lookupᴴ-≡ here here = refl
+lookupᴴ-≡ here (there {u = u} m) = ⊥-elim (∈-not-unique (member-∈ m) u)
+lookupᴴ-≡ (there l∈ls) (here {u = u}) = ⊥-elim (∈-not-unique l∈ls u)
+lookupᴴ-≡ (there l∈ls) (there m) = lookupᴴ-≡ l∈ls m
+
 --------------------------------------------------------------------------------
 
 -- Sestoft's Abstract Lazy Machine State
