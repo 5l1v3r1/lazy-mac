@@ -208,19 +208,19 @@ isSecret? Addr = inj₂ Addr
 open import Data.Maybe as M
 open import Function
 
-εᴱ : ∀ {l π} ->  Env l π -> Env l π
-εᴱ [] = []
-εᴱ (t ∷ Δ) = (M.map εᵀ t) ∷ (εᴱ Δ)
-εᴱ ∙ = ∙
+map-εᵀ : ∀ {l π} ->  Heap l π -> Heap l π
+map-εᵀ [] = []
+map-εᵀ (t ∷ Δ) = (M.map εᵀ t) ∷ (map-εᵀ Δ)
+map-εᵀ ∙ = ∙
 
--- εᴱ : ∀ {l π} -> Dec (l ⊑ A) ->  Env l π -> Env l π
+-- εᴱ : ∀ {l π} -> Dec (l ⊑ A) ->  Heap l π -> Heap l π
 -- εᴱ (yes p) [] = []
 -- εᴱ (yes p) (mt ∷ Δ) = (M.map εᵀ mt) ∷ (εᴱ (yes p) Δ)
 -- εᴱ (yes p) ∙ = ∙
 -- εᴱ (no ¬p) Δ = ∙
 
 -- Proof irrelevance for εᴱ
--- εᴱ-ext : ∀ {l π} -> (x y : Dec (l ⊑ A)) (Δ : Env l π) -> εᴱ x Δ ≡ εᴱ y Δ
+-- εᴱ-ext : ∀ {l π} -> (x y : Dec (l ⊑ A)) (Δ : Heap l π) -> εᴱ x Δ ≡ εᴱ y Δ
 -- εᴱ-ext (yes p) (yes p₁) [] = refl
 -- εᴱ-ext (yes p) (yes p₁) (t ∷ Δ) rewrite εᴱ-ext (yes p) (yes p₁) Δ = refl
 -- εᴱ-ext (yes p) (yes p₁) ∙ = refl
@@ -233,9 +233,7 @@ open import Function
 -- εᴴ [] = []
 -- εᴴ (Δ ∷ Γ) = (εᴱ ( _ ⊑? A) Δ) ∷ εᴴ Γ
 
---------------------------------------------------------------------------------
-
-εᶜ : ∀ {τ₁ τ₂ l} -> Cont l τ₁ τ₂ -> Cont l τ₁ τ₂
+εᶜ : ∀ {π τ₁ τ₂ l} -> Cont l π τ₁ τ₂ -> Cont l π τ₁ τ₂
 εᶜ (Var x∈π) = Var x∈π
 εᶜ (# x∈π) = # x∈π
 εᶜ {τ₂ = τ₂} (Then t₁ Else t₂) = Then (εᵀ t₁) Else εᵀ t₂
@@ -249,16 +247,14 @@ open import Function
 εᶜ unId = unId
 
 -- Fully homomorphic erasure on stack
-εˢ : ∀ {τ₁ τ₂ l} -> Stack l τ₁ τ₂ -> Stack l τ₁ τ₂
+εˢ : ∀ {τ₁ τ₂ π l} -> Stack l π τ₁ τ₂ -> Stack l π τ₁ τ₂
 εˢ [] = []
 εˢ (c ∷ S) = (εᶜ c) ∷ εˢ S
 εˢ ∙ = ∙
 
---------------------------------------------------------------------------------
-
 ε : ∀ {l τ} -> Dec (l ⊑ A) -> State l τ -> State l τ
 ε (no x) s = ∙
-ε (yes y) ⟨ Δ , t , S ⟩ = ⟨ εᴱ Δ , εᵀ t , εˢ S ⟩
+ε (yes y) ⟨ Δ , t , S ⟩ = ⟨ map-εᵀ Δ , εᵀ t , εˢ S ⟩
 ε (yes y) ∙ = ∙
 
 --------------------------------------------------------------------------------
@@ -307,6 +303,34 @@ open import Function
 ε-wken ∙ p = refl
 
 {-# REWRITE ε-wken #-}
+
+--------------------------------------------------------------------------------
+
+
+εᶜ-wken : ∀ {τ₁ τ₂ l π₁ π₂} -> (C : Cont l π₁ τ₁ τ₂) (p : π₁ ⊆ π₂) -> εᶜ (wkenᶜ C p) ≡ wkenᶜ (εᶜ C) p
+εᶜ-wken (Var τ∈π) p = refl
+εᶜ-wken (# τ∈π) p = refl
+εᶜ-wken (Then x Else x₁) p = refl
+εᶜ-wken (Bind x) p = refl
+εᶜ-wken (unlabel p) p₁ = refl
+εᶜ-wken unId p = refl
+εᶜ-wken (write {H = H} x τ∈π) p with H ⊑? A
+... | yes _ = refl
+... | no _ = refl
+εᶜ-wken (write∙ x τ∈π) p = refl
+εᶜ-wken (read x) p = refl
+
+{-# REWRITE εᶜ-wken #-}
+
+εˢ-wken : ∀ {τ₁ τ₂ l π₁ π₂} -> (S : Stack l π₁ τ₁ τ₂) (p : π₁ ⊆ π₂) -> εˢ (wkenˢ S p) ≡ wkenˢ (εˢ S) p
+εˢ-wken [] p = refl
+εˢ-wken (C ∷ S) p rewrite εˢ-wken S p = refl
+εˢ-wken ∙ p = refl
+
+{-# REWRITE εˢ-wken #-}
+
+--------------------------------------------------------------------------------
+
 
 ε-subst : ∀ {τ τ' π} (t₁ : Term π τ') (t₂ : Term (τ' ∷ π) τ) -> εᵀ (subst t₁ t₂) ≡ subst (εᵀ t₁) (εᵀ t₂)
 ε-subst = ε-tm-subst [] _
@@ -417,17 +441,18 @@ open import Function
 {-# REWRITE ε-deepDupᵀ-≡ #-}
 
 --------------------------------------------------------------------------------
--- Env lemmas
+-- Heap lemmas
 
-memberᴱ : ∀ {l π π' τ} {Δ : Env l π} {t : Term π' τ} (τ∈π : τ ∈⟨ l ⟩ᴿ π) ->
-           τ∈π ↦ t ∈ᴱ Δ -> τ∈π ↦ (εᵀ t) ∈ᴱ (εᴱ Δ)
+memberᴱ : ∀ {l π π' τ} {Δ : Heap l π} {t : Term π' τ} (τ∈π : τ ∈⟨ l ⟩ᴿ π) ->
+           τ∈π ↦ t ∈ᴴ Δ -> τ∈π ↦ (εᵀ t) ∈ᴴ (map-εᵀ Δ)
 memberᴱ {l} ⟪ τ∈π ⟫ = aux ⟪ (∈ᴿ-∈ τ∈π) ⟫
-  where aux : ∀ {π π' τ} {Δ : Env l π} {t : Term π' τ} (τ∈π : τ ∈⟨ l ⟩ π)
-            -> Memberᴱ (just t) τ∈π Δ -> Memberᴱ (just (εᵀ t)) τ∈π (εᴱ Δ)
+  where aux : ∀ {π π' τ} {Δ : Heap l π} {t : Term π' τ} (τ∈π : τ ∈⟨ l ⟩ π)
+            -> Memberᴴ (just t) τ∈π Δ -> Memberᴴ (just (εᵀ t)) τ∈π (map-εᵀ Δ)
         aux (⟪ here ⟫) here = here
         aux (⟪ there τ∈π' ⟫) (there x) = there (aux ⟪ τ∈π' ⟫ x)
 
-updateᴱ : ∀ {l π π' τ} {Δ Δ' : Env l π} {mt : Maybe (Term π' τ)} {τ∈π : τ ∈⟨ l ⟩ π} -> Updateᴱ mt τ∈π Δ Δ' -> Updateᴱ (M.map εᵀ mt) τ∈π (εᴱ Δ) (εᴱ Δ')
+updateᴱ : ∀ {l π π' τ} {Δ Δ' : Heap l π} {mt : Maybe (Term π' τ)} {τ∈π : τ ∈⟨ l ⟩ π}
+          -> Updateᴴ mt τ∈π Δ Δ' -> Updateᴴ (M.map εᵀ mt) τ∈π (map-εᵀ Δ) (map-εᵀ Δ')
 updateᴱ here = here
 updateᴱ (there x) = there (updateᴱ x)
 
@@ -465,8 +490,6 @@ updateᴱ (there x) = there (updateᴱ x)
 ... | yes _ = Fork p
 ... | no _ = Fork∙ p
 ε-sim (yes y) (Fork∙ p) = Fork∙ p
-ε-sim (yes y) (DeepDup τ∈π t∈Δ) = DeepDup τ∈π (memberᴱ τ∈π t∈Δ)
-ε-sim (yes y) (DeepDup' ¬var) = DeepDup' (εᵀ¬Var ¬var)
 ε-sim (yes y) (New₁ {H = H} ¬var) with H ⊑? A
 ε-sim (yes y) (New₁ ¬var) | yes p = New₁ (εᵀ¬Var ¬var)
 ε-sim (yes y) (New₁ ¬var) | no ¬p = New∙₁ (εᵀ¬Var ¬var)
@@ -481,36 +504,55 @@ updateᴱ (there x) = there (updateᴱ x)
 
 --------------------------------------------------------------------------------
 
-εᴹ : ∀ {l} -> Dec (l ⊑ A) -> Heap l -> Heap l
-εᴹ (yes p) ⟨ M , Δ ⟩ = ⟨ M , εᴱ Δ ⟩  -- Memory contains only pointers to Δ, so nothing to erase there
-εᴹ (yes p) ∙ = ∙
-εᴹ (no ¬p) _ = ∙  -- ∙ , ∙
+εᴴ : ∀ {l π} -> Dec (l ⊑ A) -> Heap l π -> Heap l π
+εᴴ (yes p) Δ = map-εᵀ Δ
+εᴴ (no ¬p) Δ = ∙
 
-εᴴ : ∀ {ls} -> Heaps ls -> Heaps ls
-εᴴ [] = []
-εᴴ (x ∷ Γ) = εᴹ (_ ⊑? A) x ∷ εᴴ Γ
+map-εᴴ : ∀ {ls} -> Heaps ls -> Heaps ls
+map-εᴴ [] = []
+map-εᴴ {l ∷ ls} (_∷_ {π = π} Δ Γ) = εᴴ (_ ⊑? A) Δ ∷ map-εᴴ Γ
+
+εᴹ : ∀ {l} -> Dec (l ⊑ A) -> Memory l -> Memory l
+εᴹ (yes p) M = M
+εᴹ (no ¬p) M = ∙
+
+map-εᴹ : ∀ {ls} -> Memories ls -> Memories ls
+map-εᴹ [] = []
+map-εᴹ (M ∷ Ms) = (εᴹ (_ ⊑? A) M) ∷ (map-εᴹ Ms)
 
 -- Erasure for Programs
 ε₁ᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) -> Program l ls τ -> Program l ls τ
-ε₁ᴾ (yes p) ⟨ Γ , t , S ⟩ = ⟨ (εᴴ Γ) , (εᵀ t) , (εˢ S) ⟩
+ε₁ᴾ (yes p) ⟨ Ms , Γ , t , S ⟩ = ⟨ map-εᴹ Ms , (map-εᴴ Γ) , (εᵀ t) , (εˢ S) ⟩
 ε₁ᴾ (yes p) ∙ = ∙
 ε₁ᴾ {l} {ls} {τ} (no ¬p) _ = ∙
 
-writeᴹ∙-≡ : ∀ {H ls} {Γ₁ Γ₂ : Heaps ls} {X Y : Heap H} -> H ⋤ A -> H ↦ X ∈ᴴ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ Y ]ᴴ -> (εᴴ Γ₁) ≡ (εᴴ Γ₂)
+writeᴹ∙-≡ : ∀ {H ls} {Ms₁ Ms₂ : Memories ls} {X Y : Memory H} -> H ⋤ A -> H ↦ X ∈ˢ Ms₁ -> Ms₂ ≔ Ms₁ [ H ↦ Y ]ˢ -> (map-εᴹ Ms₁) ≡ (map-εᴹ Ms₂)
 writeᴹ∙-≡ {H} H⋢A here here with H ⊑? A
 writeᴹ∙-≡ H⋢A here here | yes p = ⊥-elim (H⋢A p)
 writeᴹ∙-≡ H⋢A here here | no ¬p = refl
-writeᴹ∙-≡ H⋢A here (there {u = u} y) = ⊥-elim (∈-not-unique (update-∈ y) u)
-writeᴹ∙-≡ H⋢A (there {u = u} x) here = ⊥-elim (∈-not-unique (member-∈ x) u)
+writeᴹ∙-≡ H⋢A here (there {u = u} y) = ⊥-elim (∈-not-unique (updateˢ-∈ y) u)
+writeᴹ∙-≡ H⋢A (there {u = u} x) here = ⊥-elim (∈-not-unique (memberˢ-∈ x) u)
 writeᴹ∙-≡ H⋢A (there x) (there y) rewrite writeᴹ∙-≡ H⋢A x y = refl
 
-memberᴴ : ∀ {l π ls} {Γ : Heaps ls} {M : Memory l} {Δ : Env l π} -> l ⊑ A -> l ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ -> l ↦ ⟨ M , εᴱ Δ ⟩ ∈ᴴ (εᴴ Γ)
+memberᴹ : ∀ {l ls} {Ms : Memories ls} {M : Memory l} -> l ⊑ A -> l ↦ M ∈ˢ Ms -> l ↦ M ∈ˢ (map-εᴹ Ms)
+memberᴹ {l} l⊑A here with l ⊑? A
+... | yes _ = here
+... | no ¬p = ⊥-elim (¬p l⊑A)
+memberᴹ l⊑A (there x) = there (memberᴹ l⊑A x)
+
+updateᴹ : ∀ {l ls} {Ms Ms' : Memories ls} {M : Memory l} -> l ⊑ A -> Ms' ≔ Ms [ l ↦ M ]ˢ -> (map-εᴹ Ms') ≔ (map-εᴹ Ms) [ l ↦ M ]ˢ
+updateᴹ {l} l⊑A here with l ⊑? A
+... | yes _ = here
+... | no ¬p = ⊥-elim (¬p l⊑A)
+updateᴹ l⊑A (there x) = there (updateᴹ l⊑A x)
+
+memberᴴ : ∀ {l π ls} {Γ : Heaps ls} {Δ : Heap l π} -> (p : l ⊑ A) -> l ↦ Δ ∈ᴱ Γ -> l ↦ εᴴ (yes p) Δ ∈ᴱ (map-εᴴ Γ)
 memberᴴ {l} l⊑A here with l ⊑? A
 ... | yes _ = here
 ... | no ¬p = ⊥-elim (¬p l⊑A)
 memberᴴ l⊑A (there x) = there (memberᴴ l⊑A x)
 
-updateᴴ : ∀ {l π ls} {Γ Γ' : Heaps ls} {M : Memory l} {Δ : Env l π} -> l ⊑ A -> Γ' ≔ Γ [ l ↦ ⟨ M , Δ ⟩ ]ᴴ -> (εᴴ Γ') ≔ (εᴴ Γ) [ l ↦ ⟨ M , εᴱ Δ ⟩ ]ᴴ
+updateᴴ : ∀ {l π ls} {Γ Γ' : Heaps ls} {Δ : Heap l π} -> (p : l ⊑ A) -> Γ' ≔ Γ [ l ↦ Δ ]ᴱ -> (map-εᴴ Γ') ≔ (map-εᴴ Γ) [ l ↦ εᴴ (yes p) Δ ]ᴱ
 updateᴴ {l} l⊑A here with l ⊑? A
 ... | yes _ = here
 ... | no ¬p = ⊥-elim (¬p l⊑A)
@@ -521,30 +563,32 @@ open import Data.Product using (proj₁ ; proj₂)
 ε₁ᴾ-sim : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (x : Dec (l ⊑ A)) -> p₁ ⟼ p₂ -> ε₁ᴾ x p₁ ⟼ ε₁ᴾ x p₂
 ε₁ᴾ-sim (yes p) (Pure l∈Γ step uᴴ) = Pure (memberᴴ p l∈Γ) (ε-sim (yes p) step) (updateᴴ p uᴴ)
 ε₁ᴾ-sim (yes p) (New {H = H} H∈Γ uᴴ) with H ⊑? A
-ε₁ᴾ-sim (yes p₁) (New H∈Γ uᴴ) | yes p = New (memberᴴ p H∈Γ) (updateᴴ p uᴴ)
-ε₁ᴾ-sim (yes p) (New {Δ = Δ} {M = M} {τ∈π = ⟪ τ∈π ⟫} {l⊑h = l⊑h}  H∈Γ uᴴ) | no ¬p
+ε₁ᴾ-sim (yes p₁) (New H∈Γ uᴴ) | yes p = New (memberᴹ p H∈Γ) (updateᴹ p uᴴ)
+ε₁ᴾ-sim (yes p) (New {M = M} {τ∈π = ⟪ τ∈π ⟫} {l⊑h = l⊑h}  H∈Γ uᴴ) | no ¬p
   rewrite writeᴹ∙-≡ ¬p H∈Γ uᴴ = New∙
 ε₁ᴾ-sim (yes p) (New∙ {H = H}) with H ⊑? A
 ε₁ᴾ-sim (yes p₁) New∙ | yes p = New∙
 ε₁ᴾ-sim (yes p) New∙ | no ¬p = New∙
-ε₁ᴾ-sim (yes p) (Write₂ {H = H} H∈Γ uᴹ uᴴ) with H ⊑? A
-ε₁ᴾ-sim (yes p₁) (Write₂ H∈Γ uᴹ uᴴ) | yes p = Write₂ (memberᴴ p H∈Γ) uᴹ (updateᴴ p uᴴ)
-ε₁ᴾ-sim (yes p) (Write₂ {l⊑H = l⊑H} H∈Γ uᴹ uᴴ) | no ¬p
-  rewrite writeᴹ∙-≡ ¬p H∈Γ uᴴ = Write∙₂
-ε₁ᴾ-sim (yes p) (Writeᴰ₂ {H = H} H∈Γ uᴹ uᴴ) with H ⊑? A
-ε₁ᴾ-sim (yes p₁) (Writeᴰ₂ H∈Γ uᴹ uᴴ) | yes p = Writeᴰ₂ (memberᴴ p H∈Γ) uᴹ (updateᴴ p uᴴ)
-ε₁ᴾ-sim (yes p) (Writeᴰ₂ {l⊑H = l⊑H} H∈Γ uᴹ uᴴ) | no ¬p
-  rewrite writeᴹ∙-≡ ¬p H∈Γ uᴴ = Write∙₂
+ε₁ᴾ-sim (yes p) (Write₂ {H = H} H∈Γ uᴹ uˢ) with H ⊑? A
+ε₁ᴾ-sim (yes p₁) (Write₂ H∈Γ uᴹ uˢ) | yes p = Write₂ (memberᴹ p H∈Γ) uᴹ (updateᴹ p uˢ)
+ε₁ᴾ-sim (yes p) (Write₂ {l⊑H = l⊑H} H∈Γ uᴹ uˢ) | no ¬p
+  rewrite writeᴹ∙-≡ ¬p H∈Γ uˢ = Write∙₂
+ε₁ᴾ-sim (yes p) (Writeᴰ₂ {H = H} H∈Γ uᴹ uˢ) with H ⊑? A
+ε₁ᴾ-sim (yes p₁) (Writeᴰ₂ H∈Γ uᴹ uˢ) | yes p = Writeᴰ₂ (memberᴹ p H∈Γ) uᴹ (updateᴹ p uˢ)
+ε₁ᴾ-sim (yes p) (Writeᴰ₂ {l⊑H = l⊑H} H∈Γ uᴹ uˢ) | no ¬p
+  rewrite writeᴹ∙-≡ ¬p H∈Γ uˢ = Write∙₂
 ε₁ᴾ-sim (yes p) (Write∙₂ {H = H}) with H ⊑? A
 ε₁ᴾ-sim (yes p₁) Write∙₂ | yes p = Write∙₂
 ε₁ᴾ-sim (yes p) Write∙₂ | no ¬p = Write∙₂
 ε₁ᴾ-sim {l} (yes p) (Read₂ l∈Γ n∈M) with l ⊑? A
-ε₁ᴾ-sim (yes p₁) (Read₂ l∈Γ n∈M) | yes p = Read₂ (memberᴴ p₁ l∈Γ) n∈M
+ε₁ᴾ-sim (yes p₁) (Read₂ l∈Γ n∈M) | yes p = Read₂ (memberᴹ p₁ l∈Γ) n∈M
 ε₁ᴾ-sim (yes p) (Read₂ l∈Γ n∈M) | no ¬p = ⊥-elim (¬p p)
 ε₁ᴾ-sim {l} (yes p') (Readᴰ₂ {L = L} {L⊑l = L⊑l} L∈Γ n∈M) with L ⊑? A
-... | yes p = Readᴰ₂ (memberᴴ p L∈Γ) n∈M
+... | yes p = Readᴰ₂ (memberᴹ p L∈Γ) n∈M
 ... | no ¬p = ⊥-elim (¬p (trans-⊑ L⊑l p'))
-ε₁ᴾ-sim (yes p) (DeepDupˢ {τ∈π = τ∈π} L⊏l L∈Γ t∈Δ) = DeepDupˢ L⊏l (memberᴴ (trans-⊑ (proj₁ L⊏l) p) L∈Γ) (memberᴱ τ∈π t∈Δ)
+ε₁ᴾ-sim (yes p) (DeepDup₁ ¬var l∈Γ uᴱ) = DeepDup₁ (εᵀ¬Var ¬var) (memberᴴ p l∈Γ) (updateᴴ p uᴱ)
+ε₁ᴾ-sim (yes l⊑A) (DeepDup₂ {L⊑l = L⊑l} τ∈π L∈Γ t∈Δ l∈Γ uᴱ)
+  = DeepDup₂ {L⊑l = L⊑l} τ∈π (memberᴴ (trans-⊑ L⊑l l⊑A) L∈Γ) (memberᴱ τ∈π t∈Δ) (memberᴴ l⊑A l∈Γ) (updateᴴ l⊑A uᴱ)
 ε₁ᴾ-sim (yes p) Hole = Hole
 ε₁ᴾ-sim (no ¬p) x = Hole
 

@@ -108,8 +108,8 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 -- Semantics for stateful operations (with memory)
 data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
 
-  Pure : ∀ {Ms Γ Γ' π₁ π₂ τ₁ τ₂ τ₃} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l π₁ τ₁ τ₃} {S₂ : Stack l π₂ τ₂ τ₃}
-           {M : Memory l} {Δ₁ : Heap l π₁} {Δ₂ : Heap l π₂}
+  Pure : ∀ {Ms Γ Γ' π₁ π₂ τ₁ τ₂ τ₃} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂}
+           {S₁ : Stack l π₁ τ₁ τ₃} {S₂ : Stack l π₂ τ₂ τ₃} {Δ₁ : Heap l π₁} {Δ₂ : Heap l π₂}
          -> (l∈Γ : l ↦ Δ₁ ∈ᴱ Γ)
          -> (step : ⟨ Δ₁ , t₁ , S₁ ⟩ ⇝ ⟨ Δ₂ , t₂ , S₂ ⟩)
          -> (uᴴ : Γ' ≔ Γ [ l ↦  Δ₂ ]ᴱ)
@@ -119,7 +119,7 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
    -- so that it can be correctly read by threads labeled with H or more.
    -- Note that if the current thread can also read the reference, then l ≡ H and we
    -- are still writing in the right memory.
-  New : ∀ {Ms Ms' Γ τ τ' H} {π : Context} {Δ : Heap H π} {M : Memory H} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ l ⟩ᴿ π} {l⊑h : l ⊑ H}
+  New : ∀ {Ms Ms' Γ τ τ' H} {π : Context} {M : Memory H} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ l ⟩ᴿ π} {l⊑h : l ⊑ H}
          -> (H∈Γ : H ↦  M ∈ˢ Ms)
          -> (uᴴ : Ms' ≔ Ms [ H ↦ newᴹ ∥ l⊑h , τ∈π ∥ M ]ˢ ) ->
          ⟨ Ms , Γ , new {π = π} l⊑h (Var τ∈π) , S ⟩ ⟼ ⟨ Ms' , Γ , Return l (Res {π = π} H #[ lengthᴹ M ]) , S ⟩
@@ -127,13 +127,13 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
   New∙ : ∀ {Ms Γ τ τ' H} {π : Context} {S : Stack l π _ τ'} {l⊑h : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
          ⟨ Ms , Γ , new∙ l⊑h (Var τ∈π) , S ⟩ ⟼ ⟨ Ms , Γ , Return l (Res {π = π} H ∙) , S ⟩
 
-  Write₂ : ∀ {Ms Ms' Γ τ τ' n π H} {M M' : Memory H} {Δ : Heap H π} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
+  Write₂ : ∀ {Ms Ms' Γ τ τ' n π H} {M M' : Memory H} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
           -> (H∈Γ : H ↦ M  ∈ˢ Ms)
           -> (uᴹ : M' ≔ M [ n ↦ ∥ l⊑H , τ∈π ∥ ]ᴹ)
           -> (uˢ : Ms' ≔ Ms [ H ↦ M' ]ˢ) ->
          ⟨ Ms , Γ , Res {π = π} H #[ n ] , write l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Ms' , Γ , Return {π = π} l （） , S ⟩
 
-  Writeᴰ₂ : ∀ {Ms Ms' Γ τ τ' n π H} {M M' : Memory H} {Δ : Heap H π} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
+  Writeᴰ₂ : ∀ {Ms Ms' Γ τ τ' n π H} {M M' : Memory H} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
           -> (H∈Γ : H ↦ M  ∈ˢ Ms)
           -> (uᴹ : M' ≔ M [ n ↦ ∥ l⊑H , τ∈π ∥ ]ᴹ)
           -> (uˢ : Ms' ≔ Ms [ H ↦ M' ]ˢ) ->
@@ -145,13 +145,13 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
   -- If we read without duplicating it must be from the same level, otherwise we are leaking
   -- (We could write this using different L and l and from the inequalities L ⊑ l and l ⊑ L conclude the same,
   -- but I don't know if I should
-  Read₂ : ∀ {Ms Γ τ τ' n} {π : Context} {M : Memory l} {Δ : Heap l π} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
+  Read₂ : ∀ {Ms Γ τ τ' n} {π : Context} {M : Memory l} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
          -> (l∈Γ : l ↦ M ∈ˢ Ms)
          -> (n∈M : n ↦ ∥ refl-⊑ , τ∈π ∥ ∈ᴹ M) ->
            ⟨ Ms , Γ , Res {π = π} l #[ n ] , read refl-⊑ ∷ S ⟩ ⟼ ⟨ Ms , Γ , Return {π = π} l (Var τ∈π) , S ⟩
 
   -- When we read a reference from a possibly lower level we must deepDup that
-  Readᴰ₂ : ∀ {Ms Γ τ τ' n L} {π : Context} {M : Memory L} {Δ : Heap L π} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ L ⟩ᴿ π} {L⊑l : L ⊑ l}
+  Readᴰ₂ : ∀ {Ms Γ τ τ' n L} {π : Context} {M : Memory L} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ L ⟩ᴿ π} {L⊑l : L ⊑ l}
          -> (L∈Γ : L ↦ M ∈ˢ Ms)
          -> (n∈M : n ↦ ∥ refl-⊑ , τ∈π ∥ ∈ᴹ M) ->
            ⟨ Ms , Γ , Res {π = π} L #[ n ]ᴰ , read L⊑l ∷ S ⟩ ⟼ ⟨ Ms , Γ , Return {π = π} l (deepDup (Var τ∈π)) , S ⟩

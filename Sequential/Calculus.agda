@@ -304,6 +304,15 @@ data Updateˢ {l} (x : Memory l) : ∀ {ls} -> Memories ls -> Memories ls -> Set
 _≔_[_↦_]ˢ : ∀ {ls} -> Memories ls -> Memories ls -> (l : Label) -> Memory l -> Set
 Γ' ≔ Γ [ l ↦ x ]ˢ = Updateˢ x Γ Γ'
 
+memberˢ-∈ : ∀ {l ls} {x : Memory l} {Γ : Memories ls} -> l ↦ x ∈ˢ Γ -> l ∈ ls
+memberˢ-∈ here = here
+memberˢ-∈ (there x) = there (memberˢ-∈ x)
+
+updateˢ-∈ : ∀ {l ls} {x : Memory l} {Γ Γ' : Memories ls} -> Γ' ≔ Γ [ l ↦ x ]ˢ -> l ∈ ls
+updateˢ-∈ here = here
+updateˢ-∈ (there x) = there (updateˢ-∈ x)
+
+
 --------------------------------------------------------------------------------
 
 data Heaps : List Label -> Set where
@@ -326,13 +335,13 @@ data Updateᴱ {l π} (x : Heap l π) : ∀ {ls} -> Heaps ls -> Heaps ls -> Set 
 _≔_[_↦_]ᴱ : ∀ {ls π} -> Heaps ls -> Heaps ls -> (l : Label) -> Heap l π -> Set
 Γ' ≔ Γ [ l ↦ x ]ᴱ = Updateᴱ x Γ Γ'
 
-member-∈ : ∀ {l π ls} {x : Heap l π} {Γ : Heaps ls} -> l ↦ x ∈ᴱ Γ -> l ∈ ls
-member-∈ here = here
-member-∈ (there x) = there (member-∈ x)
+memberᴱ-∈ : ∀ {l π ls} {x : Heap l π} {Γ : Heaps ls} -> l ↦ x ∈ᴱ Γ -> l ∈ ls
+memberᴱ-∈ here = here
+memberᴱ-∈ (there x) = there (memberᴱ-∈ x)
 
-update-∈ : ∀ {l π ls} {x : Heap l π} {Γ Γ' : Heaps ls} -> Γ' ≔ Γ [ l ↦ x ]ᴱ -> l ∈ ls
-update-∈ here = here
-update-∈ (there x) = there (update-∈ x)
+updateᴱ-∈ : ∀ {l π ls} {x : Heap l π} {Γ Γ' : Heaps ls} -> Γ' ≔ Γ [ l ↦ x ]ᴱ -> l ∈ ls
+updateᴱ-∈ here = here
+updateᴱ-∈ (there x) = there (updateᴱ-∈ x)
 
 --------------------------------------------------------------------------------
 
