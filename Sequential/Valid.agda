@@ -2,7 +2,7 @@ import Lattice as L
 
 module Sequential.Valid (𝓛 : L.Lattice) where
 
-import Types as T
+import Types as T hiding (wken-∈)
 open T 𝓛
 
 import Sequential.Calculus as S renaming (⟨_,_,_⟩ to mkP) hiding (wkenᴱ)
@@ -45,7 +45,17 @@ validᵀ Γ (S.unlabel l⊑h t) = validᵀ Γ t
 validᵀ Γ (S.read x t) = validᵀ Γ t
 validᵀ Γ (S.write x t t₁) = (validᵀ Γ t) × (validᵀ Γ t₁)
 validᵀ Γ (S.write∙ x t t₁) = ⊥
-validᵀ Γ (S.new x t) = validᵀ Γ t
+-- TODO the problem with this definition is that we use π in Env H π.
+-- In our definition of Γ₁ ⊆ᴴ Γ₂ the environment may change (Δ₁ ⊆ Δ₂),
+-- which means that Δ₂ : Env l π' such that π ⊆ π'.
+-- Possible fixes:
+-- 1) We could change the definition of Γ₁ ⊆ Γ₂ not to allow (Δ₁ ⊆ Δ₂), but keeping the same Δ
+--    I think that this would not work out with the context rules that extends Δ, such as those in Pure
+-- 2) Split memories and heap in two different mappings (like in the paper):
+-- this would probably simplify the valid-preservation proof for pure (the memories remain all visible since
+-- they are in a different mapping), the definition of validity for new (and write and read)
+-- as they would not mention contexs π.
+Validᵀ {π = π} Γ (S.new {h = H} x t) = Σ (Memory H × Env H π) (λ x -> H ↦ ⟨ proj₁ x , proj₂ x ⟩ ∈ᴴ Γ × validᵀ Γ t)
 validᵀ Γ (S.new∙ x t) = ⊥
 validᵀ Γ S.#[ x ] = ⊤
 validᵀ Γ S.#[ x ]ᴰ = ⊤
@@ -157,6 +167,19 @@ wken-Addr (cons ∙ Γ₁⊆Γ₂) (T.here , proj₂) = here , proj₂
 wken-Addr (cons x Γ₁⊆Γ₂) (T.there proj₁ , proj₂) = P.map there id (wken-Addr Γ₁⊆Γ₂ (proj₁ , proj₂))
 wken-Addr (drop Γ₁⊆Γ₂) (proj₁ , proj₂) = P.map there id (wken-Addr Γ₁⊆Γ₂ (proj₁ , proj₂))
 
+wken-∈ : ∀ {l ls₁ ls₂} {Γ₁ : Heaps ls₁} {Γ₂ : Heaps ls₂}-> l ∈ ls₁ -> Γ₁ ⊆ᴴ Γ₂ -> l ∈ ls₂
+wken-∈ T.here (cons x Γ₁⊆Γ₂) = here
+wken-∈ T.here (drop Γ₁⊆Γ₂) = there (wken-∈ here Γ₁⊆Γ₂)
+wken-∈ (T.there l∈ls) (cons x Γ₁⊆Γ₂) = there (wken-∈ l∈ls Γ₁⊆Γ₂)
+wken-∈ (T.there l∈ls) (drop Γ₁⊆Γ₂) = there (wken-∈ (there l∈ls) Γ₁⊆Γ₂)
+
+wkenᵁ : ∀ {l ls₁ ls₂} {Γ₁ : Heaps ls₁} {Γ₂ : Heaps ls₂} {H₁ : Heap l}
+      -> l ↦ H₁ ∈ᴴ Γ₁ -> Γ₁ ⊆ᴴ Γ₂ -> Σ (Heap l) (λ H₂ -> H₁ ⊆'ᴴ H₂ × l ↦ H₂ ∈ᴴ Γ₂)
+wkenᵁ S.here (cons x Γ₁⊆Γ₂) = _ , (x , here)
+wkenᵁ S.here (drop Γ₁⊆Γ₂) = P.map id (P.map id there) (wkenᵁ here Γ₁⊆Γ₂)
+wkenᵁ (S.there x) (cons x₁ Γ₁⊆Γ₂) = P.map id (P.map id there) (wkenᵁ x Γ₁⊆Γ₂)
+wkenᵁ (S.there x) (drop Γ₁⊆Γ₂) = P.map id (P.map id there) (wkenᵁ (there x) Γ₁⊆Γ₂)
+
 wkenᵀ : ∀ {π τ ls₁ ls₂} {Γ₁ : Heaps ls₁} {Γ₂ : Heaps ls₂} -> Γ₁ ⊆ᴴ Γ₂ -> (t : Term π τ) -> validᵀ Γ₁ t -> validᵀ Γ₂ t
 wkenᵀ Γ₁⊆Γ₂ S.（） ok = T.tt
 wkenᵀ Γ₁⊆Γ₂ S.True ok = T.tt
@@ -191,7 +214,8 @@ wkenᵀ Γ₁⊆Γ₂ (S.unlabel l⊑h t) ok = wkenᵀ Γ₁⊆Γ₂ t ok
 wkenᵀ Γ₁⊆Γ₂ (S.read x t) ok = wkenᵀ Γ₁⊆Γ₂ t ok
 wkenᵀ Γ₁⊆Γ₂ (S.write x t t₁) (proj₁ , proj₂) = (wkenᵀ Γ₁⊆Γ₂ t proj₁) , (wkenᵀ Γ₁⊆Γ₂ t₁ proj₂)
 wkenᵀ Γ₁⊆Γ₂ (S.write∙ x t t₁) ()
-wkenᵀ Γ₁⊆Γ₂ (S.new x t) ok = wkenᵀ Γ₁⊆Γ₂ t ok
+wkenᵀ Γ₁⊆Γ₂ (S.new x t) (ok₁ , ok₂ , ok₃) with wkenᵁ ok₂ Γ₁⊆Γ₂
+wkenᵀ Γ₁⊆Γ₂ (S.new x₂ t) (ok₁ , ok₂ , ok₃) | ⟨ M' , Δ' ⟩ , ⟨ x , x₁ ⟩ , H∈Γ = (M' , {!Δ'!}) , ( {!H∈Γ!} , wkenᵀ Γ₁⊆Γ₂ t ok₃)
 wkenᵀ Γ₁⊆Γ₂ (S.new∙ x t) ()
 wkenᵀ Γ₁⊆Γ₂ S.#[ x ] ok = T.tt
 wkenᵀ Γ₁⊆Γ₂ S.#[ x ]ᴰ ok = T.tt
@@ -341,7 +365,7 @@ update-validᵀ l∈Γ u M₁≤M₂ (S.unlabel l⊑h t) tⱽ = update-validᵀ 
 update-validᵀ l∈Γ u M₁≤M₂ (S.read x t) tⱽ =  update-validᵀ l∈Γ u M₁≤M₂ t tⱽ
 update-validᵀ l∈Γ u M₁≤M₂ (S.write x t t₁) (tⱽ , t₁ⱽ) = update-validᵀ l∈Γ u M₁≤M₂ t tⱽ ,  update-validᵀ l∈Γ u M₁≤M₂ t₁ t₁ⱽ
 update-validᵀ l∈Γ u M₁≤M₂ (S.write∙ x t t₁) ()
-update-validᵀ l∈Γ u M₁≤M₂ (S.new x t) tⱽ =  update-validᵀ l∈Γ u M₁≤M₂ t tⱽ
+update-validᵀ l∈Γ u M₁≤M₂ (S.new x t) (ok , tⱽ) = {!!} -- ok , update-validᵀ l∈Γ u M₁≤M₂ t tⱽ
 update-validᵀ l∈Γ u M₁≤M₂ (S.new∙ x t) ()
 update-validᵀ l∈Γ u M₁≤M₂ S.#[ x ] tⱽ = tt
 update-validᵀ l∈Γ u M₁≤M₂ S.#[ x ]ᴰ tⱽ = tt
@@ -417,8 +441,10 @@ update-validᴴ {Γ = S.∙ S.∷ Γ} (S.there a) (S.there b) M₁≤M₂ M₂�
 -- valid⇝ = {!!}
 
 valid⟼ : ∀ {ls τ l} {p₁ p₂ : Program l ls τ} -> validᴾ p₁ -> p₁ ⟼ p₂ -> validᴾ p₂
-valid⟼ (proj₁ , proj₂ , proj₃ ) (SS.Pure l∈Γ step uᴴ) with valid-memberᴴ proj₁ l∈Γ
-... | Mⱽ , Δⱽ = {!!} , ({!!} , {!!})
+valid⟼ (proj₁ , proj₂ , proj₃ ) (SS.Pure l∈Γ step uᴴ) = FIXME
+  where postulate FIXME : ∀ {a} {A : Set a} -> A
+--         with valid-memberᴴ proj₁ l∈Γ
+-- ... | Mⱽ , Δⱽ = {!!} , ({!!} , {!!})
 valid⟼ (proj₁ , proj₃ , proj₂) (SS.New {M = M} {τ∈π = τ∈π} {l⊑h = l⊑h} H∈Γ uᴴ) with valid-memberᴴ proj₁ H∈Γ
 ... | Mⱽ , Δⱽ with valid-newᴹ ∥ l⊑h ,  τ∈π ∥ M Mⱽ
 ... | M'ⱽ , ok-Addr = update-validᴴ H∈Γ uᴴ ok-Addr M'ⱽ proj₁ , (((update-∈ uᴴ) , valid-new-Addr {M = M} Mⱽ ∥ l⊑h ,  τ∈π ∥ uᴴ) , update-validˢ H∈Γ uᴴ (newᴹ-≤ M ∥ l⊑h ,  τ∈π ∥) proj₂)
