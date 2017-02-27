@@ -4,8 +4,7 @@ module Sequential.Determinism (𝓛 : L.Lattice) where
 
 open import Types 𝓛
 open import Sequential.Calculus 𝓛
-import Sequential.Semantics as S
-open S 𝓛
+open import Sequential.Semantics 𝓛
 
 open import Data.Product
 open import Data.Maybe
@@ -170,14 +169,14 @@ determinismᴾ (Readᴰ₂ L∈Γ t∈M) (Pure l∈Γ () uᴴ)
 determinismᴾ (Readᴰ₂ L∈Γ n∈M) (Readᴰ₂ L∈Γ₁ n∈M₁) with memberˢ-≅ L∈Γ L∈Γ₁
 ... | refl with memberᴹ-≡ n∈M n∈M₁
 ... | refl = refl
-determinismᴾ (S.Pure l∈Γ (S.Var₂ τ∈π () uᴴ₁) uᴴ) (S.DeepDup₁ ¬var l∈Γ₁ uᴱ)
-determinismᴾ (S.Pure l∈Γ (S.Var₂ τ∈π () uᴴ₁) uᴴ) (S.DeepDup₂ τ∈π₁ L∈Γ t∈Δ l∈Γ₁ uᴱ)
-determinismᴾ (S.DeepDup₁ ¬var l∈Γ uᴱ) (S.Pure l∈Γ₁ (S.Var₂ τ∈π () uᴴ) uᴴ₁)
+determinismᴾ (Pure l∈Γ (Var₂ τ∈π () uᴴ₁) uᴴ) (DeepDup₁ ¬var l∈Γ₁ uᴱ)
+determinismᴾ (Pure l∈Γ (Var₂ τ∈π () uᴴ₁) uᴴ) (DeepDup₂ τ∈π₁ L∈Γ t∈Δ l∈Γ₁ uᴱ)
+determinismᴾ (DeepDup₁ ¬var l∈Γ uᴱ) (Pure l∈Γ₁ (Var₂ τ∈π () uᴴ) uᴴ₁)
 determinismᴾ (DeepDup₁ ¬var l∈Γ uᴱ) (DeepDup₁ ¬var₁ l∈Γ₁ uᴱ₁) with memberᴱ-≅ l∈Γ l∈Γ₁
 ... | refl rewrite updateᴱ-≡ uᴱ uᴱ₁ = refl
 determinismᴾ (DeepDup₁ ¬var l∈Γ uᴱ) (DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ₁ uᴱ₁) with memberᴱ-≅ l∈Γ l∈Γ₁
 ... | refl = ⊥-elim (¬var (Var τ∈π))
-determinismᴾ (S.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) (S.Pure l∈Γ₁ (S.Var₂ τ∈π₁ () uᴴ) uᴴ₁)
+determinismᴾ (DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) (Pure l∈Γ₁ (Var₂ τ∈π₁ () uᴴ) uᴴ₁)
 determinismᴾ (DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) (DeepDup₁ ¬var l∈Γ₁ uᴱ₁) with memberᴱ-≅ l∈Γ l∈Γ₁
 ... | refl = ⊥-elim (¬var (Var τ∈π))
 determinismᴾ (DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) (DeepDup₂ .τ∈π L∈Γ₁ t∈Δ₁ l∈Γ₁ uᴱ₁) with memberᴱ-≅ L∈Γ L∈Γ₁
