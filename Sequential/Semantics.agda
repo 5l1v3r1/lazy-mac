@@ -203,6 +203,9 @@ data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
 ⊥-stuckSteps {p₁ = ⟨ Ms , Γ , t , S ⟩} x y = proj₁ (proj₂ x) y
 ⊥-stuckSteps {p₁ = ∙} x y = x
 
+⊥-stuckForks : ∀ {l ls π τ₁ τ₂} {Ms : Memories ls} {Γ : Heaps ls} {t : Term π τ₁} {S : Stack l _ _ τ₂} -> Stuckᴾ ⟨ Ms , Γ , t , S ⟩ -> ¬ (IsFork t)
+⊥-stuckForks stuck = proj₂ (proj₂ stuck)
+
 ⊥-doneSteps : ∀ {l ls τ} {p₁ : Program l ls τ} -> Doneᴾ p₁ -> ¬ (Redexᴾ p₁)
 ⊥-doneSteps (Done （）) (Step (Pure l∈Γ () uᴴ))
 ⊥-doneSteps (Done True) (Step (Pure l∈Γ () uᴴ))
@@ -217,6 +220,10 @@ data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
 ⊥-stuckDone : ∀ {l ls τ} {p : Program l ls τ} -> Stuckᴾ p -> ¬ (Doneᴾ p)
 ⊥-stuckDone {p = ⟨ Ms , Γ , t , S ⟩} stuck don = proj₁ stuck don
 ⊥-stuckDone {p = ∙} stuck don = stuck
+
+⊥-doneForks : ∀ {l ls π τ₁ τ₂} {Ms : Memories ls} {Γ : Heaps ls} {t : Term π τ₁} {S : Stack l _ _ τ₂} -> Doneᴾ ⟨ Ms , Γ , t , S ⟩ -> ¬ (IsFork t)
+⊥-doneForks (Done ()) (Fork p t)
+⊥-doneForks (Done ()) (Fork∙ p t)
 
 --------------------------------------------------------------------------------
 

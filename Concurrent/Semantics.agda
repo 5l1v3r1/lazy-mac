@@ -26,7 +26,7 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (uᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ ) ->
            Stepᶜ l n ⟨ Σ₁ , Ms₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Ms₂ , Γ₂ , P₂ ⟩
 
-  fork :  ∀ {H π S Ms Σ₁ Σ₂} {tᴴ : Term π (Mac H _)} {Γ₁ Γ₂ : Heaps ls}
+  fork :  ∀ {H π S Ms Σ₁ Σ₂} {tᴴ : Term π (Mac H _)} {Γ : Heaps ls}
             {P₁ P₂ P₃ : Pools ls} {T₁ T₂ : Pool l} {Tᴴ : Pool H} {l⊑H : l ⊑ H}
            (l∈P : l ↦ T₁ ∈ᴾ P₁)
            (t∈T : n ↦ ⟨ fork l⊑H tᴴ , S ⟩ ∈ᵀ T₁)
@@ -35,16 +35,16 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (H∈P₂ : H ↦ Tᴴ ∈ᴾ P₂)
            (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Fork H (lengthᵀ Tᴴ) l⊑H ⟫ )
            (u₂ᴾ : P₃ ≔ P₂ [ H ↦ Tᴴ ▻ ⟨ tᴴ , [] ⟩ ]ᴾ ) ->  -- TODO must add deepDup!
-           Stepᶜ l n ⟨ Σ₁ , Ms , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Ms , Γ₂ , P₃ ⟩
+           Stepᶜ l n ⟨ Σ₁ , Ms , Γ , P₁ ⟩ ⟨ Σ₂ , Ms , Γ , P₃ ⟩
 
-  fork∙ :  ∀ {H π₁ π₂ τ₂ S₁ S₂ Ms Σ₁ Σ₂} {tᴴ : Term π₁ (Mac H _)} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heaps ls}
+  fork∙ :  ∀ {H π S Ms Σ₁ Σ₂} {tᴴ : Term π (Mac H _)} {Γ : Heaps ls}
              {P₁ P₂ : Pools ls} {T₁ T₂ : Pool l} {l⊑H : l ⊑ H}
            (l∈P : l ↦ T₁ ∈ᴾ P₁)
-           (t∈T : n ↦ ⟨ fork∙ l⊑H tᴴ , S₁ ⟩ ∈ᵀ T₁)
-           (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ t₂ , S₂ ⟩ ]ᵀ )
+           (t∈T : n ↦ ⟨ fork∙ l⊑H tᴴ , S ⟩ ∈ᵀ T₁)
+           (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ Return _ （） , S ⟩ ]ᵀ )
            (uᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ )
            (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Step ⟫) ->
-           Stepᶜ l n ⟨ Σ₁ , Ms , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Ms , Γ₂ , P₂ ⟩
+           Stepᶜ l n ⟨ Σ₁ , Ms , Γ , P₁ ⟩ ⟨ Σ₂ , Ms , Γ , P₂ ⟩
 
   skip : ∀ {Σ₁ Σ₂ τ π Ms S} {t : Term π τ} {Γ : Heaps ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
