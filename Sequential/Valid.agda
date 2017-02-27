@@ -20,13 +20,6 @@ open import Data.Maybe
 -- address and no free-variables, i.e. variables unbounded in the
 -- heap.
 
--- data Valid {l : Label} : ∀ {τ : Ty} -> State l τ -> Set where
-
--- validAddr : ∀ {l ls} -> l ∈ ls -> Heaps ls -> ℕ -> Set
--- validAddr here (⟨ M , Δ ⟩ ∷ Γ) n = n < lengthᴹ M
--- validAddr here (∙ ∷ _) n = ⊥
--- validAddr (there l∈ls) (_ S.∷ Γ) n = validAddr l∈ls Γ n
-
 validAddr : ∀ {l} -> Memory l -> ℕ -> Set
 validAddr M n = n < lengthᴹ M
 
@@ -97,6 +90,10 @@ validᴴ₂ Γ S.∙ = ⊥
 validᴴ : ∀ {ls} -> Heaps ls -> Set
 validᴴ S.[] = ⊤
 validᴴ (x S.∷ Γ) = validᴴ₂ (x ∷ Γ) x × validᴴ Γ
+
+valid-state : ∀ {l ls τ} -> Heaps ls -> State l τ -> Set
+valid-state Γ (S.mkP Δ t S) = validᴱ Γ Δ × validᵀ Γ t × validˢ Γ S
+valid-state _ S.∙ = ⊥
 
 validᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
 validᴾ (S.mkP Γ t S ) = validᴴ Γ × (validᵀ Γ t) × (validˢ Γ S)
@@ -399,8 +396,29 @@ update-validᴴ {Γ = S.⟨ M' , Δ' ⟩ S.∷ Γ} (S.there a) (S.there b) M₁�
   = (proj₁ , wkenᴱ {Δ = Δ'} (update-⊆ᴴ (there a) (there b) M₁≤M₂) proj₂) , (update-validᴴ a b M₁≤M₂ M₂ⱽ proj₃)
 update-validᴴ {Γ = S.∙ S.∷ Γ} (S.there a) (S.there b) M₁≤M₂ M₂ⱽ (() , proj₂)
 
+
+
+-- This does not go because I need to restrict Γ to get to the memory where the update occurs
+-- which may make some references invalid.
+-- update-valid'ᴴ : ∀ {l π₁ π₂ ls ls'} {Γ Γ' : Heaps ls} {Γ'' : Heaps ls'} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} {M : Memory l} ->
+--                   l ↦ ⟨ M , Δ₁ ⟩ ∈ᴴ Γ ->
+--                   Γ' ≔ Γ [ l ↦ ⟨ M , Δ₂ ⟩ ]ᴴ ->
+--                   validᴴ Γ -> Γ ⊆ᴴ Γ'' -> validᴱ Γ'' Δ₂ -> validᴴ Γ'
+-- update-valid'ᴴ S.here S.here Γⱽ Γ⊆ᴴΓ'' Δ₂ⱽ = {!!}
+-- update-valid'ᴴ S.here (S.there {u = u} uᴴ) Γⱽ _ Δ₂ⱽ = ⊥-elim (∈-not-unique (update-∈ uᴴ) u)
+-- update-valid'ᴴ (S.there {u = u} l∈Γ) S.here Γⱽ _ Δ₂ⱽ = ⊥-elim (∈-not-unique (member-∈ l∈Γ) u)
+-- update-valid'ᴴ {Γ = S.⟨ x , x₁ ⟩ S.∷ Γ} (S.there l∈Γ) (S.there u₁) (proj₁ , proj₂) Γ⊆ᴴΓ'' Δ₂ⱽ = {!!} , (update-valid'ᴴ l∈Γ u₁ proj₂ {!drop ?!}  Δ₂ⱽ)
+-- update-valid'ᴴ {Γ = S.∙ S.∷ Γ} (S.there l∈Γ) (S.there u₁) (() , proj₂) Δ₂ⱽ
+
+
+-- valid⇝ : ∀ {l τ π₁ π₂ τ₁ τ₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} {S₁ : Stack l τ₁ τ} {S₂ : Stack l τ₂ τ}
+--             {M : Memory l} -> l ↦ ⟨ M , Δ₁ ⟩ Γ ->
+--            {!!} -> {!!} ⇝ {!!} -> {!!}
+-- valid⇝ = {!!}
+
 valid⟼ : ∀ {ls τ l} {p₁ p₂ : Program l ls τ} -> validᴾ p₁ -> p₁ ⟼ p₂ -> validᴾ p₂
-valid⟼ (proj₁ , proj₂) (SS.Pure l∈Γ step uᴴ) = {!!}
+valid⟼ (proj₁ , proj₂ , proj₃ ) (SS.Pure l∈Γ step uᴴ) with valid-memberᴴ proj₁ l∈Γ
+... | Mⱽ , Δⱽ = {!!} , ({!!} , {!!})
 valid⟼ (proj₁ , proj₃ , proj₂) (SS.New {M = M} {τ∈π = τ∈π} {l⊑h = l⊑h} H∈Γ uᴴ) with valid-memberᴴ proj₁ H∈Γ
 ... | Mⱽ , Δⱽ with valid-newᴹ ∥ l⊑h ,  τ∈π ∥ M Mⱽ
 ... | M'ⱽ , ok-Addr = update-validᴴ H∈Γ uᴴ ok-Addr M'ⱽ proj₁ , (((update-∈ uᴴ) , valid-new-Addr {M = M} Mⱽ ∥ l⊑h ,  τ∈π ∥ uᴴ) , update-validˢ H∈Γ uᴴ (newᴹ-≤ M ∥ l⊑h ,  τ∈π ∥) proj₂)
