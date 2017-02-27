@@ -161,66 +161,96 @@ subst {Δ = Δ} v t = tm-subst [] Δ v t
 -- A Well-Typed continuation (Cont), contains well-typed terms and
 -- transform the input type (first indexed) in the output type (second
 -- index).
-data Cont (l : Label) : Ty -> Ty -> Set where
- Var : ∀ {τ₁ τ₂} {{π : Context}} -> (τ∈π : τ₁ ∈⟨ l ⟩ᴿ π) -> Cont l (τ₁ => τ₂) τ₂
- # : ∀ {τ} {{π : Context}} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π)  -> Cont l τ τ
- Then_Else_ : ∀ {τ} {π : Context} -> Term π τ -> Term π τ -> Cont l Bool τ
- Bind :  ∀ {τ₁ τ₂} {π : Context} -> Term π (τ₁ => Mac l τ₂) -> Cont l (Mac l τ₁) (Mac l τ₂)
- unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Cont l (Labeled l' τ) (Mac l τ)
- unId : ∀ {τ} -> Cont l (Id τ) τ
- write : ∀ {τ H} {{π : Context}} -> l ⊑ H -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Cont l (Ref H τ) (Mac l （）)
- write∙ : ∀ {τ H} {{π : Context}} -> l ⊑ H -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Cont l (Ref H τ) (Mac l （）)
- read : ∀ {τ L} -> L ⊑ l -> Cont l (Ref L τ) (Mac l τ)
+data Cont (l : Label) (π : Context) : Ty -> Ty -> Set where
+ Var : ∀ {τ₁ τ₂} -> (τ∈π : τ₁ ∈⟨ l ⟩ᴿ π) -> Cont l π (τ₁ => τ₂) τ₂
+ # : ∀ {τ} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π)  -> Cont l π τ τ
+ Then_Else_ : ∀ {τ} -> Term π τ -> Term π τ -> Cont l π Bool τ
+ Bind :  ∀ {τ₁ τ₂} -> Term π (τ₁ => Mac l τ₂) -> Cont l π (Mac l τ₁) (Mac l τ₂)
+ unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Cont l π (Labeled l' τ) (Mac l τ)
+ unId : ∀ {τ} -> Cont l π (Id τ) τ
+ write : ∀ {τ H} -> l ⊑ H -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Cont l π (Ref H τ) (Mac l （）)
+ write∙ : ∀ {τ H} -> l ⊑ H -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Cont l π (Ref H τ) (Mac l （）)
+ read : ∀ {τ L} -> L ⊑ l -> Cont l π (Ref L τ) (Mac l τ)
+
+wkenᶜ : ∀ {l π₁ π₂ τ₁ τ₂} -> Cont l π₁ τ₁ τ₂ -> π₁ ⊆ π₂ -> Cont l π₂ τ₁ τ₂
+wkenᶜ (Var ⟪ τ∈π ⟫) π₁⊆π₂ = Var ⟪ wken-∈ᴿ π₁⊆π₂ τ∈π ⟫
+wkenᶜ (# ⟪ τ∈π ⟫) π₁⊆π₂ = # ⟪ wken-∈ᴿ π₁⊆π₂ τ∈π ⟫
+wkenᶜ (Then x Else x₁) π₁⊆π₂ = Then (wken x π₁⊆π₂) Else (wken x₁ π₁⊆π₂)
+wkenᶜ (Bind x) π₁⊆π₂ = Bind (wken x π₁⊆π₂)
+wkenᶜ (unlabel p) π₁⊆π₂ = unlabel p
+wkenᶜ unId π₁⊆π₂ = unId
+wkenᶜ (write x ⟪ τ∈π ⟫) π₁⊆π₂ = write x ⟪ wken-∈ᴿ π₁⊆π₂ τ∈π ⟫
+wkenᶜ (write∙ x ⟪ τ∈π ⟫) π₁⊆π₂ = write∙ x ⟪ wken-∈ᴿ π₁⊆π₂ τ∈π ⟫
+wkenᶜ (read x) π₁⊆π₂ = read x
 
 -- A Well-typed stack (Stack) contains well-typed terms and is indexed
 -- by an input type and an output type.
 -- It transforms the former in the latter according to the continuations.
 -- TODO can parametrize the stack with π? (remember that π only grows)
-data Stack (l : Label) : Ty -> Ty -> Set where
- [] : ∀ {τ} -> Stack l τ τ
- _∷_ : ∀ {τ₁ τ₂ τ₃} -> Cont l τ₁ τ₂ -> Stack l τ₂ τ₃ -> Stack l τ₁ τ₃
- ∙ : ∀ {τ} -> Stack l τ τ
+data Stack (l : Label) (π : Context) : Ty -> Ty -> Set where
+ [] : ∀ {τ} -> Stack l π τ τ
+ _∷_ : ∀ {τ₁ τ₂ τ₃} -> (C : Cont l π τ₁ τ₂) (S : Stack l π τ₂ τ₃) -> Stack l π τ₁ τ₃
+ ∙ : ∀ {τ} -> Stack l π τ τ
+
+wkenˢ : ∀ {l π₁ π₂ τ₁ τ₂} -> Stack l π₁ τ₁ τ₂ -> π₁ ⊆ π₂ -> Stack l π₂ τ₁ τ₂
+wkenˢ [] _ = []
+wkenˢ (C ∷ S) π₁⊆π₂ = wkenᶜ C π₁⊆π₂ ∷ (wkenˢ S π₁⊆π₂)
+wkenˢ ∙ _ = ∙
+
 --------------------------------------------------------------------------------
 
-data Env (l : Label) : Context -> Set where
-  [] : Env l []
-  _∷_ : ∀ {π τ} -> (t : Maybe (Term π τ)) -> Env l π -> Env l (τ ∷ π)
-  ∙ : ∀ {{π}} -> Env l π
+data Heap (l : Label) : Context -> Set where
+  [] : Heap l []
+  _∷_ : ∀ {π τ} -> (t : Maybe (Term π τ)) (Δ : Heap l π) -> Heap l (τ ∷ π)
+  ∙ : ∀ {{π}} -> Heap l π
 
-wkenᴱ : ∀ {l π₁ π₂} -> Env l π₁ -> π₁ ⊆ π₂ -> Env l π₂
-wkenᴱ [] base = []
-wkenᴱ [] (drop x) = nothing ∷ wkenᴱ [] x
-wkenᴱ (just t ∷ Δ) (cons x) = (just (wken t x)) ∷ (wkenᴱ Δ x)
-wkenᴱ (nothing ∷ Δ) (cons x) = nothing ∷ wkenᴱ Δ x
-wkenᴱ (t ∷ Δ) (drop x) = nothing ∷ wkenᴱ (t ∷ Δ) x
-wkenᴱ ∙ x = ∙
+wkenᴴ : ∀ {l π₁ π₂} -> Heap l π₁ -> π₁ ⊆ π₂ -> Heap l π₂
+wkenᴴ [] base = []
+wkenᴴ [] (drop x) = nothing ∷ wkenᴴ [] x
+wkenᴴ (just t ∷ Δ) (cons x) = (just (wken t x)) ∷ (wkenᴴ Δ x)
+wkenᴴ (nothing ∷ Δ) (cons x) = nothing ∷ wkenᴴ Δ x
+wkenᴴ (t ∷ Δ) (drop x) = nothing ∷ wkenᴴ (t ∷ Δ) x
+wkenᴴ ∙ x = ∙
 
-data Updateᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈⟨ l ⟩ π' -> Env l π' -> Env l π' -> Set where
-  here : ∀ {Δ : Env l π} {mt' : Maybe (Term _ τ)} -> Updateᴱ mt (⟪ here ⟫) (mt' ∷ Δ) (mt ∷ Δ)
-  there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ Δ' : Env l π'} {mt' : Maybe (Term _ τ')} -> Updateᴱ mt (⟪ τ∈π' ⟫) Δ Δ' ->
-            Updateᴱ mt (⟪ there τ∈π' ⟫) (mt' ∷ Δ) (mt' ∷ Δ')
+data Updateᴴ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈⟨ l ⟩ π' -> Heap l π' -> Heap l π' -> Set where
+  here : ∀ {Δ : Heap l π} {mt' : Maybe (Term _ τ)} -> Updateᴴ mt (⟪ here ⟫) (mt' ∷ Δ) (mt ∷ Δ)
+  there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ Δ' : Heap l π'} {mt' : Maybe (Term _ τ')} -> Updateᴴ mt (⟪ τ∈π' ⟫) Δ Δ' ->
+            Updateᴴ mt (⟪ there τ∈π' ⟫) (mt' ∷ Δ) (mt' ∷ Δ')
 
-_≔_[_↦_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈⟨ l ⟩ᴿ π' -> Term π τ -> Set
-Δ' ≔ Δ [ ⟪ τ∈π' ⟫ ↦ t ]ᴱ = Updateᴱ (just t) (⟪ ∈ᴿ-∈ τ∈π' ⟫) Δ Δ'
+_≔_[_↦_]ᴴ : ∀ {l τ} {π π' : Context} -> Heap l π' -> Heap l π' -> τ ∈⟨ l ⟩ᴿ π' -> Term π τ -> Set
+Δ' ≔ Δ [ ⟪ τ∈π' ⟫ ↦ t ]ᴴ = Updateᴴ (just t) (⟪ ∈ᴿ-∈ τ∈π' ⟫) Δ Δ'
 
 -- Syntatic sugar for removing a term from the environment.
 -- The term is used only to fix its context π and avoid unsolved metas.
-_≔_[_↛_]ᴱ : ∀ {l τ} {π π' : Context} -> Env l π' -> Env l π' -> τ ∈⟨ l ⟩ᴿ π' -> Term π τ -> Set
-_≔_[_↛_]ᴱ {π = π} Δ' Δ ⟪ x ⟫ t = Updateᴱ {π = π} nothing (⟪ ∈ᴿ-∈ x ⟫) Δ Δ'
+_≔_[_↛_]ᴴ : ∀ {l τ} {π π' : Context} -> Heap l π' -> Heap l π' -> τ ∈⟨ l ⟩ᴿ π' -> Term π τ -> Set
+_≔_[_↛_]ᴴ {π = π} Δ' Δ ⟪ x ⟫ t = Updateᴴ {π = π} nothing (⟪ ∈ᴿ-∈ x ⟫) Δ Δ'
 
-data Memberᴱ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈⟨ l ⟩ π' -> Env l π' -> Set where
-  here : ∀ {Δ : Env l π} -> Memberᴱ mt (⟪ here ⟫) (mt ∷ Δ)
-  there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ : Env l π'} {mt' : Maybe (Term _ τ')} -> Memberᴱ mt (⟪ τ∈π' ⟫) Δ -> Memberᴱ mt (⟪ there τ∈π' ⟫) (mt' ∷ Δ)
+data Memberᴴ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈⟨ l ⟩ π' -> Heap l π' -> Set where
+  here : ∀ {Δ : Heap l π} -> Memberᴴ mt (⟪ here ⟫) (mt ∷ Δ)
+  there : ∀ {π' τ'} {τ∈π' : τ ∈ π'} {Δ : Heap l π'} {mt' : Maybe (Term _ τ')} -> Memberᴴ mt (⟪ τ∈π' ⟫) Δ -> Memberᴴ mt (⟪ there τ∈π' ⟫) (mt' ∷ Δ)
 
-_↦_∈ᴱ_ : ∀ {l τ} {π π' : Context} -> τ ∈⟨ l ⟩ᴿ π' -> Term π τ -> Env l π' -> Set
-⟪ x ⟫ ↦ t ∈ᴱ Δ = Memberᴱ (just t) (⟪ ∈ᴿ-∈ x ⟫) Δ
+_↦_∈ᴴ_ : ∀ {l τ} {π π' : Context} -> τ ∈⟨ l ⟩ᴿ π' -> Term π τ -> Heap l π' -> Set
+⟪ x ⟫ ↦ t ∈ᴴ Δ = Memberᴴ (just t) (⟪ ∈ᴿ-∈ x ⟫) Δ
+
+--------------------------------------------------------------------------------
+
+open import Data.List.All
+open import Data.Empty
+open import Relation.Nullary
+
+Unique : Label -> List Label -> Set
+Unique l₁ ls = All (λ l₂ → ¬ (l₁ ≡ l₂)) ls
+
+∈-not-unique : ∀ {l ls} -> l ∈ ls -> Unique l ls -> ⊥
+∈-not-unique here (px ∷ q) = ⊥-elim (px refl)
+∈-not-unique (there p) (px ∷ q) = ∈-not-unique p q
 
 --------------------------------------------------------------------------------
 
 -- A labeled-typed memory cell, containing a pointer
 -- at most at level l
 data Cell (l : Label) (τ : Ty) : Set where
-  ∥_,_∥  : ∀ {L} {{π}} -> L ⊑ l -> τ ∈⟨ L ⟩ᴿ π -> Cell l τ
+  ∥_,_∥  : ∀ {L} {{π}} -> (L⊑l : L ⊑ l) (τ∈π : τ ∈⟨ L ⟩ᴿ π) -> Cell l τ
 
 -- A labeled memory keeps pointer to no more sensitive heaps
 data Memory (l : Label) : Set where
@@ -228,12 +258,12 @@ data Memory (l : Label) : Set where
   _∷_ : ∀ {τ} -> (cᴸ : Cell l τ) (M : Memory l) -> Memory l
   ∙ : Memory l
 
-data Memberᴹ {l τ} (cᴸ : Cell l τ) : ℕ -> Memory l -> Set where
-  here : ∀ {M} -> Memberᴹ cᴸ 0 (cᴸ ∷ M)
-  there : ∀ {M n τ'} {c₁ᴸ : Cell l τ'} -> Memberᴹ cᴸ n M -> Memberᴹ cᴸ (suc n) (c₁ᴸ ∷ M)
+data Lookupᴹ {l τ} (cᴸ : Cell l τ) : ℕ -> Memory l -> Set where
+  here : ∀ {M} -> Lookupᴹ cᴸ 0 (cᴸ ∷ M)
+  there : ∀ {M n τ'} {c₁ᴸ : Cell l τ'} -> Lookupᴹ cᴸ n M -> Lookupᴹ cᴸ (suc n) (c₁ᴸ ∷ M)
 
 _↦_∈ᴹ_ : ∀ {l τ} -> ℕ -> Cell l τ -> Memory l -> Set
-_↦_∈ᴹ_ n c M = Memberᴹ c n M
+_↦_∈ᴹ_ n c M = Lookupᴹ c n M
 
 data Writeᴹ {l τ} (cᴸ : Cell l τ) : ℕ -> Memory l -> Memory l -> Set where
   here : ∀ {M} {c₁ᴸ : Cell l τ} -> Writeᴹ cᴸ 0 (c₁ᴸ ∷ M) (cᴸ ∷  M)
@@ -253,63 +283,56 @@ lengthᴹ (x ∷ M) = suc (lengthᴹ M)
 lengthᴹ ∙ = 0  -- We don't care when the memory is collapsed
 
 --------------------------------------------------------------------------------
--- A heap pairs together labeled memories and environment
 
-open import Data.List.All
-open import Data.Empty
-open import Relation.Nullary
+data Memories : List Label -> Set where
+  [] : Memories []
+  _∷_ : ∀ {l ls} {{u : Unique l ls}} -> (M : Memory l) (Ms : Memories ls) -> Memories (l ∷ ls)
 
-Unique : Label -> List Label -> Set
-Unique l₁ ls = All (λ l₂ → ¬ (l₁ ≡ l₂)) ls
+-- This is defined as a data type rather than as a function to avoid having to existentially quantify π
+-- and in order to simplify unification agains semantics rules.
+data Memberˢ {l} (x : Memory l) : ∀ {ls} -> Memories ls -> Set where
+  here : ∀ {ls} {u : Unique l ls} {Γ : Memories ls} -> Memberˢ x (x ∷ Γ)
+  there : ∀ {ls' l'} {u : Unique l' ls'} {Γ : Memories ls'} {y : Memory l'} -> Memberˢ x Γ -> Memberˢ x (y ∷ Γ)
 
-∈-not-unique : ∀ {l ls} -> l ∈ ls -> Unique l ls -> ⊥
-∈-not-unique here (px ∷ q) = ⊥-elim (px refl)
-∈-not-unique (there p) (px ∷ q) = ∈-not-unique p q
+_↦_∈ˢ_ : ∀ {ls} -> (l : Label) -> Memory l -> Memories ls -> Set
+l ↦ x ∈ˢ Γ = Memberˢ x Γ
 
-data Heap (l : Label) : Set where
-  ⟨_,_⟩ : ∀ {π} -> Memory l -> Env l π -> Heap l
-  ∙ : Heap l
+data Updateˢ {l} (x : Memory l) : ∀ {ls} -> Memories ls -> Memories ls -> Set where
+  here : ∀ {ls} {u : Unique l ls} {Γ : Memories ls} {x' : Memory l} -> Updateˢ x (x' ∷ Γ) (x ∷ Γ)
+  there : ∀ {ls l'} {u : Unique l' ls} {Γ Γ' : Memories ls} {y : Memory l'} -> Updateˢ x Γ Γ' -> Updateˢ x (y ∷ Γ) (y ∷ Γ')
+
+_≔_[_↦_]ˢ : ∀ {ls} -> Memories ls -> Memories ls -> (l : Label) -> Memory l -> Set
+Γ' ≔ Γ [ l ↦ x ]ˢ = Updateˢ x Γ Γ'
+
+--------------------------------------------------------------------------------
 
 data Heaps : List Label -> Set where
   [] : Heaps []
-  _∷_ : ∀ {l ls} {{u : Unique l ls}} -> Heap l -> Heaps ls -> Heaps (l ∷ ls)
+  _∷_ : ∀ {l ls π} {{u : Unique l ls}} -> Heap l π -> Heaps ls -> Heaps (l ∷ ls)
 
-data Member {l} (x : Heap l) : ∀ {ls} -> Heaps ls -> Set where
-  here : ∀ {ls} {u : Unique l ls} {Γ : Heaps ls} -> Member x (x ∷ Γ)
-  there : ∀ {ls l'} {u : Unique l' ls} {Γ : Heaps ls} {y : Heap l'} -> Member x Γ -> Member x (y ∷ Γ)
+-- This is defined as a data type rather than as a function to avoid having to existentially quantify π
+-- and in order to simplify unification agains semantics rules.
+data Memberᴱ {l π} (x : Heap l π) : ∀ {ls} -> Heaps ls -> Set where
+  here : ∀ {ls} {u : Unique l ls} {Γ : Heaps ls} -> Memberᴱ x (x ∷ Γ)
+  there : ∀ {ls π' l'} {u : Unique l' ls} {Γ : Heaps ls} {y : Heap l' π'} -> Memberᴱ x Γ -> Memberᴱ x (y ∷ Γ)
 
-_↦_∈ᴴ_ : ∀ {ls} -> (l : Label) -> Heap l -> Heaps ls -> Set
-l ↦ x ∈ᴴ Γ = Member x Γ
+_↦_∈ᴱ_ : ∀ {ls π} -> (l : Label) -> Heap l π -> Heaps ls -> Set
+l ↦ x ∈ᴱ Γ = Memberᴱ x Γ
 
-data Update {l} (x : Heap l) : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
-  here : ∀ {ls} {u : Unique l ls} {Γ : Heaps ls} {x' : Heap l} -> Update x (x' ∷ Γ) (x ∷ Γ)
-  there : ∀ {ls l'} {u : Unique l' ls} {Γ Γ' : Heaps ls} {y : Heap l'} -> Update x Γ Γ' -> Update x (y ∷ Γ) (y ∷ Γ')
+data Updateᴱ {l π} (x : Heap l π) : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
+  here : ∀ {ls π'} {u : Unique l ls} {Γ : Heaps ls} {x' : Heap l π'} -> Updateᴱ x (x' ∷ Γ) (x ∷ Γ)
+  there : ∀ {ls π' l'} {u : Unique l' ls} {Γ Γ' : Heaps ls} {y : Heap l' π'} -> Updateᴱ x Γ Γ' -> Updateᴱ x (y ∷ Γ) (y ∷ Γ')
 
-_≔_[_↦_]ᴴ : ∀ {ls} -> Heaps ls -> Heaps ls -> (l : Label) -> Heap l -> Set
-Γ' ≔ Γ [ l ↦ x ]ᴴ = Update x Γ Γ'
+_≔_[_↦_]ᴱ : ∀ {ls π} -> Heaps ls -> Heaps ls -> (l : Label) -> Heap l π -> Set
+Γ' ≔ Γ [ l ↦ x ]ᴱ = Updateᴱ x Γ Γ'
 
-member-∈ : ∀ {l ls} {x : Heap l} {Γ : Heaps ls} -> l ↦ x ∈ᴴ Γ -> l ∈ ls
+member-∈ : ∀ {l π ls} {x : Heap l π} {Γ : Heaps ls} -> l ↦ x ∈ᴱ Γ -> l ∈ ls
 member-∈ here = here
 member-∈ (there x) = there (member-∈ x)
 
-update-∈ : ∀ {l ls} {x : Heap l} {Γ Γ' : Heaps ls} -> Γ' ≔ Γ [ l ↦ x ]ᴴ -> l ∈ ls
+update-∈ : ∀ {l π ls} {x : Heap l π} {Γ Γ' : Heaps ls} -> Γ' ≔ Γ [ l ↦ x ]ᴱ -> l ∈ ls
 update-∈ here = here
 update-∈ (there x) = there (update-∈ x)
-
-lookupᴴ : ∀ {l ls} -> l ∈ ls -> Heaps ls -> Heap l
-lookupᴴ here (x ∷ Γ) = x
-lookupᴴ (there l∈ls) (x ∷ Γ) = lookupᴴ l∈ls Γ
-
-lookupᴹ : ∀ {l ls} -> l ∈ ls -> Heaps ls -> Memory l
-lookupᴹ l∈ls Γ with lookupᴴ l∈ls Γ
-lookupᴹ l∈ls Γ | ⟨ M , _ ⟩ = M
-lookupᴹ l∈ls Γ | ∙ = ∙
-
-lookupᴴ-≡ : ∀ {l ls} {H : Heap l} {Γ : Heaps ls} -> (l∈ls : l ∈ ls) -> l ↦ H ∈ᴴ Γ -> lookupᴴ l∈ls Γ ≡ H
-lookupᴴ-≡ here here = refl
-lookupᴴ-≡ here (there {u = u} m) = ⊥-elim (∈-not-unique (member-∈ m) u)
-lookupᴴ-≡ (there l∈ls) (here {u = u}) = ⊥-elim (∈-not-unique l∈ls u)
-lookupᴴ-≡ (there l∈ls) (there m) = lookupᴴ-≡ l∈ls m
 
 --------------------------------------------------------------------------------
 
@@ -318,12 +341,12 @@ lookupᴴ-≡ (there l∈ls) (there m) = lookupᴴ-≡ l∈ls m
 -- term (thread) executed.
 
 data State (l : Label) (τ : Ty) : Set where
-  ⟨_,_,_⟩ : ∀ {τ'} {π : Context} -> (Δ : Env l π) (t : Term π τ') (S : Stack l τ' τ) -> State l τ
+  ⟨_,_,_⟩ : ∀ {τ'} {π : Context} -> (Δ : Heap l π) (t : Term π τ') (S : Stack l π τ' τ) -> State l τ
   ∙ : State l τ
 
 -- Adds labeled memory and heap to a term and stack
 data Program (l : Label) (ls : List Label) (τ : Ty) : Set where
-  ⟨_,_,_⟩ : ∀ {π} {τ'} -> (Γ : Heaps ls) (t : Term π τ') (S : Stack l τ' τ) -> Program l ls τ
+  ⟨_,_,_,_⟩ : ∀ {π} {τ'} -> (Ms : Memories ls) (Γ : Heaps ls) (t : Term π τ') (S : Stack l π τ' τ) -> Program l ls τ
   ∙ : Program l ls τ
 
 --------------------------------------------------------------------------------
