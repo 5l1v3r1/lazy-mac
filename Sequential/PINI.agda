@@ -18,6 +18,7 @@ open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
 open import Data.Empty
 
+open import Sequential.Graph 𝓛 A
 open import Sequential.LowEq 𝓛 A
 
 pini : ∀ {l ls τ} {p₁ p₁' p₂ p₂' : Program l ls τ} -> p₁ ≅ᴾ p₂ -> p₁ ⟼ p₁' -> p₂ ⟼ p₂' -> p₁' ≅ᴾ p₂'
@@ -26,21 +27,23 @@ pini eq s₁ s₂ = aux eq (εᴾ-sim s₁) (εᴾ-sim s₂)
         aux refl x y = determinismᴾ x y
 
 stepᴴ : ∀ {H ls τ} {p₁ p₂ : Program H ls τ} -> (H⋤A : H ⋤ A) -> p₁ ⟼ p₂ -> p₁ ≈ᴾ⟨ no H⋤A ⟩ p₂
-stepᴴ {H} {ls} {τ} H⋤A step = ∙
+stepᴴ {H} {ls} {τ} {p₁} {p₂} H⋤A step = Kᴾ (lift-εᴾ (no H⋤A) p₁) (lift-εᴾ (no H⋤A) p₂)
 
 -- Simulation of low-step (shows that we maintain the program structure)
-stepᴸ : ∀ {ls π₁ π₂ τ l τ₁ τ₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l _ τ} {S₂ : Stack l _ τ}
-             -> l ⊑ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> ⟨ εᴴ Γ₁ , εᵀ t₁ , εˢ S₁ ⟩ ⟼ ⟨ εᴴ Γ₂ , εᵀ t₂ , εˢ S₂ ⟩
+stepᴸ : ∀ {ls π₁ π₂ τ l τ₁ τ₂ Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l _ _ τ} {S₂ : Stack l _ _ τ}
+             -> l ⊑ A -> ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩ ->
+                ⟨ map-εᴹ Ms₁ , map-εᴴ Γ₁ , εᵀ t₁ , εˢ S₁ ⟩ ⟼ ⟨ map-εᴹ Ms₂ , map-εᴴ Γ₂ , εᵀ t₂ , εˢ S₂ ⟩
 stepᴸ l⊑A step = ε₁ᴾ-sim (yes l⊑A) step
 
-stepᴴ-Γ : ∀ {H ls τ₁ τ₂ τ π₁ π₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ τ } {S₂ : Stack _ _ _} ->
-          H ⋤ A -> ⟨ Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Γ₂ , t₂ , S₂ ⟩ -> εᴴ Γ₁ ≡ εᴴ Γ₂
-stepᴴ-Γ H⋤A (S₁.Pure l∈Γ step uᴴ) = writeᴹ∙-≡ H⋤A l∈Γ uᴴ
-stepᴴ-Γ H⋤A (S₁.New {l⊑h = L⊑H} H∈Γ uᴴ) = writeᴹ∙-≡ (trans-⋢ L⊑H H⋤A) H∈Γ uᴴ
+stepᴴ-Γ : ∀ {H ls τ₁ τ₂ τ π₁ π₂ Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ _ τ } {S₂ : Stack _ _ _ _} ->
+          H ⋤ A -> ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩ -> map-εᴹ Ms₁ ≡ map-εᴹ Ms₂
+stepᴴ-Γ H⋤A (S₁.Pure l∈Γ step uᴴ) = refl
+stepᴴ-Γ H⋤A (S₁.New {l⊑h = l⊑H} H∈Γ uᴴ) = writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uᴴ
 stepᴴ-Γ H⋤A S₁.New∙ = refl
-stepᴴ-Γ H⋤A (S₁.Write₂ {l⊑H = L⊑H} H∈Γ uᴹ uᴴ) = writeᴹ∙-≡ (trans-⋢ L⊑H H⋤A) H∈Γ uᴴ
-stepᴴ-Γ H⋤A (S₁.Writeᴰ₂ {l⊑H = L⊑H} H∈Γ uᴹ uᴴ) = writeᴹ∙-≡ (trans-⋢ L⊑H H⋤A) H∈Γ uᴴ
+stepᴴ-Γ H⋤A (S₁.Write₂ {l⊑H = l⊑H} H∈Γ uᴹ uˢ) = writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uˢ
+stepᴴ-Γ H⋤A (S₁.Writeᴰ₂ {l⊑H = l⊑H} H∈Γ uᴹ uˢ) = writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uˢ
 stepᴴ-Γ H⋤A S₁.Write∙₂ = refl
 stepᴴ-Γ H⋤A (S₁.Read₂ l∈Γ n∈M) = refl
 stepᴴ-Γ H⋤A (S₁.Readᴰ₂ L∈Γ n∈M) = refl
-stepᴴ-Γ H⋤A (S₁.DeepDupˢ L⊏l L∈Γ t∈Δ) = refl
+stepᴴ-Γ H⋤A (S₁.DeepDup₁ ¬var l∈Γ uᴱ) = refl
+stepᴴ-Γ H⋤A (S₁.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = refl
