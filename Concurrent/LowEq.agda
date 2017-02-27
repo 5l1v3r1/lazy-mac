@@ -10,7 +10,7 @@ open import Types 𝓛
 open import Sequential.Semantics 𝓛
 
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
-open import Sequential.LowEq 𝓛 A as LE using (_≅ᴴ_ ; ⌞_⌟ᴴ ; _≈ᴴ_ ; ⌜_⌝ᴴ)
+import Sequential.LowEq 𝓛 A as LE hiding (⌜_⌝ᵀ ; ⌞_⌟ᵀ ; _≅ᴾ_ ; ⌜_⌝ᴾ ; ⌞_⌟ᴾ) -- using (_≅ᴴ_ ; ⌞_⌟ᴴ ; _≈ᴴ_ ; ⌜_⌝ᴴ)
 open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-Γ)
 
 --------------------------------------------------------------------------------
@@ -150,11 +150,12 @@ trans-≈ᴾ x y = ⌜ trans ⌞ x ⌟ᴾ ⌞ y ⌟ᴾ ⌝ᴾ
 
 -- structural low-equivalence for global configuration
 record _≈ᴳ_ {ls} (g₁ g₂ : Global ls) : Set where
-  constructor ⟨_,_,_⟩
+  constructor ⟨_,_,_,_⟩
   field
       Σ₁≈Σ₂ : Σ g₁ ≈ˢ Σ g₂
-      P₁≈P₂ : P g₁ ≈ᴾ P g₂
+      Ms₁≈Ms₂ : ?
       Γ₁≈Γ₂ : Γ g₁ ≈ᴴ Γ g₂
+      P₁≈P₂ : P g₁ ≈ᴾ P g₂
 
 open _≈ᴳ_ public
 

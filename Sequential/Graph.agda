@@ -223,6 +223,10 @@ val₁ᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Value t -> Value
 val₁ᴱ e val with εᵀ-Val val
 ... | val' rewrite unlift-εᵀ e = val'
 
+-- ε¬fork : ∀ {π τ l} {t : Term π (Mac l τ)} -> ¬ (IsFork t) -> ¬ (IsFork (εᵀ t))
+-- ε¬fork ¬fork ¬fork-ε = {!aux!}
+--   where aux : ∀ {π τ l} {t t' : Term π (Mac l τ)} -> Eraseᵀ t t' -> ¬ (IsFork t) -> ¬ (IsFork t')
+--         aux = {!!}
 --------------------------------------------------------------------------------
 
 data Eraseᶜ {π l} : ∀ {τ₁ τ₂} -> Cont l π τ₁ τ₂ -> Cont l π τ₁ τ₂ -> Set where

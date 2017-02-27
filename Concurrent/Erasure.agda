@@ -10,7 +10,7 @@ open import Types 𝓛
 import Sequential.Semantics as S₁
 open S₁ 𝓛
 
-open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
+open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ ; map-εᵀ)
 open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-Γ)
 
 --------------------------------------------------------------------------------
@@ -30,55 +30,58 @@ open SC 𝓛
 
 open Scheduler.Security.NIˢ 𝓛 A 𝓝 renaming (State to Stateˢ)
 
-εᵗ : ∀ {l} ->  Thread l -> Thread l
-εᵗ C.⟨ t , S ⟩ = ⟨ SE.εᵀ t , SE.εˢ S ⟩
+εᵀ : ∀ {l} ->  Thread l -> Thread l
+εᵀ C.⟨ t , S ⟩ = ⟨ SE.εᵀ t , SE.εˢ S ⟩
 
-εᵀ : ∀ {l} -> Dec (l ⊑ A) -> Pool l -> Pool l
-εᵀ (yes p) C.[] = []
-εᵀ (yes p) (t C.◅ T) = εᵗ t ◅ (εᵀ (yes p) T)
-εᵀ (yes p) C.∙ = ∙
-εᵀ (no ¬p) T = ∙
+map-εᵀ : ∀ {l} -> Pool l -> Pool l
+map-εᵀ C.[] = []
+map-εᵀ (t C.◅ P) = εᵀ t ◅ map-εᵀ P
+map-εᵀ C.∙ = ∙
+
+εᴾ : ∀ {l} -> Dec (l ⊑ A) -> Pool l -> Pool l
+εᴾ (yes _) P = map-εᵀ P
+εᴾ (no _) P = ∙
 
 open import Relation.Binary.PropositionalEquality
 open import Data.Empty
 
-εᵀ-ext-≡ : ∀ {l} -> (x y : Dec (l ⊑ A)) (T : Pool l) -> εᵀ x T ≡ εᵀ y T
-εᵀ-ext-≡ (yes p) (yes p₁) C.[] = refl
-εᵀ-ext-≡ (yes p) (yes p₁) (t C.◅ T) rewrite εᵀ-ext-≡ (yes p) (yes p₁) T = refl
-εᵀ-ext-≡ (yes p) (yes p₁) C.∙ = refl
-εᵀ-ext-≡ (yes p) (no ¬p) T = ⊥-elim (¬p p)
-εᵀ-ext-≡ (no ¬p) (yes p) T = ⊥-elim (¬p p)
-εᵀ-ext-≡ (no ¬p) (no ¬p₁) T = refl
+εᴾ-ext-≡ : ∀ {l} -> (x y : Dec (l ⊑ A)) (T : Pool l) -> εᴾ x T ≡ εᴾ y T
+εᴾ-ext-≡ (yes p) (yes p₁) C.[] = refl
+εᴾ-ext-≡ (yes p) (yes p₁) (t C.◅ T) rewrite εᴾ-ext-≡ (yes p) (yes p₁) T = refl
+εᴾ-ext-≡ (yes p) (yes p₁) C.∙ = refl
+εᴾ-ext-≡ (yes p) (no ¬p) T = ⊥-elim (¬p p)
+εᴾ-ext-≡ (no ¬p) (yes p) T = ⊥-elim (¬p p)
+εᴾ-ext-≡ (no ¬p) (no ¬p₁) T = refl
 
 -- Pointwise erasure function for pools
-εᴾ : ∀ {ls} -> Pools ls -> Pools ls
-εᴾ C.[] = []
-εᴾ (T C.◅ P) = (εᵀ (_ ⊑? A) T) ◅ (εᴾ P)
+map-εᴾ : ∀ {ls} -> Pools ls -> Pools ls
+map-εᴾ C.[] = []
+map-εᴾ (T C.◅ P) = (εᴾ (_ ⊑? A) T) ◅ (map-εᴾ P)
 
 εᴳ : ∀ {ls} -> Global ls -> Global ls
-εᴳ C.⟨ Σ , Γ , P ⟩ = C.⟨ εˢ Σ , εᴴ Γ , εᴾ P ⟩
+εᴳ C.⟨ Σ , Ms , Γ , P ⟩ = C.⟨ εˢ Σ , map-εᴹ Ms , map-εᴴ Γ , map-εᴾ P ⟩
 
 import Data.Product as P
 
-memberᴾ : ∀ {l ls} {T : Pool l} {P : Pools ls} -> (l⊑A : l ⊑ A) -> l ↦ T ∈ᴾ P -> l ↦ (εᵀ (yes l⊑A) T) ∈ᴾ (εᴾ P)
+memberᴾ : ∀ {l ls} {T : Pool l} {P : Pools ls} -> (l⊑A : l ⊑ A) -> l ↦ T ∈ᴾ P -> l ↦ (εᴾ (yes l⊑A) T) ∈ᴾ (map-εᴾ P)
 memberᴾ {l} l⊑A C.here with l ⊑? A
-memberᴾ {T = T} l⊑A C.here | yes p rewrite εᵀ-ext-≡ (yes l⊑A) (yes p) T = here
+memberᴾ {T = T} l⊑A C.here | yes p rewrite εᴾ-ext-≡ (yes l⊑A) (yes p) T = here
 memberᴾ l⊑A C.here | no ¬p = ⊥-elim (¬p l⊑A)
 memberᴾ l⊑A (C.there x) = there (memberᴾ l⊑A x)
 
-memberᵀ : ∀ {l n τ₁ π} {T : Pool l} {t : Term π τ₁} {S : Stack l _ _} -> (l⊑A : l ⊑ A)
-          -> n ↦ ⟨ t , S ⟩ ∈ᵀ T -> n ↦ ⟨ SE.εᵀ t , SE.εˢ S ⟩ ∈ᵀ (εᵀ (yes l⊑A) T)
+memberᵀ : ∀ {l n τ₁ π} {T : Pool l} {t : Term π τ₁} {S : Stack l _ _ _} -> (l⊑A : l ⊑ A)
+          -> n ↦ ⟨ t , S ⟩ ∈ᵀ T -> n ↦ ⟨ SE.εᵀ t , SE.εˢ S ⟩ ∈ᵀ (εᴾ (yes l⊑A) T)
 memberᵀ l⊑A C.here = C.here
 memberᵀ l⊑A (C.there x) = C.there (memberᵀ l⊑A x)
 
-updateᵀ : ∀ {l π τ n} {t : Term π τ} {S : Stack l _ _} {T₁ T₂ : Pool l} -> (l⊑A : l ⊑ A) -> T₂ ≔ T₁ [ n ↦ ⟨ t , S ⟩ ]ᵀ ->
-          (εᵀ (yes l⊑A) T₂) ≔ (εᵀ (yes l⊑A) T₁) [ n ↦ ⟨ (SE.εᵀ t) , SE.εˢ S ⟩ ]ᵀ
+updateᵀ : ∀ {l π τ n} {t : Term π τ} {S : Stack l _ _ _} {T₁ T₂ : Pool l} -> (l⊑A : l ⊑ A) -> T₂ ≔ T₁ [ n ↦ ⟨ t , S ⟩ ]ᵀ ->
+          (εᴾ (yes l⊑A) T₂) ≔ (εᴾ (yes l⊑A) T₁) [ n ↦ ⟨ (SE.εᵀ t) , SE.εˢ S ⟩ ]ᵀ
 updateᵀ l⊑A C.here = C.here
 updateᵀ l⊑A (C.there x) = C.there (updateᵀ l⊑A x)
 
-updateᴾ : ∀ {l ls} {T : Pool l} {P₁ P₂ : Pools ls} -> (l⊑A : l ⊑ A) -> P₂ ≔ P₁ [ l ↦ T ]ᴾ -> (εᴾ P₂) ≔ (εᴾ P₁) [ l ↦ (εᵀ (yes l⊑A) T) ]ᴾ
+updateᴾ : ∀ {l ls} {T : Pool l} {P₁ P₂ : Pools ls} -> (l⊑A : l ⊑ A) -> P₂ ≔ P₁ [ l ↦ T ]ᴾ -> (map-εᴾ P₂) ≔ (map-εᴾ P₁) [ l ↦ (εᴾ (yes l⊑A) T) ]ᴾ
 updateᴾ {l} l⊑A C.here with l ⊑? A
-updateᴾ {T = T} l⊑A C.here | yes p rewrite εᵀ-ext-≡ (yes l⊑A) (yes p) T = here
+updateᴾ {T = T} l⊑A C.here | yes p rewrite εᴾ-ext-≡ (yes l⊑A) (yes p) T = here
 updateᴾ l⊑A C.here | no ¬p = ⊥-elim (¬p l⊑A)
 updateᴾ l⊑A (C.there x) = C.there (updateᴾ l⊑A x)
 
@@ -90,40 +93,41 @@ import Sequential.Graph as S₂
 open S₂ 𝓛 A
 
 stuck-ε : ∀ {l ls τ} {p : Program l ls τ} -> (l⊑A : l ⊑ A) -> Stuckᴾ p -> Stuckᴾ (SE.ε₁ᴾ (yes l⊑A) p)
-stuck-ε {l} {ls} {τ} l⊑A (¬done P., ¬redex) = ε¬done ¬done P., ε¬redex l⊑A ¬redex
+stuck-ε {p = SC.∙} l⊑A stuck = stuck
+stuck-ε {l} {ls} {τ} {p = SC.⟨ Ms , Γ , t , S ⟩} l⊑A (¬done P., ¬redex P., ¬fork) = ε¬done ¬done P., ε¬redex l⊑A ¬redex P., εᵀ¬Fork ¬fork
   where ε¬done : {p : Program l ls τ} -> ¬ (Doneᴾ p) -> ¬ (Doneᴾ (ε₁ᴾ (yes l⊑A) p))
-        ε¬done {⟨ Γ , t , [] ⟩} ¬done₁ (Done isVal) = εᵀ¬Val (¬Done⇒¬Val ¬done₁) isVal
-        ε¬done {⟨ Γ , t , x ∷ S ⟩} ¬done₁ ()
-        ε¬done {⟨ Γ , t , ∙ ⟩} ¬done₁ ()
+        ε¬done {⟨ Ms , Γ , t , [] ⟩} ¬done₁ (Done isVal) = εᵀ¬Val (¬Done⇒¬Val ¬done₁) isVal
+        ε¬done {⟨ Ms , Γ , t , x ∷ S ⟩} ¬done₁ ()
+        ε¬done {⟨ Ms , Γ , t , ∙ ⟩} ¬done₁ ()
         ε¬done {∙} ¬done₁ ()
 
         -- open import Sequential.Lemmas Sequential.Lemmas 𝓛 A -- simᴾ is almost completed
         postulate ε¬redex : ∀ {l ls τ} {p : Program l ls τ} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
-        -- ε¬redex {l} {ls} {τ} {p = p} l⊑A ¬redex redex = simᴾ (lift-εᴾ (yes l⊑A) p) ¬redex redex
+        -- ε¬redex {l} {ls} {τ} {p = p} l⊑A ¬redex redex = simᴾ (lift-map-εᴾ (yes l⊑A) p) ¬redex redex
 
 
-lengthᵀ-ε-≡ : ∀ {l} (l⊑A : l ⊑ A) (T : Pool l) -> lengthᵀ T ≡ lengthᵀ (εᵀ (yes l⊑A) T)
+lengthᵀ-ε-≡ : ∀ {l} (l⊑A : l ⊑ A) (T : Pool l) -> lengthᵀ T ≡ lengthᵀ (εᴾ (yes l⊑A) T)
 lengthᵀ-ε-≡ l⊑A C.[] = refl
 lengthᵀ-ε-≡ l⊑A (t C.◅ T) rewrite lengthᵀ-ε-≡ l⊑A T = refl
 lengthᵀ-ε-≡ l⊑A C.∙ = refl
 
-εᵀ-▻-≡ : ∀ {l} (l⊑A : l ⊑ A) (T : Pool l) (t : Thread l) -> ((εᵀ (yes l⊑A) T) ▻ εᵗ t) ≡ εᵀ (yes l⊑A) (T ▻ t)
-εᵀ-▻-≡ l⊑A C.[] t = refl
-εᵀ-▻-≡ l⊑A (t C.◅ T) t₁ rewrite εᵀ-▻-≡ l⊑A T t₁ = refl
-εᵀ-▻-≡ l⊑A C.∙ t = refl
+εᴾ-▻-≡ : ∀ {l} (l⊑A : l ⊑ A) (T : Pool l) (t : Thread l) -> ((εᴾ (yes l⊑A) T) ▻ εᵀ t) ≡ εᴾ (yes l⊑A) (T ▻ t)
+εᴾ-▻-≡ l⊑A C.[] t = refl
+εᴾ-▻-≡ l⊑A (t C.◅ T) t₁ rewrite εᴾ-▻-≡ l⊑A T t₁ = refl
+εᴾ-▻-≡ l⊑A C.∙ t = refl
 
 updateᴾ-▻ : ∀ {l ls} {P₁ P₂ : Pools ls} (T : Pool l) (t : Thread l) -> (l⊑A : l ⊑ A) ->
                  P₁ ≔ P₂ [ l ↦ T ▻ t ]ᴾ ->
-                 (εᴾ P₁) ≔ (εᴾ P₂) [ l ↦ (εᵀ (yes l⊑A) T) ▻ (εᵗ t) ]ᴾ
-updateᴾ-▻ T t l⊑A x rewrite εᵀ-▻-≡ l⊑A T t = updateᴾ l⊑A x
+                 (map-εᴾ P₁) ≔ (map-εᴾ P₂) [ l ↦ (εᴾ (yes l⊑A) T) ▻ (εᵀ t) ]ᴾ
+updateᴾ-▻ {l} T t l⊑A x rewrite εᴾ-▻-≡ l⊑A T t = updateᴾ l⊑A x
 
-newᴾ∙ : ∀ {H ls} {P₁ P₂ : Pools ls} (T : Pool H) (t : Thread H) -> (H⋤A : H ⋤ A) -> P₂ ≔ P₁ [ H ↦ T ▻ t ]ᴾ -> εᴾ P₂ ≡ εᴾ P₁
+newᴾ∙ : ∀ {H ls} {P₁ P₂ : Pools ls} (T : Pool H) (t : Thread H) -> (H⋤A : H ⋤ A) -> P₂ ≔ P₁ [ H ↦ T ▻ t ]ᴾ -> map-εᴾ P₂ ≡ map-εᴾ P₁
 newᴾ∙ {H} T t H⋤A C.here with H ⊑? A
 newᴾ∙ T t H⋤A C.here | yes p = ⊥-elim (H⋤A p)
 newᴾ∙ T t H⋤A C.here | no ¬p = refl
 newᴾ∙ T t H⋤A (C.there x) rewrite newᴾ∙ T t H⋤A x = refl
 
-updateᴾ∙ : ∀ {H ls} {P₁ P₂ : Pools ls} {T : Pool H} -> H ⋤ A -> P₂ ≔ P₁ [ H ↦ T ]ᴾ -> εᴾ P₁ ≡  εᴾ P₂
+updateᴾ∙ : ∀ {H ls} {P₁ P₂ : Pools ls} {T : Pool H} -> H ⋤ A -> P₂ ≔ P₁ [ H ↦ T ]ᴾ -> map-εᴾ P₁ ≡  map-εᴾ P₂
 updateᴾ∙ {H} H⋤A C.here with H ⊑? A
 updateᴾ∙ H⋤A C.here | yes p = ⊥-elim (H⋤A p)
 updateᴾ∙ H⋤A C.here | no ¬p = refl
