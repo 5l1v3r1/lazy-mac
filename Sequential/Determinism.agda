@@ -55,8 +55,6 @@ determinism (Var₂ τ∈π () uᴱ) (Label' p)
 determinism (Var₂ τ∈π () uᴱ) (Label'∙ p)
 determinism (Var₂ τ∈π () uᴱ) (Unlabel₁ p)
 determinism (Var₂ τ∈π () uᴱ) UnId₁
-determinism (Var₂ τ∈π () uᴱ) (Fork p)
-determinism (Var₂ τ∈π () uᴱ) (Fork∙ p)
 determinism (Var₂ τ∈π () uᴱ) (New₁ ¬var)
 determinism (Var₂ τ∈π () uᴱ) (New∙₁ ¬var)
 determinism (Var₂ τ∈π () uᴱ) Write₁
@@ -81,10 +79,6 @@ determinism (Unlabel₂ p) (Unlabel₂ .p) = refl
 determinism UnId₁ (Var₂ τ∈π () uᴱ)
 determinism UnId₁ UnId₁ = refl
 determinism UnId₂ UnId₂ = refl
-determinism (Fork p) (Var₂ τ∈π () uᴱ)
-determinism (Fork∙ p) (Var₂ τ∈π () uᴱ)
-determinism (Fork p) (Fork .p) = refl
-determinism (Fork∙ p) (Fork∙ .p) = refl
 determinism (New₁ ¬var) (Var₂ τ∈π () uᴱ)
 determinism (New₁ ¬var) (New₁ ¬var₁) = refl
 determinism (New∙₁ ¬var) (Var₂ τ∈π () uᴱ)

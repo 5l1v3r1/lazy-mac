@@ -78,12 +78,6 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
  UnId₂ : ∀ {π τ τ'} {Δ : Heap l π} {S : Stack l π τ τ'} {t : Term π τ} ->
            ⟨ Δ , Id t , unId ∷ S ⟩ ⇝ ⟨ Δ , t , S ⟩
 
- Fork : ∀ {π τ h} {Δ : Heap l π} {S : Stack l π _ τ} {t : Term π (Mac h _)} -> (p : l ⊑ h) ->
-          ⟨ Δ , (fork p t) , S ⟩ ⇝ ⟨ Δ , Return {π = π} l （） , S ⟩
-
- Fork∙ : ∀ {π τ h} {Δ : Heap l π} {S : Stack l π _ τ} {t : Term π (Mac h _)} -> (p : l ⊑ h) ->
-          ⟨ Δ , (fork∙ p t) , S ⟩ ⇝ ⟨ Δ , Return {π = π} l （） , S ⟩
-
  Hole₁ : ∀ {τ} -> ∙ {τ = τ} ⇝ ∙
 
  Hole₂ : ∀ {τ} {π} -> ⟨ ∙ {{π}} , ∙ {{τ}} , ∙ ⟩ ⇝ ⟨ ∙ {{π}} , ∙ , ∙ ⟩  -- TODO remove?
@@ -188,11 +182,11 @@ data Redexᴾ {l ls τ} (p : Program l ls τ) : Set where
   Step : ∀ {p'} -> p ⟼ p' -> Redexᴾ p
 
 open import Data.Product using (proj₁ ; proj₂ ; _×_)
+open import Data.Empty
 
 Stuckᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
-Stuckᴾ p = (¬ (Doneᴾ p)) × (¬ (Redexᴾ p))
-
-open import Data.Empty
+Stuckᴾ ⟨ Ms , Γ , t , S ⟩ = (¬ (Doneᴾ ⟨ Ms , Γ , t , S ⟩)) × (¬ (Redexᴾ ⟨ Ms , Γ , t , S ⟩)) × ¬ IsFork t
+Stuckᴾ ∙ = ⊥
 
 ¬Done⇒¬Val :  ∀ {l π ls τ Ms} {Γ : Heaps ls} {t : Term π τ} -> ¬ (Doneᴾ {l} ⟨ Ms , Γ , t , [] ⟩) -> ¬ Value t
 ¬Done⇒¬Val x v = ⊥-elim (x (Done v))
@@ -206,7 +200,8 @@ data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
 -- Lemmas
 
 ⊥-stuckSteps : ∀ {l ls τ} {p₁ : Program l ls τ } -> Stuckᴾ p₁ -> ¬ (Redexᴾ p₁)
-⊥-stuckSteps x y = proj₂ x y
+⊥-stuckSteps {p₁ = ⟨ Ms , Γ , t , S ⟩} x y = proj₁ (proj₂ x) y
+⊥-stuckSteps {p₁ = ∙} x y = x
 
 ⊥-doneSteps : ∀ {l ls τ} {p₁ : Program l ls τ} -> Doneᴾ p₁ -> ¬ (Redexᴾ p₁)
 ⊥-doneSteps (Done （）) (Step (Pure l∈Γ () uᴴ))
@@ -220,7 +215,8 @@ data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
 ⊥-doneSteps (Done #[ n ]ᴰ) (Step (Pure l∈Γ () uᴴ))
 
 ⊥-stuckDone : ∀ {l ls τ} {p : Program l ls τ} -> Stuckᴾ p -> ¬ (Doneᴾ p)
-⊥-stuckDone stuck don = proj₁ stuck don
+⊥-stuckDone {p = ⟨ Ms , Γ , t , S ⟩} stuck don = proj₁ stuck don
+⊥-stuckDone {p = ∙} stuck don = stuck
 
 --------------------------------------------------------------------------------
 
@@ -244,8 +240,6 @@ step-⊆ (Unlabel₁ p) = refl-⊆
 step-⊆ (Unlabel₂ p) = refl-⊆
 step-⊆ UnId₁ = refl-⊆
 step-⊆ UnId₂ = refl-⊆
-step-⊆ (Fork p) = refl-⊆
-step-⊆ (Fork∙ p) = refl-⊆
 step-⊆ Hole₂ = refl-⊆
 step-⊆ (New₁ ¬var) = drop refl-⊆
 step-⊆ (New∙₁ ¬var) = drop refl-⊆

@@ -10,7 +10,7 @@ open S.Scheduler 𝓛 𝓢 renaming (State to Stateˢ)
 --------------------------------------------------------------------------------
 
 data Thread (l : Label) : Set where
-  ⟨_,_⟩ :  ∀ {τ π} -> (t : Term π τ) (S : Stack l τ (Mac l （）)) -> Thread l
+  ⟨_,_⟩ :  ∀ {τ π} -> (t : Term π τ) (S : Stack l π τ (Mac l （）)) -> Thread l
 
 -- Pool of threads at a certain label
 data Pool (l : Label) : Set where
@@ -53,8 +53,9 @@ infixl 3 _▻_
 
 -- The global configuration is a thread pool paired with some shared split memory Σ
 record Global (ls : List Label) : Set where
-  constructor ⟨_,_,_⟩
+  constructor ⟨_,_,_,_⟩
   field Σ : Stateˢ
+        Ms : Memories ls
         Γ : Heaps ls
         P : Pools ls
 
