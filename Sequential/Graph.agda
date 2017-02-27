@@ -225,63 +225,63 @@ val₁ᴱ e val with εᵀ-Val val
 
 --------------------------------------------------------------------------------
 
-data Eraseᵀᶜ {π l} : ∀ {τ₁ τ₂} -> Cont l π τ₁ τ₂ -> Cont l π τ₁ τ₂ -> Set where
- Var : ∀ {τ₁ τ₂} -> (τ∈π : τ₁ ∈⟨ l ⟩ᴿ π) -> Eraseᵀᶜ {τ₂ = τ₂} (Var τ∈π) (Var τ∈π)
- # :  ∀ {τ} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π)  -> Eraseᵀᶜ (# τ∈π) (# τ∈π)
- Then_Else_ : ∀ {τ} {t₁ t₁' t₂ t₂' : Term π τ} -> Eraseᵀ t₁ t₁' -> Eraseᵀ t₂ t₂' -> Eraseᵀᶜ (Then t₁ Else t₂) (Then t₁' Else t₂')
- Bind :  ∀ {τ₁ τ₂} {t t' : Term π (τ₁ => Mac l τ₂)} -> Eraseᵀ t t' -> Eraseᵀᶜ (Bind t) (Bind t')
- unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Eraseᵀᶜ {τ₁ = Labeled l' τ} (unlabel p) (unlabel p)
- unId : ∀ {τ} -> Eraseᵀᶜ {τ₂ = τ} unId unId
- write : ∀ {τ H} (l⊑H : l ⊑ H) (H⊑A : H ⊑ A) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᵀᶜ (write l⊑H τ∈π) (write l⊑H τ∈π)
- write' : ∀ {τ H} (l⊑H : l ⊑ H) (H⋤A : H ⋤ A) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᵀᶜ (write l⊑H τ∈π) (write∙ l⊑H τ∈π)
- write∙ : ∀ {τ H} (l⊑H : l ⊑ H) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᵀᶜ (write∙ l⊑H τ∈π) (write∙ l⊑H τ∈π)
- read : ∀ {τ L} (L⊑H : L ⊑ l) -> Eraseᵀᶜ (read {τ = τ} L⊑H) (read L⊑H)
+data Eraseᶜ {π l} : ∀ {τ₁ τ₂} -> Cont l π τ₁ τ₂ -> Cont l π τ₁ τ₂ -> Set where
+ Var : ∀ {τ₁ τ₂} -> (τ∈π : τ₁ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ {τ₂ = τ₂} (Var τ∈π) (Var τ∈π)
+ # :  ∀ {τ} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π)  -> Eraseᶜ (# τ∈π) (# τ∈π)
+ Then_Else_ : ∀ {τ} {t₁ t₁' t₂ t₂' : Term π τ} -> Eraseᵀ t₁ t₁' -> Eraseᵀ t₂ t₂' -> Eraseᶜ (Then t₁ Else t₂) (Then t₁' Else t₂')
+ Bind :  ∀ {τ₁ τ₂} {t t' : Term π (τ₁ => Mac l τ₂)} -> Eraseᵀ t t' -> Eraseᶜ (Bind t) (Bind t')
+ unlabel : ∀ {l' τ} (p : l' ⊑ l) -> Eraseᶜ {τ₁ = Labeled l' τ} (unlabel p) (unlabel p)
+ unId : ∀ {τ} -> Eraseᶜ {τ₂ = τ} unId unId
+ write : ∀ {τ H} (l⊑H : l ⊑ H) (H⊑A : H ⊑ A) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ (write l⊑H τ∈π) (write l⊑H τ∈π)
+ write' : ∀ {τ H} (l⊑H : l ⊑ H) (H⋤A : H ⋤ A) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ (write l⊑H τ∈π) (write∙ l⊑H τ∈π)
+ write∙ : ∀ {τ H} (l⊑H : l ⊑ H) -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> Eraseᶜ (write∙ l⊑H τ∈π) (write∙ l⊑H τ∈π)
+ read : ∀ {τ L} (L⊑H : L ⊑ l) -> Eraseᶜ (read {τ = τ} L⊑H) (read L⊑H)
 
-lift-εᵀᶜ : ∀ {l π τ₁ τ₂} -> (C : Cont l π τ₁ τ₂) -> Eraseᵀᶜ C (εᶜ C)
-lift-εᵀᶜ (S.Var τ∈π) = Var τ∈π
-lift-εᵀᶜ (S.# τ∈π) = # τ∈π
-lift-εᵀᶜ (S.Then x Else x₁) = Then (lift-εᵀ x) Else (lift-εᵀ x₁)
-lift-εᵀᶜ (S.Bind x) = Bind (lift-εᵀ x)
-lift-εᵀᶜ (S.unlabel p) = unlabel p
-lift-εᵀᶜ S.unId = unId
-lift-εᵀᶜ (S.write {H = H} x τ∈π) with H ⊑? A
-lift-εᵀᶜ (S.write x τ∈π) | yes p = write x p τ∈π
-lift-εᵀᶜ (S.write x τ∈π) | no ¬p = write' x ¬p τ∈π
-lift-εᵀᶜ (S.write∙ x τ∈π) = write∙ x τ∈π
-lift-εᵀᶜ (S.read x) = read x
+lift-εᶜ : ∀ {l π τ₁ τ₂} -> (C : Cont l π τ₁ τ₂) -> Eraseᶜ C (εᶜ C)
+lift-εᶜ (S.Var τ∈π) = Var τ∈π
+lift-εᶜ (S.# τ∈π) = # τ∈π
+lift-εᶜ (S.Then x Else x₁) = Then (lift-εᵀ x) Else (lift-εᵀ x₁)
+lift-εᶜ (S.Bind x) = Bind (lift-εᵀ x)
+lift-εᶜ (S.unlabel p) = unlabel p
+lift-εᶜ S.unId = unId
+lift-εᶜ (S.write {H = H} x τ∈π) with H ⊑? A
+lift-εᶜ (S.write x τ∈π) | yes p = write x p τ∈π
+lift-εᶜ (S.write x τ∈π) | no ¬p = write' x ¬p τ∈π
+lift-εᶜ (S.write∙ x τ∈π) = write∙ x τ∈π
+lift-εᶜ (S.read x) = read x
 
-unlift-εᵀᶜ : ∀ {l π τ₁ τ₂} {C C' : Cont l π τ₁ τ₂} -> Eraseᵀᶜ C C' -> C' ≡ εᶜ C
-unlift-εᵀᶜ (Var τ∈π) = refl
-unlift-εᵀᶜ (# τ∈π) = refl
-unlift-εᵀᶜ (Then x Else x₁)
+unlift-εᶜ : ∀ {l π τ₁ τ₂} {C C' : Cont l π τ₁ τ₂} -> Eraseᶜ C C' -> C' ≡ εᶜ C
+unlift-εᶜ (Var τ∈π) = refl
+unlift-εᶜ (# τ∈π) = refl
+unlift-εᶜ (Then x Else x₁)
   rewrite unlift-εᵀ x | unlift-εᵀ x₁ = refl
-unlift-εᵀᶜ (Bind x) rewrite unlift-εᵀ x = refl
-unlift-εᵀᶜ (unlabel p) = refl
-unlift-εᵀᶜ unId = refl
-unlift-εᵀᶜ (write {H = H} l⊑H H⊑A τ∈π) with H ⊑? A
-unlift-εᵀᶜ (write l⊑H H⊑A τ∈π) | yes p = refl
-unlift-εᵀᶜ (write l⊑H H⊑A τ∈π) | no ¬p = ⊥-elim (¬p H⊑A)
-unlift-εᵀᶜ (write' {H = H} l⊑H H⋤A τ∈π) with H ⊑? A
-unlift-εᵀᶜ (write' l⊑H H⋤A τ∈π) | yes p = ⊥-elim (H⋤A p)
-unlift-εᵀᶜ (write' l⊑H H⋤A τ∈π) | no ¬p = refl
-unlift-εᵀᶜ (write∙ l⊑H τ∈π) = refl
-unlift-εᵀᶜ (read L⊑H) = refl
+unlift-εᶜ (Bind x) rewrite unlift-εᵀ x = refl
+unlift-εᶜ (unlabel p) = refl
+unlift-εᶜ unId = refl
+unlift-εᶜ (write {H = H} l⊑H H⊑A τ∈π) with H ⊑? A
+unlift-εᶜ (write l⊑H H⊑A τ∈π) | yes p = refl
+unlift-εᶜ (write l⊑H H⊑A τ∈π) | no ¬p = ⊥-elim (¬p H⊑A)
+unlift-εᶜ (write' {H = H} l⊑H H⋤A τ∈π) with H ⊑? A
+unlift-εᶜ (write' l⊑H H⋤A τ∈π) | yes p = ⊥-elim (H⋤A p)
+unlift-εᶜ (write' l⊑H H⋤A τ∈π) | no ¬p = refl
+unlift-εᶜ (write∙ l⊑H τ∈π) = refl
+unlift-εᶜ (read L⊑H) = refl
 
 --------------------------------------------------------------------------------
 
 data Eraseˢ {l π} : ∀ {τ₁ τ₂} -> Stack l π τ₁ τ₂ -> Stack l π τ₁ τ₂ -> Set where
   [] : ∀ {τ} -> Eraseˢ ([] {τ = τ}) []
-  _∷_ : ∀ {τ₁ τ₂ τ₃} {C₁ C₂ : Cont l π τ₁ τ₂} {S₁ S₂ : Stack l π τ₂ τ₃} -> Eraseᵀᶜ C₁ C₂ -> Eraseˢ S₁ S₂ -> Eraseˢ (C₁ ∷ S₁) (C₂ ∷ S₂)
+  _∷_ : ∀ {τ₁ τ₂ τ₃} {C₁ C₂ : Cont l π τ₁ τ₂} {S₁ S₂ : Stack l π τ₂ τ₃} -> Eraseᶜ C₁ C₂ -> Eraseˢ S₁ S₂ -> Eraseˢ (C₁ ∷ S₁) (C₂ ∷ S₂)
   ∙ : ∀ {τ} -> Eraseˢ (∙ {τ = τ}) ∙
 
 lift-εˢ : ∀ {l π τ₁ τ₂} -> (S : Stack l π τ₁ τ₂) -> Eraseˢ S (εˢ S)
 lift-εˢ S.[] = []
-lift-εˢ (x S.∷ S) = (lift-εᵀᶜ x) ∷ (lift-εˢ S)
+lift-εˢ (x S.∷ S) = (lift-εᶜ x) ∷ (lift-εˢ S)
 lift-εˢ S.∙ = ∙
 
 unlift-εˢ : ∀ {l π τ₁ τ₂} {S S' : Stack l π τ₁ τ₂} -> Eraseˢ S S' -> S' ≡ εˢ S
 unlift-εˢ [] = refl
-unlift-εˢ (x ∷ x₁) rewrite unlift-εᵀᶜ x | unlift-εˢ x₁ = refl
+unlift-εˢ (x ∷ x₁) rewrite unlift-εᶜ x | unlift-εˢ x₁ = refl
 unlift-εˢ ∙ = refl
 
 --------------------------------------------------------------------------------

@@ -21,11 +21,11 @@ open import Data.Maybe as M
 open import Data.Product using (_×_ ; proj₁ ; proj₂)
 import Data.Product as P
 
-_≡ᴱ_ : ∀ {l π} -> Env l π -> Env l π -> Set
+_≡ᴱ_ : ∀ {l π} -> Heap l π -> Heap l π -> Set
 _≡ᴱ_ = _≡_
 
 _≅ᴴ_ : ∀ {ls} (H₁ H₂ : Heaps ls) -> Set
-H₁ ≅ᴴ H₂ = εᴴ H₁ ≡ εᴴ H₂
+H₁ ≅ᴴ H₂ = map-εᴴ H₁ ≡ map-εᴴ H₂
 
 --------------------------------------------------------------------------------
 
@@ -33,161 +33,48 @@ _≅ᵀ_ : ∀ {π τ} (t₁ t₂ : Term π τ) -> Set
 t₁ ≅ᵀ t₂ = εᵀ t₁ ≡ εᵀ t₂
 
 data _≈ᵀ_ {π τ} (t₁ t₂ : Term π τ) : Set where
-  ⟨_,_⟩ : ∀ {t' : Term π τ} -> (e₁ : Erase t₁ t') (e₂ : Erase t₂ t') -> t₁ ≈ᵀ t₂
+  ⟨_,_⟩ : ∀ {t' : Term π τ} -> (e₁ : Eraseᵀ t₁ t') (e₂ : Eraseᵀ t₂ t') -> t₁ ≈ᵀ t₂
 
 ⌞_⌟ᵀ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> t₁ ≅ᵀ t₂
-⌞ ⟨ e₁ , e₂ ⟩ ⌟ᵀ rewrite unlift-ε e₁ | unlift-ε e₂ = refl
+⌞ ⟨ e₁ , e₂ ⟩ ⌟ᵀ rewrite unlift-εᵀ e₁ | unlift-εᵀ e₂ = refl
 
 ⌜_⌝ᵀ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≅ᵀ t₂ -> t₁ ≈ᵀ t₂
-⌜_⌝ᵀ {t₁ = t₁} {t₂} eq with lift-ε t₁ | lift-ε t₂
+⌜_⌝ᵀ {t₁ = t₁} {t₂} eq with lift-εᵀ t₁ | lift-εᵀ t₂
 ... | x | y rewrite eq = ⟨ x , y ⟩
 
 --------------------------------------------------------------------------------
 
-_≅ᶜ_ : ∀ {l τ₁ τ₂} (C₁ C₂ : Cont l τ₁ τ₂) -> Set
+_≅ᶜ_ : ∀ {l π τ₁ τ₂} (C₁ C₂ : Cont l π τ₁ τ₂) -> Set
 C₁ ≅ᶜ C₂ = εᶜ C₁ ≡ εᶜ C₂
 
--- It is better to define structural low-equivalence with the graph
--- of the function whenever you have > 3 constructors, to avoid the
--- combinatorical explosion when proving ⌜_⌝
--- Depndency between the index may reduce the number of cases, but it
--- we still need lots of isignificant lemmas to extract information
--- from propositional equality proofs.
-data _≈ᶜ_ {l} : ∀ {τ₁ τ₂} -> (C₁ C₂ : Cont l τ₁ τ₂) -> Set where
-  Var : ∀ {τ₁ τ₂} {{π : Context}} -> (τ∈π : τ₁ ∈⟨ l ⟩ᴿ π) -> Var {τ₂ = τ₂} τ∈π ≈ᶜ Var τ∈π
-  # : ∀ {τ} {{π : Context}} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π)  -> # τ∈π ≈ᶜ # τ∈π
-  Then_Else_ : ∀ {τ} {π : Context} {t₂ t₂' t₃ t₃' : Term π τ} -> t₂ ≈ᵀ t₂' -> t₃ ≈ᵀ t₃' -> (Then t₂ Else t₃) ≈ᶜ (Then t₂' Else t₃')
-  Bind :  ∀ {τ₁ τ₂} {π : Context} {t₁ t₂ : Term π (τ₁ => Mac l τ₂)} -> t₁ ≈ᵀ t₂ -> Bind t₁ ≈ᶜ Bind t₂
-  unlabel : ∀ {l' τ} (p : l' ⊑ l) -> unlabel {τ = τ} p ≈ᶜ unlabel p
-  unId : ∀ {τ} -> unId {τ = τ} ≈ᶜ unId
-  write : ∀ {τ H} {{π : Context}} {p : l ⊑ H} (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> write p τ∈π ≈ᶜ write p τ∈π
-  write' : ∀ {τ H} {{π : Context}} {p : l ⊑ H} (H⋤A : H ⋤ A) (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> write p τ∈π ≈ᶜ write∙ p τ∈π
-  write'' : ∀ {τ H} {{π : Context}} {p : l ⊑ H} (H⋤A : H ⋤ A) (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> write∙ p τ∈π ≈ᶜ write p τ∈π
-  write∙ : ∀ {τ H} {{π : Context}} (p : l ⊑ H) (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> write∙ p τ∈π ≈ᶜ write∙ p τ∈π
-  read : ∀ {τ L} -> (p : L ⊑ l) -> read {τ = τ} p ≈ᶜ read p
+data _≈ᶜ_ {l π τ₁ τ₂} (C₁ C₂ : Cont l π τ₁ τ₂) : Set where
+  Kᶜ : ∀ {Cᴱ : Cont l π τ₁ τ₂} -> Eraseᶜ C₁ Cᴱ -> Eraseᶜ C₂ Cᴱ -> C₁ ≈ᶜ C₂
 
-⌞_⌟ᶜ : ∀ {l τ₁ τ₂} {C₁ C₂ : Cont l τ₁ τ₂} -> C₁ ≈ᶜ C₂ -> C₁ ≅ᶜ C₂
-⌞ Var τ∈π ⌟ᶜ = refl
-⌞ # τ∈π ⌟ᶜ = refl
-⌞ Then x Else x₁ ⌟ᶜ rewrite ⌞ x ⌟ᵀ | ⌞ x₁ ⌟ᵀ = refl
-⌞ Bind x ⌟ᶜ rewrite ⌞ x ⌟ᵀ = refl
-⌞ unlabel p ⌟ᶜ = refl
-⌞ unId ⌟ᶜ = refl
-⌞ write τ∈π ⌟ᶜ = refl
-⌞ write' {H = H} H⋤A τ∈π ⌟ᶜ with H ⊑? A
-... | yes p = ⊥-elim (H⋤A p)
-... | no _ = refl
-⌞ write'' {H = H} H⋤A τ∈π ⌟ᶜ with H ⊑? A
-... | yes p = ⊥-elim (H⋤A p)
-... | no _ = refl
-⌞ write∙ p τ∈π ⌟ᶜ = refl
-⌞ read p ⌟ᶜ = refl
+⌞_⌟ᶜ : ∀ {l π τ₁ τ₂} {C₁ C₂ : Cont l π τ₁ τ₂} -> C₁ ≈ᶜ C₂ -> C₁ ≅ᶜ C₂
+⌞ Kᶜ e₁ e₂ ⌟ᶜ rewrite unlift-εᶜ e₁ | unlift-εᶜ e₂ = refl
 
-split₁ᶜ : ∀ {l τ π₁ π₂} {t₁ t₂ : Term π₁ τ} {t₁' t₂' : Term π₂ τ} -> _≡_ {_} {Cont l _ _} (Then t₁ Else t₂) (Then t₁' Else t₂') -> π₁ ≡ π₂
-split₁ᶜ refl = refl
-
-split₂ᶜ : ∀ {l τ π} {t₁ t₂ t₁' t₂' : Term π τ} -> _≡_ {_} {Cont l _ _} (Then t₁ Else t₂) (Then t₁' Else t₂') -> t₁ ≡ t₁' × t₂ ≡ t₂'
-split₂ᶜ refl = refl P., refl
-
-split₃ᶜ : ∀ {l τ τ₂ π₁ π₂} {t₁ : Term π₁ (τ => Mac l τ₂)} {t₁' : Term π₂ (τ => Mac l τ₂)} -> _≡_ {_} {Cont l _ _} (Bind t₁) (Bind t₁') -> π₁ ≡ π₂
-split₃ᶜ refl = refl
-
-split₄ᶜ : ∀ {l τ₁ τ₂ π} {t₁ t₂ : Term π (τ₁ => Mac l τ₂)} -> _≡_ {_} {Cont l _ _} (Bind t₁) (Bind t₂) -> t₁ ≡ t₂
-split₄ᶜ refl = refl
-
-split₅ᶜ : ∀ {l τ₁ τ₂ π₁ π₂ H} {x : τ₁ ∈⟨ l ⟩ᴿ π₁} {y : τ₂ ∈⟨ l ⟩ᴿ π₂} {l⊑A l⊑A' : l ⊑ H} -> _≡_ {_} {Cont l _ _} (write l⊑A x) (write l⊑A' y)
-          -> (τ₁ ≡ τ₂) × (π₁ ≡ π₂)
-split₅ᶜ refl = refl P., refl
-
-split₆ᶜ : ∀ {l τ π H} {x : τ ∈⟨ l ⟩ᴿ π} {y : τ ∈⟨ l ⟩ᴿ π} {l⊑A l⊑A' : l ⊑ H} -> _≡_ {_} {Cont l _ _} (write l⊑A x) (write l⊑A' y)
-          -> x ≡ y × l⊑A ≡ l⊑A'
-split₆ᶜ refl = refl P., refl
-
-split∙₅ᶜ : ∀ {l τ₁ τ₂ π₁ π₂ H} {x : τ₁ ∈⟨ l ⟩ᴿ π₁} {y : τ₂ ∈⟨ l ⟩ᴿ π₂} {l⊑A l⊑A' : l ⊑ H} -> _≡_ {_} {Cont l _ _} (write∙ l⊑A x) (write∙ l⊑A' y)
-          -> (τ₁ ≡ τ₂) × (π₁ ≡ π₂)
-split∙₅ᶜ refl = refl P., refl
-
-split∙₆ᶜ : ∀ {l τ π H} {x : τ ∈⟨ l ⟩ᴿ π} {y : τ ∈⟨ l ⟩ᴿ π} {l⊑A l⊑A' : l ⊑ H} -> _≡_ {_} {Cont l _ _} (write∙ l⊑A x) (write∙ l⊑A' y)
-          -> x ≡ y × l⊑A ≡ l⊑A'
-split∙₆ᶜ refl = refl P., refl
-
-
-⌜_⌝ᶜ : ∀ {l τ₁ τ₂} {C₁ C₂ : Cont l τ₁ τ₂} -> C₁ ≅ᶜ C₂ -> C₁ ≈ᶜ C₂
-⌜_⌝ᶜ {C₁ = SC.Var τ∈π₁} {SC.Var .τ∈π₁} refl = Var τ∈π₁
-⌜_⌝ᶜ {C₁ = SC.# τ∈π₁} {SC.# .τ∈π₁} refl = # τ∈π₁
-⌜_⌝ᶜ {C₁ = SC.# τ∈π} {SC.Then x Else x₁} ()
-⌜_⌝ᶜ {C₁ = SC.# τ∈π} {SC.Bind x} ()
-⌜_⌝ᶜ {C₁ = SC.Then x Else x₁} {SC.# τ∈π} ()
-⌜_⌝ᶜ {C₁ = SC.Then x Else x₁} {SC.Then x₂ Else x₃} eq rewrite split₁ᶜ eq with split₂ᶜ eq
-... | eq₁ P., eq₂ = Then ⌜ eq₁ ⌝ᵀ Else ⌜ eq₂ ⌝ᵀ
-⌜_⌝ᶜ {C₁ = SC.Bind x} {SC.# τ∈π} ()
-⌜_⌝ᶜ {C₁ = SC.Bind x} {SC.Bind x₁} eq rewrite split₃ᶜ eq = Bind ⌜ split₄ᶜ eq ⌝ᵀ
-⌜_⌝ᶜ {C₁ = SC.unlabel p} {SC.unlabel .p} refl = unlabel p
-⌜_⌝ᶜ {C₁ = SC.unId} {SC.unId} refl = unId
-⌜_⌝ᶜ {C₁ = SC.write {H = H} x τ∈π} {SC.write x₁ τ∈π₁} eq with H ⊑? A
-⌜_⌝ᶜ {C₁ = SC.write x τ∈π} {SC.write x₁ τ∈π₁} eq | yes p with split₅ᶜ eq
-... | refl P., refl with split₆ᶜ eq
-... | eq₁ P., eq₂ rewrite eq₁ | eq₂ = write τ∈π₁
-⌜_⌝ᶜ {C₁ = SC.write x τ∈π} {SC.write x₁ τ∈π₁} eq | no ¬p with split∙₅ᶜ eq
-... | refl P., refl with split∙₆ᶜ eq
-... | eq₁ P., eq₂ rewrite eq₁ | eq₂ = write τ∈π₁
-⌜_⌝ᶜ {C₁ = SC.write {H = H} x τ∈π} {SC.write∙ x₁ τ∈π₁} eq with H ⊑? A
-⌜_⌝ᶜ {C₁ = SC.write {H = H} x τ∈π} {SC.write∙ x₁ τ∈π₁} () | yes p
-⌜_⌝ᶜ {C₁ = SC.write x₁ τ∈π₁} {SC.write∙ .x₁ .τ∈π₁} refl | no p = write' p τ∈π₁
-⌜_⌝ᶜ {C₁ = SC.write {H = H} x τ∈π} {SC.read x₁} eq with H ⊑? A
-⌜_⌝ᶜ {C₁ = SC.write {H = H} x τ∈π} {SC.read x₁} () | yes p
-⌜_⌝ᶜ {C₁ = SC.write {H = H} x τ∈π} {SC.read x₁} () | no p
-⌜_⌝ᶜ {C₁ = SC.write∙ {H = H} x τ∈π} {SC.write x₁ τ∈π₁} eq with H ⊑? A
-⌜_⌝ᶜ {C₁ = SC.write∙ x τ∈π} {SC.write x₁ τ∈π₁} () | yes p
-⌜_⌝ᶜ {C₁ = SC.write∙ x τ∈π} {SC.write .x .τ∈π} refl | no ¬p = write'' ¬p τ∈π
-⌜_⌝ᶜ {C₁ = SC.write∙ x₁ τ∈π₁} {SC.write∙ .x₁ .τ∈π₁} refl = write∙ x₁ τ∈π₁
-⌜_⌝ᶜ {C₁ = SC.write∙ x τ∈π} {SC.read x₁} ()
-⌜_⌝ᶜ {C₁ = SC.read x} {SC.write {H = H} x₁ τ∈π} eq with H ⊑? A
-⌜_⌝ᶜ {C₁ = SC.read x} {SC.write x₁ τ∈π} () | yes _
-⌜_⌝ᶜ {C₁ = SC.read x} {SC.write x₁ τ∈π} () | no _
-⌜_⌝ᶜ {C₁ = SC.read x} {SC.write∙ x₁ τ∈π} ()
-⌜_⌝ᶜ {C₁ = SC.read x} {SC.read .x} refl = read x
+⌜_⌝ᶜ : ∀ {l π τ₁ τ₂} {C₁ C₂ : Cont l π τ₁ τ₂} -> C₁ ≅ᶜ C₂ -> C₁ ≈ᶜ C₂
+⌜_⌝ᶜ {C₁ = C₁} {C₂} eq with lift-εᶜ C₁ | lift-εᶜ C₂
+... | e₁ | e₂ rewrite eq = Kᶜ e₁ e₂
 
 --------------------------------------------------------------------------------
 
-_≅ˢ_ : ∀ {l τ₁ τ₂} (S₁ S₂ : Stack l τ₁ τ₂) -> Set
+_≅ˢ_ : ∀ {l π τ₁ τ₂} (S₁ S₂ : Stack l π τ₁ τ₂) -> Set
 S₁ ≅ˢ S₂ = εˢ S₁ ≡ εˢ S₂
 
-data _≈ˢ_ {l} : ∀ {τ₁ τ₂} -> (S₁ S₂ : Stack l τ₁ τ₂) -> Set where
-  [] : ∀ {τ} -> [] {τ = τ} ≈ˢ []
-  _∷_ : ∀ {τ₁ τ₂ τ₃} {C₁ C₂ : Cont l τ₁ τ₂} {S₁ S₂ : Stack l τ₂ τ₃} ->
-          C₁ ≈ᶜ C₂ -> S₁ ≈ˢ S₂ -> (C₁ ∷ S₁) ≈ˢ (C₂ ∷ S₂)
-  ∙ : ∀ {τ} -> ∙ {τ = τ} ≈ˢ ∙
+data _≈ˢ_ {l π τ₁ τ₂ } (S₁ S₂ : Stack l π τ₁ τ₂) : Set where
+  Kˢ : ∀ {Sᴱ : Stack l π τ₁ τ₂} -> Eraseˢ S₁ Sᴱ -> Eraseˢ S₂ Sᴱ -> S₁ ≈ˢ S₂
 
-⌞_⌟ˢ : ∀ {l τ₁ τ₂} {S₁ S₂ : Stack l τ₁ τ₂} -> S₁ ≈ˢ S₂ -> S₁ ≅ˢ S₂
-⌞ [] ⌟ˢ = refl
-⌞ x ∷ eq ⌟ˢ = cong₂ _∷_ ⌞ x ⌟ᶜ ⌞ eq ⌟ˢ
-⌞ ∙ ⌟ˢ = refl
+⌞_⌟ˢ : ∀ {l π τ₁ τ₂} {S₁ S₂ : Stack l π τ₁ τ₂} -> S₁ ≈ˢ S₂ -> S₁ ≅ˢ S₂
+⌞ Kˢ e₁ e₂ ⌟ˢ rewrite unlift-εˢ e₁ | unlift-εˢ e₂ = refl
 
-split₁ˢ : ∀ {l τ₁ τ₂ τ₂' τ₃ } {C₁ : Cont l τ₁ τ₂} {C₂ : Cont l τ₁ τ₂'}
-          {S₁  : Stack l τ₂ τ₃} {S₂ : Stack l τ₂' τ₃} ->
-           _≡_ {_} {Stack l τ₁ τ₃} (C₁ ∷ S₁) (C₂ ∷ S₂) -> τ₂ ≡ τ₂'
-split₁ˢ refl = refl
-
-
-split₂ˢ : ∀ {l τ₁ τ₂ τ₃} {C₁ C₂ : Cont l τ₁ τ₂} {S₁ S₂ : Stack l τ₂ τ₃} ->
-           _≡_ {_} {Stack l τ₁ τ₃} (C₁ ∷ S₁)(C₂ ∷ S₂) -> C₁ ≡ C₂ × S₁ ≡ S₂
-split₂ˢ refl = refl P., refl
-
-⌜_⌝ˢ : ∀ {l τ₁ τ₂} {S₁ S₂ : Stack l τ₁ τ₂} -> S₁ ≅ˢ S₂ -> S₁ ≈ˢ S₂
-⌜_⌝ˢ {S₁ = SC.[]} {SC.[]} eq = []
-⌜_⌝ˢ {S₁ = SC.[]} {x SC.∷ S₂} ()
-⌜_⌝ˢ {S₁ = SC.[]} {SC.∙} ()
-⌜_⌝ˢ {S₁ = x SC.∷ S₁} {SC.[]} ()
-⌜_⌝ˢ {S₁ = x SC.∷ S₁} {x₁ SC.∷ S₂} eq with split₁ˢ eq
-... | refl with split₂ˢ eq
-... | eq₂ P., eq₃ = ⌜ eq₂ ⌝ᶜ ∷ ⌜ eq₃ ⌝ˢ
-⌜_⌝ˢ {S₁ = x SC.∷ S₁} {SC.∙} ()
-⌜_⌝ˢ {S₁ = SC.∙} {SC.[]} ()
-⌜_⌝ˢ {S₁ = SC.∙} {x SC.∷ S₂} ()
-⌜_⌝ˢ {S₁ = SC.∙} {SC.∙} eq = ∙
+⌜_⌝ˢ : ∀ {l π τ₁ τ₂} {S₁ S₂ : Stack l π τ₁ τ₂} -> S₁ ≅ˢ S₂ -> S₁ ≈ˢ S₂
+⌜_⌝ˢ {S₁ = S₁} {S₂} eq with lift-εˢ S₁ | lift-εˢ S₂
+... | e₁ | e₂ rewrite eq = Kˢ e₁ e₂
 
 --------------------------------------------------------------------------------
+
+-- TODO remove?
 
 data _≈ᴹᵀ_ {π τ} : Maybe (Term π τ) -> Maybe (Term π τ) -> Set where
   nothing : nothing ≈ᴹᵀ nothing
@@ -206,119 +93,102 @@ mt₁ ≅ᴹᵀ mt₂ = M.map εᵀ mt₁ ≡ M.map εᵀ mt₂
 
 --------------------------------------------------------------------------------
 
-data _≈ᴱ_ {l} : ∀ {π} -> Env l π -> Env l π -> Set where
-  [] : [] ≈ᴱ []
-  _∷_ : ∀ {π τ} {Δ₁ Δ₂ : Env l π} {mt₁ mt₂ : Maybe (Term π τ)} -> mt₁ ≈ᴹᵀ mt₂ -> Δ₁ ≈ᴱ Δ₂ -> (mt₁ ∷ Δ₁) ≈ᴱ (mt₂ ∷ Δ₂)
-  ∙ : ∀ {π} -> ∙ {{π = π}} ≈ᴱ ∙
+-- data _map-≈ᵀ_ {l π} (Δ₁ Δ₂ : Heap l π) : Set where
+--   map-Kᵀ : ∀ {Δᴱ : Heap l π} -> EraseMapᵀ Δ₁ Δᴱ -> EraseMapᵀ Δ₂ Δᴱ -> Δ₁ map-≈ᵀ Δ₂
 
-_≅ᴱ_ : ∀ {π l} -> (Δ₁ Δ₂ : Env l π) -> Set
-Δ₁ ≅ᴱ Δ₂ = εᴱ Δ₁ ≡ εᴱ Δ₂
+-- _≅ᴱ_ : ∀ {π l} -> (Δ₁ Δ₂ : Heap l π) -> Set
+-- Δ₁ ≅ᴱ Δ₂ = map-εᵀ Δ₁ ≡ map-εᵀ Δ₂
 
-⌜_⌝ᴱ : ∀ {l π} {Δ₁ Δ₂ : Env l π} -> Δ₁ ≅ᴱ Δ₂ -> Δ₁ ≈ᴱ Δ₂
-⌜_⌝ᴱ {Δ₁ = SC.[]} {SC.[]} refl = []
-⌜_⌝ᴱ {Δ₁ = SC.[]} {SC.∙} ()
-⌜_⌝ᴱ {Δ₁ = t SC.∷ Δ₁} {t₁ SC.∷ Δ₂} eq =  ⌜ (proj₁ (split eq)) ⌝ᴹᵀ ∷ ⌜ proj₂ (split eq) ⌝ᴱ
-  where split : ∀ {l π τ} {mt₁ mt₂ : Maybe (Term π τ)} {Δ₁ Δ₂ : Env l π} -> (mt₁ ∷ Δ₁) ≡ᴱ (mt₂ ∷ Δ₂) -> mt₁ ≡ mt₂ × Δ₁ ≡ Δ₂
-        split refl = refl P., refl
-⌜_⌝ᴱ {Δ₁ = t SC.∷ Δ₁} {SC.∙} ()
-⌜_⌝ᴱ {Δ₁ = SC.∙} {SC.[]} ()
-⌜_⌝ᴱ {Δ₁ = SC.∙} {t SC.∷ Δ₂} ()
-⌜_⌝ᴱ {Δ₁ = SC.∙} {SC.∙} refl = ∙
+-- ⌜_⌝ᴱ : ∀ {l π} {Δ₁ Δ₂ : Heap l π} -> Δ₁ ≅ᴱ Δ₂ -> Δ₁ map-≈ᵀ Δ₂
+-- ⌜_⌝ᴱ {Δ₁ = SC.[]} {SC.[]} refl = []
+-- ⌜_⌝ᴱ {Δ₁ = SC.[]} {SC.∙} ()
+-- ⌜_⌝ᴱ {Δ₁ = t SC.∷ Δ₁} {t₁ SC.∷ Δ₂} eq =  ⌜ (proj₁ (split eq)) ⌝ᴹᵀ ∷ ⌜ proj₂ (split eq) ⌝ᴱ
+--   where split : ∀ {l π τ} {mt₁ mt₂ : Maybe (Term π τ)} {Δ₁ Δ₂ : Heap l π} -> (mt₁ ∷ Δ₁) ≡ᴱ (mt₂ ∷ Δ₂) -> mt₁ ≡ mt₂ × Δ₁ ≡ Δ₂
+--         split refl = refl P., refl
+-- ⌜_⌝ᴱ {Δ₁ = t SC.∷ Δ₁} {SC.∙} ()
+-- ⌜_⌝ᴱ {Δ₁ = SC.∙} {SC.[]} ()
+-- ⌜_⌝ᴱ {Δ₁ = SC.∙} {t SC.∷ Δ₂} ()
+-- ⌜_⌝ᴱ {Δ₁ = SC.∙} {SC.∙} refl = ∙
 
-⌞_⌟ᴱ : ∀ {l π} {Δ₁ Δ₂ : Env l π} -> Δ₁ ≈ᴱ Δ₂ -> Δ₁ ≅ᴱ Δ₂
-⌞ [] ⌟ᴱ = refl
-⌞ nothing ∷ eq ⌟ᴱ rewrite  ⌞ eq ⌟ᴱ = refl
-⌞ just x ∷ eq ⌟ᴱ rewrite ⌞ x ⌟ᵀ | ⌞ eq ⌟ᴱ  = refl
-⌞ ∙ ⌟ᴱ = refl
+-- ⌞_⌟ᴱ : ∀ {l π} {Δ₁ Δ₂ : Heap l π} -> Δ₁ map-≈ᵀ Δ₂ -> Δ₁ ≅ᴱ Δ₂
+-- ⌞ [] ⌟ᴱ = refl
+-- ⌞ nothing ∷ eq ⌟ᴱ rewrite  ⌞ eq ⌟ᴱ = refl
+-- ⌞ just x ∷ eq ⌟ᴱ rewrite ⌞ x ⌟ᵀ | ⌞ eq ⌟ᴱ  = refl
+-- ⌞ ∙ ⌟ᴱ = refl
 
 --------------------------------------------------------------------------------
 
-data _≈ˣ⟨_⟩_ {l} : Heap l -> Dec (l ⊑ A) -> Heap l -> Set where
-  ⟨_,_⟩ : ∀ {π} {l⊑A : l ⊑ A} {Δ₁ Δ₂ : Env l π} -> (M : Memory l) -> Δ₁ ≈ᴱ Δ₂ -> ⟨ M , Δ₁ ⟩ ≈ˣ⟨ yes l⊑A ⟩ ⟨ M , Δ₂ ⟩
-  ∙ᴸ : {l⊑A : l ⊑ A} -> ∙ ≈ˣ⟨ yes l⊑A ⟩ ∙
-  ∙ : ∀ {H₁ H₂ : Heap l} {l⋤A : l ⋤ A} -> H₁ ≈ˣ⟨ no l⋤A ⟩ H₂
+data _≈ᴴ⟨_⟩_ {l π} (Δ₁ : Heap l π) (x : Dec (l ⊑ A)) (Δ₂ : Heap l π) : Set where
+  Kᴴ : ∀ {Δᴱ : Heap l π} -> Eraseᴴ x Δ₁ Δᴱ -> Eraseᴴ x Δ₂ Δᴱ -> Δ₁ ≈ᴴ⟨ x ⟩ Δ₂
+
+-- ⟨_,_⟩ : ∀ {π} {l⊑A : l ⊑ A} {Δ₁ Δ₂ : Heap l π} -> (M : Memory l) -> Δ₁ map-≈ᵀ Δ₂ -> ⟨ M , Δ₁ ⟩ ≈ᴴ⟨ yes l⊑A ⟩ ⟨ M , Δ₂ ⟩
+--   ∙ᴸ : {l⊑A : l ⊑ A} -> ∙ ≈ᴴ⟨ yes l⊑A ⟩ ∙
+--   ∙ : ∀ {H₁ H₂ : Heap l} {l⋤A : l ⋤ A} -> H₁ ≈ᴴ⟨ no l⋤A ⟩ H₂
+
+
+-- data _≈ᴹ⟨_⟩_ {l} : Heap l -> Dec (l ⊑ A) -> Heap l -> Set where
+--   ⟨_,_⟩ : ∀ {π} {l⊑A : l ⊑ A} {Δ₁ Δ₂ : Heap l π} -> (M : Memory l) -> Δ₁ map-≈ᵀ Δ₂ -> ⟨ M , Δ₁ ⟩ ≈ᴹ⟨ yes l⊑A ⟩ ⟨ M , Δ₂ ⟩
+--   ∙ᴸ : {l⊑A : l ⊑ A} -> ∙ ≈ᴹ⟨ yes l⊑A ⟩ ∙
+--   ∙ : ∀ {H₁ H₂ : Heap l} {l⋤A : l ⋤ A} -> H₁ ≈ᴹ⟨ no l⋤A ⟩ H₂
+
 
 --------------------------------------------------------------------------------
 
--- Structural low-equivalence for Heaps
-data _≈ᴴ_ : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
-  nil : [] ≈ᴴ []
-  cons : ∀ {ls} {l} {u : Unique l ls} {Γ₁ Γ₂ : Heaps ls} {H₁ H₂ : Heap l} (x : Dec (l ⊑ A)) ->
-               H₁ ≈ˣ⟨ x ⟩ H₂ -> Γ₁ ≈ᴴ Γ₂ -> (_∷_ {{u}} H₁ Γ₁) ≈ᴴ (_∷_ {{u}} H₂ Γ₂)
+-- -- Structural low-equivalence for Heaps
+-- data _≈ᴴ_ : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
+--   nil : [] ≈ᴴ []
+--   cons : ∀ {ls} {l} {u : Unique l ls} {Γ₁ Γ₂ : Heaps ls} {H₁ H₂ : Heap l} (x : Dec (l ⊑ A)) ->
+--                H₁ ≈ˣ⟨ x ⟩ H₂ -> Γ₁ ≈ᴴ Γ₂ -> (_∷_ {{u}} H₁ Γ₁) ≈ᴴ (_∷_ {{u}} H₂ Γ₂)
 
 
-split : ∀ {ls} {l} {u₁ u₂ : Unique l ls} {Γ₁ Γ₂ : Heaps ls} {H₁ H₂ : Heap l} ->
-                 _≡_ {_} {Heaps (l ∷ ls)}  (_∷_ {{u₁}} H₁ Γ₁) (_∷_ {{u₂}} H₂ Γ₂ ) -> u₁ ≡ u₂ × H₁ ≡ H₂ × Γ₁ ≡ Γ₂
-split refl = refl P., refl P., refl
+-- split : ∀ {ls} {l} {u₁ u₂ : Unique l ls} {Γ₁ Γ₂ : Heaps ls} {H₁ H₂ : Heap l} ->
+--                  _≡_ {_} {Heaps (l ∷ ls)}  (_∷_ {{u₁}} H₁ Γ₁) (_∷_ {{u₂}} H₂ Γ₂ ) -> u₁ ≡ u₂ × H₁ ≡ H₂ × Γ₁ ≡ Γ₂
+-- split refl = refl P., refl P., refl
 
-split₁ᴴ : ∀ {l π₁ π₂} {M₁ M₂ : Memory l} {Δ₁ : Env l π₁} {Δ₂ : Env l π₂} -> _≡_ {_} {Heap l} ⟨ M₁ , Δ₁ ⟩ ⟨ M₂ , Δ₂ ⟩ -> π₁ ≡ π₂ × M₁ ≡ M₂
-split₁ᴴ refl = refl P., refl
+-- split₁ᴴ : ∀ {l π₁ π₂} {M₁ M₂ : Memory l} {Δ₁ : Heap l π₁} {Δ₂ : Heap l π₂} -> _≡_ {_} {Heap l} ⟨ M₁ , Δ₁ ⟩ ⟨ M₂ , Δ₂ ⟩ -> π₁ ≡ π₂ × M₁ ≡ M₂
+-- split₁ᴴ refl = refl P., refl
 
-split₂ᴴ : ∀ {l π} {M₁ M₂ : Memory l} {Δ₁ Δ₂ : Env l π} -> _≡_ {_} {Heap l} ⟨ M₁ , Δ₁ ⟩ ⟨ M₂ , Δ₂ ⟩ -> Δ₁ ≡ Δ₂
-split₂ᴴ refl = refl
+-- split₂ᴴ : ∀ {l π} {M₁ M₂ : Memory l} {Δ₁ Δ₂ : Heap l π} -> _≡_ {_} {Heap l} ⟨ M₁ , Δ₁ ⟩ ⟨ M₂ , Δ₂ ⟩ -> Δ₁ ≡ Δ₂
+-- split₂ᴴ refl = refl
 
-aux₂ : ∀ {l} {H₁ H₂ : Heap l} -> (x : Dec (l ⊑ A)) -> SE.εᴹ x H₁ ≡ SE.εᴹ x H₂ -> H₁ ≈ˣ⟨ x ⟩ H₂
-aux₂ {H₁ = SC.⟨ x , x₁ ⟩} {SC.⟨ x₂ , x₃ ⟩} (yes p) eq with split₁ᴴ eq
-aux₂ {l} {SC.⟨ M , x₁ ⟩} {SC.⟨ .M , x₃ ⟩} (yes p) eq₁ | refl P., refl = ⟨ M , ⌜ split₂ᴴ eq₁ ⌝ᴱ ⟩
-aux₂ {H₁ = SC.⟨ x , x₁ ⟩} {SC.∙} (yes p) ()
-aux₂ {H₁ = SC.∙} {SC.⟨ x , x₁ ⟩} (yes p) ()
-aux₂ {H₁ = SC.∙} {SC.∙} (yes p) refl = ∙ᴸ
-aux₂ (no ¬p) eq₁ = ∙
+-- aux₂ : ∀ {l} {H₁ H₂ : Heap l} -> (x : Dec (l ⊑ A)) -> SE.εᴹ x H₁ ≡ SE.εᴹ x H₂ -> H₁ ≈ˣ⟨ x ⟩ H₂
+-- aux₂ {H₁ = SC.⟨ x , x₁ ⟩} {SC.⟨ x₂ , x₃ ⟩} (yes p) eq with split₁ᴴ eq
+-- aux₂ {l} {SC.⟨ M , x₁ ⟩} {SC.⟨ .M , x₃ ⟩} (yes p) eq₁ | refl P., refl = ⟨ M , ⌜ split₂ᴴ eq₁ ⌝ᴱ ⟩
+-- aux₂ {H₁ = SC.⟨ x , x₁ ⟩} {SC.∙} (yes p) ()
+-- aux₂ {H₁ = SC.∙} {SC.⟨ x , x₁ ⟩} (yes p) ()
+-- aux₂ {H₁ = SC.∙} {SC.∙} (yes p) refl = ∙ᴸ
+-- aux₂ (no ¬p) eq₁ = ∙
 
-⌜_⌝ᴴ : ∀ {ls} {Γ₁ Γ₂ : Heaps ls} -> Γ₁ ≅ᴴ Γ₂ -> Γ₁ ≈ᴴ Γ₂
-⌜_⌝ᴴ {Γ₁ = []} {[]} refl = nil
-⌜_⌝ᴴ {Γ₁ = H₁ ∷ Γ₁} {H₂ ∷ Γ₂} eq with split eq
-... | eq₁ P., eq₂ P., eq₃ rewrite eq₁ = cons (_ ⊑? A) (aux₂ (_ ⊑? A) eq₂) ⌜ eq₃ ⌝ᴴ
+-- ⌜_⌝ᴴ : ∀ {ls} {Γ₁ Γ₂ : Heaps ls} -> Γ₁ ≅ᴴ Γ₂ -> Γ₁ ≈ᴴ Γ₂
+-- ⌜_⌝ᴴ {Γ₁ = []} {[]} refl = nil
+-- ⌜_⌝ᴴ {Γ₁ = H₁ ∷ Γ₁} {H₂ ∷ Γ₂} eq with split eq
+-- ... | eq₁ P., eq₂ P., eq₃ rewrite eq₁ = cons (_ ⊑? A) (aux₂ (_ ⊑? A) eq₂) ⌜ eq₃ ⌝ᴴ
 
-⌞_⌟ᴴ : ∀ {ls} {Γ₁ Γ₂ : Heaps ls} -> Γ₁ ≈ᴴ Γ₂ -> Γ₁ ≅ᴴ Γ₂
-⌞ nil ⌟ᴴ = refl
-⌞ cons {l = l}  (yes l⊑A) ⟨ M , x ⟩ eq₂ ⌟ᴴ with l ⊑? A
-... | yes p rewrite ⌞ x ⌟ᴱ | ⌞ eq₂ ⌟ᴴ = refl
-... | no ¬p = ⊥-elim (¬p l⊑A)
-⌞ cons ._ ∙ᴸ eq₂ ⌟ᴴ rewrite ⌞ eq₂ ⌟ᴴ = refl
-⌞ cons {l = l} (no _) ∙ eq₂ ⌟ᴴ rewrite ⌞ eq₂ ⌟ᴴ with l ⊑? A
-⌞ cons (no l⋤A) ∙ eq₂ ⌟ᴴ | yes p = ⊥-elim (l⋤A p)
-⌞ cons (no _) ∙ eq₂ ⌟ᴴ | no ¬p = refl
+-- ⌞_⌟ᴴ : ∀ {ls} {Γ₁ Γ₂ : Heaps ls} -> Γ₁ ≈ᴴ Γ₂ -> Γ₁ ≅ᴴ Γ₂
+-- ⌞ nil ⌟ᴴ = refl
+-- ⌞ cons {l = l}  (yes l⊑A) ⟨ M , x ⟩ eq₂ ⌟ᴴ with l ⊑? A
+-- ... | yes p rewrite ⌞ x ⌟ᴱ | ⌞ eq₂ ⌟ᴴ = refl
+-- ... | no ¬p = ⊥-elim (¬p l⊑A)
+-- ⌞ cons ._ ∙ᴸ eq₂ ⌟ᴴ rewrite ⌞ eq₂ ⌟ᴴ = refl
+-- ⌞ cons {l = l} (no _) ∙ eq₂ ⌟ᴴ rewrite ⌞ eq₂ ⌟ᴴ with l ⊑? A
+-- ⌞ cons (no l⋤A) ∙ eq₂ ⌟ᴴ | yes p = ⊥-elim (l⋤A p)
+-- ⌞ cons (no _) ∙ eq₂ ⌟ᴴ | no ¬p = refl
 
---------------------------------------------------------------------------------
+-- --------------------------------------------------------------------------------
 
 _≅ᴾ⟨_⟩_ : ∀ {l ls τ} -> Program l ls τ -> Dec (l ⊑ A) -> Program l ls τ -> Set
 p₁ ≅ᴾ⟨ x ⟩ p₂ = ε₁ᴾ x p₁ ≡ ε₁ᴾ x p₂
 
 -- Program low-equivalence
-data _≈ᴾ⟨_⟩_ {l ls τ} : Program l ls τ -> Dec (l ⊑ A) -> Program l ls τ -> Set where
-  ⟨_,_,_⟩ : ∀ {π τ'} {Γ₁ Γ₂ : Heaps ls} {t₁ t₂ : Term π τ'} {S₁ S₂ : Stack l _ τ} {l⊑A : l ⊑ A} ->
-            Γ₁ ≈ᴴ Γ₂ -> t₁ ≈ᵀ t₂ -> S₁ ≈ˢ S₂ -> ⟨ Γ₁ , t₁ , S₁ ⟩ ≈ᴾ⟨ yes l⊑A ⟩ ⟨ Γ₂ , t₂ , S₂ ⟩
-  ∙ᴸ : ∀ {l⊑A : l ⊑ A} -> ∙ ≈ᴾ⟨ yes l⊑A ⟩ ∙
-  ∙ : ∀ {p₁ p₂} {l⋤A : l ⋤ A} -> p₁ ≈ᴾ⟨ no l⋤A ⟩ p₂
-
-splitᴾ : ∀ {l ls τ τ₁ τ₂ π₁ π₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heaps ls} {S₁ : Stack _ _ _} {S₂ : Stack _ _ _}
-         -> _≡_ {_} {Program l ls τ} ⟨ Γ₁ , t₁ , S₁ ⟩ ⟨ Γ₂ , t₂ , S₂ ⟩ -> π₁ ≡ π₂ × τ₁ ≡ τ₂
-splitᴾ refl = refl P., refl
-
-split₂ᴾ : ∀ {l ls τ τ' π} {t₁ t₂ : Term π τ'} {Γ₁ Γ₂ : Heaps ls} {S₁ S₂ : Stack _ _ _}
-         -> _≡_ {_} {Program l ls τ} ⟨ Γ₁ , t₁ , S₁ ⟩ ⟨ Γ₂ , t₂ , S₂ ⟩ -> Γ₁ ≡ Γ₂ × t₁ ≡ t₂ × S₁ ≡ S₂
-split₂ᴾ refl = refl P., refl P., refl
+data _≈ᴾ⟨_⟩_ {l ls τ} (p₁ : Program l ls τ) (x : Dec (l ⊑ A)) (p₂ : Program l ls τ) : Set where
+  Kᴾ : ∀ {pᴱ : Program l ls τ} -> Eraseᴾ x p₁ pᴱ -> Eraseᴾ x p₂ pᴱ -> p₁ ≈ᴾ⟨ x ⟩ p₂
 
 ⌜_⌝ᴾ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} {x : Dec _} -> p₁ ≅ᴾ⟨ x ⟩ p₂ -> p₁ ≈ᴾ⟨ x ⟩ p₂
-⌜_⌝ᴾ {p₁ = SC.⟨ Γ , t , S ⟩} {SC.⟨ Γ₁ , t₁ , S₁ ⟩} {yes p} eq with splitᴾ eq
-... | eq₁ P., eq₂ rewrite eq₁ | eq₂ with split₂ᴾ eq
-... | eq₃ P., eq₄ P., eq₅ = ⟨ ⌜ eq₃ ⌝ᴴ , ⌜ eq₄ ⌝ᵀ , ⌜ eq₅ ⌝ˢ ⟩
-⌜_⌝ᴾ {p₁ = SC.⟨ Γ , t , S ⟩} {SC.∙} {yes p} ()
-⌜_⌝ᴾ {p₁ = SC.∙} {SC.⟨ Γ , t , S ⟩} {yes p} ()
-⌜_⌝ᴾ {p₁ = SC.∙} {SC.∙} {yes p} refl = ∙ᴸ
-⌜_⌝ᴾ {x = no ¬p} refl = ∙
+⌜_⌝ᴾ {p₁ = p₁} {p₂} {x} eq with lift-εᴾ x p₁ | lift-εᴾ x p₂
+... | e₁ | e₂ rewrite eq = Kᴾ e₁ e₂
 
 ⌞_⌟ᴾ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} {x : Dec _} -> p₁ ≈ᴾ⟨ x ⟩ p₂ -> p₁ ≅ᴾ⟨ x ⟩ p₂
-⌞ ⟨ x , x₁ , x₂ ⟩ ⌟ᴾ rewrite ⌞ x ⌟ᴴ | ⌞ x₁ ⌟ᵀ | ⌞ x₂ ⌟ˢ = refl
-⌞ ∙ᴸ ⌟ᴾ = refl
-⌞ ∙ ⌟ᴾ = refl
+⌞ Kᴾ e₁ e₂ ⌟ᴾ rewrite unlift-εᴾ e₁ | unlift-εᴾ e₂ = refl
 
 _≅ᴾ_ : ∀ {l ls τ} -> Program l ls τ -> Program l ls τ -> Set
 p₁ ≅ᴾ p₂ = p₁ ≅ᴾ⟨ (_ ⊑? A) ⟩ p₂
-
-
--- ≈ᴾ-≈ᴴ : ∀ {l ls τ' τ π} {Γ₁ Γ₂ : Heaps ls} {t₁ t₂ : Term π τ'} {S₁ S₂ : Stack l τ' τ} {x : Dec _} ->
---           ⟨ Γ₁ , t₁ , S₁ ⟩ ≈ᴾ⟨ x ⟩ ⟨ Γ₂ , t₂ , S₂ ⟩ -> Γ₁ ≈ᴴ Γ₂
--- ≈ᴾ-≈ᴴ ⟨ x , x₁ , x₂ ⟩ = x
--- ≈ᴾ-≈ᴴ ∙ = {!!}  -- Γ₁ and Γ₂ are arbitrary heaps, they are not related!
