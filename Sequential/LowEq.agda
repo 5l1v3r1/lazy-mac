@@ -155,3 +155,17 @@ lift-≈ᴾ {Ms₁ = Ms₁} {Ms₂} {Γ₁} {Γ₂} {t₁} {t₂} {S₁} {S₂} 
   where aux : ∀ {l ls τ τ' π} {Ms₁ Ms₂ : Memories ls} {Γ₁ Γ₂ : Heaps ls} {t₁ t₂ : Term π τ} {S₁ S₂ : Stack l π τ τ'} ->
               Ms₁ ≡ Ms₂ -> Γ₁ ≡ Γ₂ -> t₁ ≡ t₂ -> S₁ ≡ S₂ -> ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ≡ᴾ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩
         aux eq₁ eq₂ eq₃ eq₄ rewrite eq₁ | eq₂ | eq₃ | eq₄ = refl
+
+data _∼ᴾ⟨_⟩_ {l ls τ} : Program l ls τ -> l ⊑ A -> Program l ls τ -> Set where
+  ⟨_,_,_,_⟩ : ∀ {Ms₁ Ms₂ Γ₁ Γ₂ τ' π S₁ S₂} {t₁ t₂ : Term π τ'} {l⊑A : l ⊑ A} ->
+                (Ms₁≈Ms₂ : Ms₁ map-≈ᴹ Ms₂) (Γ₁≈Γ₂ : Γ₁ map-≈ᴴ Γ₂) (t₁≈t₂ : t₁ ≈ᵀ t₂) (S₁≈S₂ : S₁ ≈ˢ S₂) ->
+                ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ∼ᴾ⟨ l⊑A ⟩ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩
+
+
+∼-≈ᴾ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} {l⊑A : l ⊑ A} -> p₁ ∼ᴾ⟨ l⊑A ⟩ p₂ -> p₁ ≈ᴾ⟨ yes l⊑A ⟩ p₂
+∼-≈ᴾ ⟨ Ms₁≈Ms₂ , Γ₁≈Γ₂ , t₁≈t₂ , S₁≈S₂ ⟩ = lift-≈ᴾ _ Ms₁≈Ms₂ Γ₁≈Γ₂ t₁≈t₂ S₁≈S₂
+
+≈-∼ᴾ : ∀ {l ls τ τ' π} {Ms₁ Ms₂ : Memories ls} {Γ₁ Γ₂ : Heaps ls} {t₁ t₂ : Term π τ} {S₁ S₂ : Stack l π τ τ'} {l⊑A : l ⊑ A} ->
+       let p₁ = ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩
+           p₂ = ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩ in p₁ ≈ᴾ⟨ yes l⊑A ⟩ p₂ -> p₁ ∼ᴾ⟨ l⊑A ⟩ p₂
+≈-∼ᴾ (Kᴾ ⟨ x , x₃ , x₁ , x₂ ⟩ ⟨ x₄ , x₅ , x₆ , x₇ ⟩) = ⟨ (K-mapᴹ x x₄) , (K-mapᴴ x₃ x₅) , ⟨ x₁ , x₆ ⟩ , (Kˢ x₂ x₇) ⟩
