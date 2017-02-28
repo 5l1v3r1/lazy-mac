@@ -31,7 +31,7 @@ open SC 𝓛
 open Scheduler.Security.NIˢ 𝓛 A 𝓝 renaming (State to Stateˢ)
 
 εᵀ : ∀ {l} ->  Thread l -> Thread l
-εᵀ C.⟨ t , S ⟩ = ⟨ SE.εᵀ t , SE.εˢ S ⟩
+εᵀ ⟨ t , S ⟩ = ⟨ SE.εᵀ t , SE.εˢ S ⟩
 
 map-εᵀ : ∀ {l} -> Pool l -> Pool l
 map-εᵀ C.[] = []

@@ -60,6 +60,14 @@ unlift-εᴾ : ∀ {l} {x : Dec (l ⊑ A)} {P P' : Pool l} -> Eraseᴾ x P P' ->
 unlift-εᴾ (Mapᵀ x) = unlift-map-εᵀ x
 unlift-εᴾ ∙ = refl
 
+open import Data.Empty
+
+ext-εᴾ : ∀ {l} {x : Dec (l ⊑ A)} {T T' : Pool l} -> Eraseᴾ x T T' -> (y : Dec (l ⊑ A)) -> Eraseᴾ y T T'
+ext-εᴾ (Mapᵀ x) (yes p) = Mapᵀ x
+ext-εᴾ (Mapᵀ {l⊑A = l⊑A} x) (no ¬p) = ⊥-elim (¬p l⊑A)
+ext-εᴾ {x = no l⋤A} ∙ (yes p) = ⊥-elim (l⋤A p)
+ext-εᴾ ∙ (no ¬p) = ∙
+
 --------------------------------------------------------------------------------
 
 data EraseMapᴾ : ∀ {ls} -> Pools ls -> Pools ls -> Set where

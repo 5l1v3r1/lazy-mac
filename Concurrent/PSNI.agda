@@ -57,22 +57,22 @@ data  _↪⋆-≈ᴳ_ {ls} (g₂ : Global ls) (g₁' : Global ls) : Set where
 open import Data.Nat
 open import Function
 
-memberᴾ-≈ : ∀ {ls L} {T₁ : Pool L} {P₁ P₂ : Pools ls} -> (x : Dec (L ⊑ A)) -> L ↦ T₁ ∈ᴾ P₁ -> P₁ ≈ᴾ P₂ -> ∃ (λ T₂ -> T₁ ≈ᵀ⟨ x ⟩ T₂ × L ↦ T₂ ∈ᴾ P₂)
-memberᴾ-≈ x C.here (T₁≈T₂ ◅ P₁≈P₂) = _ P., (ext-≈ᵀ T₁≈T₂ x P., here)
+memberᴾ-≈ : ∀ {ls L} {T₁ : Pool L} {P₁ P₂ : Pools ls} -> (x : Dec (L ⊑ A)) -> L ↦ T₁ ∈ᴾ P₁ -> P₁ map-≈ᴾ P₂ -> ∃ (λ T₂ -> T₁ L₁.≈ᴾ⟨ x ⟩ T₂ × L ↦ T₂ ∈ᴾ P₂)
+memberᴾ-≈ x C.here (T₁≈T₂ ◅ P₁≈P₂) = _ P., (ext-≈ᴾ T₁≈T₂ x P., here)
 memberᴾ-≈ x (C.there T∈P₁) (x₁ ◅ P₁≈P₂) = P.map id (P.map id there) (memberᴾ-≈ x T∈P₁ P₁≈P₂)
 
-memberᵀ-≈ : ∀ {n L} {T₁ T₂ : Pool L} {t₁ : Thread L} -> (L⊑A : L ⊑ A) -> n ↦ t₁ ∈ᵀ T₁ -> T₁ ≈ᵀ⟨ yes L⊑A ⟩ T₂ -> ∃ (λ t₂ → (t₁ ≈ᵗ t₂) × n ↦ t₂ ∈ᵀ T₂)
+memberᵀ-≈ : ∀ {n L} {T₁ T₂ : Pool L} {t₁ : Thread L} -> (L⊑A : L ⊑ A) -> n ↦ t₁ ∈ᵀ T₁ -> T₁ L₁.≈ᴾ⟨ yes L⊑A ⟩ T₂ -> ∃ (λ t₂ → (t₁ L₁.≈ᵀ t₂) × n ↦ t₂ ∈ᵀ T₂)
 memberᵀ-≈ l⊑A C.here (cons .l⊑A x T₁≈T₂) = _ P., x P., C.here
 memberᵀ-≈ l⊑A (C.there t∈T₁) (cons .l⊑A x T₁≈T₂) = P.map id (P.map id there) (memberᵀ-≈ l⊑A t∈T₁ T₁≈T₂)
 
 updateᵀ-≈ : ∀ {n L} {T₁ T₁' T₂ : Pool L} {t₁ t₂ : Thread L} -> (L⊑A : L ⊑ A) -> T₁' ≔ T₁ [ n ↦ t₁ ]ᵀ ->
-            T₁ ≈ᵀ⟨ yes L⊑A ⟩ T₂ -> t₁ ≈ᵗ t₂ -> ∃ (λ T₂' → T₁' ≈ᵀ⟨ yes L⊑A ⟩ T₂'  × T₂' ≔ T₂ [ n ↦ t₂ ]ᵀ)
+            T₁ L₁.≈ᴾ⟨ yes L⊑A ⟩ T₂ -> t₁ L₁.≈ᵀ t₂ -> ∃ (λ T₂' → T₁' L₁.≈ᴾ⟨ yes L⊑A ⟩ T₂'  × T₂' ≔ T₂ [ n ↦ t₂ ]ᵀ)
 updateᵀ-≈ L⊑A C.here (cons .L⊑A x T₁≈T₂) t₁≈t₂ = _ P., cons L⊑A t₁≈t₂ T₁≈T₂ P., C.here
 updateᵀ-≈ L⊑A (C.there uᵀ) (cons .L⊑A x T₁≈T₂) t₁≈t₂ = P.map (_◅_ _) (P.map (cons L⊑A x) there) (updateᵀ-≈ L⊑A uᵀ T₁≈T₂ t₁≈t₂)
 
 updateᴾ-≈ : ∀ {l ls} {P₁ P₂ P₁' : Pools ls} {T₁ T₂ : Pool l}  (x : Dec (l ⊑ A)) -> P₁' ≔ P₁ [ l ↦ T₁ ]ᴾ ->
-             P₁ ≈ᴾ P₂ -> T₁ ≈ᵀ⟨ x ⟩ T₂ -> ∃ (λ P₂' → P₁' ≈ᴾ P₂' × P₂' ≔ P₂ [ l ↦ T₂ ]ᴾ)
-updateᴾ-≈ x C.here (_ ◅ P₁≈P₂) T₁≈T₂ = _ P., (((ext-≈ᵀ T₁≈T₂ _) ◅ P₁≈P₂) P., here)
+             P₁ map-≈ᴾ P₂ -> T₁ L₁.≈ᴾ⟨ x ⟩ T₂ -> ∃ (λ P₂' → P₁' map-≈ᴾ P₂' × P₂' ≔ P₂ [ l ↦ T₂ ]ᴾ)
+updateᴾ-≈ x C.here (_ ◅ P₁≈P₂) T₁≈T₂ = _ P., (((ext-≈ᴾ T₁≈T₂ _) ◅ P₁≈P₂) P., here)
 updateᴾ-≈ x (C.there uᴾ) (T₁≈T₂' ◅ P₁≈P₂) T₁≈T₂ = P.map (_◅_ _) (P.map (_◅_ T₁≈T₂') there) (updateᴾ-≈ x uᴾ P₁≈P₂ T₁≈T₂)
 
 val-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ L₂.≈ᵀ t₂ -> Value t₁ -> Value t₂
@@ -106,16 +106,11 @@ redex-≈ : ∀ {l ls τ} {p₁ p₁' p₂ : Program l ls τ} -> (l⊑A : l ⊑ 
             ∃ (λ p₂' -> (p₁' L₂.≈ᴾ⟨ yes l⊑A ⟩ p₂') × (p₂ ⟼ p₂'))
 redex-≈ = {!!}
 
-lengthᵀ-≈ : ∀ {l} {T₁ T₂ : Pool l} -> (l⊑A : l ⊑ A) -> T₁ ≈ᵀ⟨ yes l⊑A ⟩ T₂ -> lengthᵀ T₁ ≡ lengthᵀ T₂
+lengthᵀ-≈ : ∀ {l} {T₁ T₂ : Pool l} -> (l⊑A : l ⊑ A) -> T₁ L₁.≈ᴾ⟨ yes l⊑A ⟩ T₂ -> lengthᵀ T₁ ≡ lengthᵀ T₂
 lengthᵀ-≈ {_} {T₁} {T₂} l⊑A T₁≈T₂ rewrite lengthᵀ-ε-≡ l⊑A T₁ | lengthᵀ-ε-≡ l⊑A T₂ | L₁.⌞ T₁≈T₂ ⌟ᵀ = refl
 
-newᵀ-≈ : ∀ {l} {T₁ T₂ : Pool l} {t₁ t₂ : Thread l} {x : Dec _} -> T₁ ≈ᵀ⟨ x ⟩ T₂ -> t₁ ≈ᵗ t₂ -> (T₁ ▻ t₁) ≈ᵀ⟨ x ⟩ (T₂ ▻ t₂)
-newᵀ-≈ (nil l⊑A) t₁≈t₂ = cons l⊑A t₁≈t₂ (nil l⊑A)
-newᵀ-≈ (cons l⊑A x T₁≈T₂) t₁≈t₂ = cons l⊑A x (newᵀ-≈ T₁≈T₂ t₁≈t₂)
-newᵀ-≈ ∙ᴸ t₁≈t₂ = ∙ᴸ
-newᵀ-≈ ∙ t₁≈t₂ = ∙
-
-postulate trans-≈ᴴ : ∀ {ls} {H₁ H₂ H₃ : Heaps ls} -> H₁ ≈ᴴ H₂ -> H₂ ≈ᴴ H₃ -> H₁ ≈ᴴ H₃
+newᵀ-≈ : ∀ {l} {T₁ T₂ : Pool l} {t₁ t₂ : Thread l} {x : Dec _} -> T₁ L₁.≈ᴾ⟨ x ⟩ T₂ -> t₁ L₁.≈ᵀ t₂ -> (T₁ ▻ t₁) L₁.≈ᴾ⟨ x ⟩ (T₂ ▻ t₂)
+newᵀ-≈ T₁≈T₂ t₁≈t₂ = ?
 
 -- This is consistent with the fact that our lists are truly mappings
 -- they are not defined so becuase they are inconvinient to reason with
@@ -159,19 +154,19 @@ open import Sequential.Graph 𝓛 A
 
 εᴳ-simᴸ⋆ SC.zero Σ₁≈Σ₂ L⊑A step g₁'≈g₂' with squareˢ L⊑A Σ₁≈Σ₂ (getSchStep step)
 
-εᴳ-simᴸ⋆ zero _ L⊑A (CS.step-∅ l∈P₁ t∈T₁ ¬fork₁ step₁ sch₁ u₁ᵀ u₁ᴾ) L₁.⟨ Σ₁≈Σ₂ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
+εᴳ-simᴸ⋆ zero _ L⊑A (CS.step-∅ l∈P₁ t∈T₁ ¬fork₁ step₁ sch₁ u₁ᵀ u₁ᴾ) L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
     | Σ₂' P., sch' P., Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) l∈P₁ P₁≈P₂
 ... | T₂ P., T₁≈T₂ P., l∈P₂ with memberᵀ-≈ L⊑A t∈T₁ T₁≈T₂
-... | _ P., ⟨ t₁≈t₂ , S₁≈S₂ ⟩ P., t∈T₂ with redex-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , t₁≈t₂ , S₁≈S₂ ⟩ step₁
-... | _ P., L₂.⟨ Γ₁'≈Γ₂' , t₁'≈t₂' , S₁'≈S₂' ⟩  P., step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ L₁.⟨ t₁'≈t₂' , S₁'≈S₂' ⟩
+... | _ P., ⟨ t₁≈t₂ , S₁≈S₂ ⟩ P., t∈T₂ with redex-≈ L⊑A (lift-≈ᴾ Ms₁≈Ms₂ Γ₁≈Γ₂ t₁≈t₂ S₁≈S₂) step₁
+... | _ P., L₂.⟨ Γ₁'≈Γ₂' , t₁'≈t₂' , S₁'≈S₂' ⟩  P., step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ (lift-≈ᵀ t₁'≈t₂' S₁'≈S₂')
 ... | T₂' P., T₁'≈T₂' P., u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
 ... | P₂' P., P₁'≈P₂' P., u₂ᴾ
   = Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , P₁'≈P₂' , Γ₁'≈Γ₂' ⟩ (step-∅ l∈P₂ t∈T₂ (¬fork-≈ t₁≈t₂ ¬fork₁) step₂ sch' u₂ᵀ u₂ᴾ ∷ [])
 
-εᴳ-simᴸ⋆ zero _ L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₂ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
+εᴳ-simᴸ⋆ zero _ L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
     | Σ₂' P., sch' P., Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) l∈P₁ P₁≈P₂
 ... | T₂ P., T₁≈T₂ P., l∈P₂ with memberᵀ-≈ L⊑A t∈T₁ T₁≈T₂
-εᴳ-simᴸ⋆ zero _ L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₂ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
+εᴳ-simᴸ⋆ zero _ L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
 
     -- Fork
     | Σ₂' P., sch' P., Σ₁'≈Σ₂' | T₂ P., T₁≈T₂ P., l∈P₂
@@ -208,7 +203,7 @@ open import Sequential.Graph 𝓛 A
 ... | P₂'' P., P₁''≈P₂'' P., uᴾ₂′
   = Cᴳ _ L₁.⟨ (trans-≈ˢ Σ₁'≈Σ₂' Σ₂'≈Σ₂'') , trans-≈ᴾ P₁''≈P₂'' L₁.⌜ sym (updateᴾ∙ h⋤A uᴾ₂′) ⌝ᴾ , Γ₁'≈Γ₂' ⟩ (fork∙ l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ sch'' ∷ [])
 
-εᴳ-simᴸ⋆ zero _ L⊑A (CS.fork∙ {P₂ = P₁'} l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ sch) L₁.⟨ Σ₁≈Σ₂ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
+εᴳ-simᴸ⋆ zero _ L⊑A (CS.fork∙ {P₂ = P₁'} l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ sch) L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
     | Σ₂' P., sch' P., Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) l∈P₁ P₁≈P₂
 ... | T₂ P., T₁≈T₂ P., l∈P₂ with memberᵀ-≈ L⊑A t∈T₁ T₁≈T₂
 
