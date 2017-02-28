@@ -524,10 +524,14 @@ map-εᴹ : ∀ {ls} -> Memories ls -> Memories ls
 map-εᴹ [] = []
 map-εᴹ (M ∷ Ms) = (εᴹ (_ ⊑? A) M) ∷ (map-εᴹ Ms)
 
+εᵀˢ : ∀ {l τ} -> Dec (l ⊑ A) -> TS∙ l  τ -> TS∙ l τ
+εᵀˢ (yes _) ⟨ t , S ⟩ = ⟨ εᵀ t , εˢ S ⟩
+εᵀˢ (yes _) ∙ = ∙
+εᵀˢ (no _) _ = ∙
+
 -- Erasure for Programs
 ε₁ᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) -> Program l ls τ -> Program l ls τ
-ε₁ᴾ (yes p) ⟨ Ms , Γ , t , S ⟩ = ⟨ map-εᴹ Ms , (map-εᴴ Γ) , (εᵀ t) , (εˢ S) ⟩
-ε₁ᴾ {l} {ls} {τ} (no ¬p) (⟨_,_,_,_⟩ {π = π} Ms Γ t S) = ⟨ (map-εᴹ Ms) , map-εᴴ Γ , ∙ {π = π} , ∙ ⟩
+ε₁ᴾ x ⟨ Ms , Γ , TS ⟩ = ⟨ map-εᴹ Ms , map-εᴴ Γ , εᵀˢ x TS ⟩
 
 writeᴹ∙-≡ : ∀ {H ls} {Ms₁ Ms₂ : Memories ls} {X Y : Memory H} -> H ⋤ A -> H ↦ X ∈ˢ Ms₁ -> Ms₂ ≔ Ms₁ [ H ↦ Y ]ˢ -> (map-εᴹ Ms₁) ≡ (map-εᴹ Ms₂)
 writeᴹ∙-≡ {H} H⋢A here here with H ⊑? A
@@ -536,6 +540,14 @@ writeᴹ∙-≡ H⋢A here here | no ¬p = refl
 writeᴹ∙-≡ H⋢A here (there {u = u} y) = ⊥-elim (∈-not-unique (updateˢ-∈ y) u)
 writeᴹ∙-≡ H⋢A (there {u = u} x) here = ⊥-elim (∈-not-unique (memberˢ-∈ x) u)
 writeᴹ∙-≡ H⋢A (there x) (there y) rewrite writeᴹ∙-≡ H⋢A x y = refl
+
+writeᴴ∙-≡ : ∀ {H ls} {Γ₁ Γ₂ : Heaps ls} {Δ₁ Δ₂ : Heap∙ H} -> H ⋤ A -> H ↦ Δ₁ ∈ᴱ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ Δ₂ ]ᴱ -> (map-εᴴ Γ₁) ≡ (map-εᴴ Γ₂)
+writeᴴ∙-≡ {H} H⋤A here here with H ⊑? A
+... | yes H⊑A = ⊥-elim (H⋤A H⊑A)
+... | no _ = refl
+writeᴴ∙-≡ H⋤A here (there {u = u} uᴴ) = ⊥-elim (∈-not-unique (updateᴱ-∈ uᴴ) u)
+writeᴴ∙-≡ H⋤A (there {u = u} H∈Γ) here = ⊥-elim (∈-not-unique (memberᴱ-∈ H∈Γ) u)
+writeᴴ∙-≡ H⋤A (there H∈Γ) (there uᴴ) rewrite writeᴴ∙-≡ H⋤A H∈Γ uᴴ = refl
 
 memberᴹ : ∀ {l ls} {Ms : Memories ls} {M : Memory l} -> l ⊑ A -> l ↦ M ∈ˢ Ms -> l ↦ M ∈ˢ (map-εᴹ Ms)
 memberᴹ {l} l⊑A here with l ⊑? A
@@ -567,7 +579,7 @@ open import Data.Product using (proj₁ ; proj₂)
 ε₁ᴾ-sim (yes p) (Pure l∈Γ step uᴴ) = Pure (memberᴴ p l∈Γ) (ε-sim (yes p) step) (updateᴴ p uᴴ)
 ε₁ᴾ-sim (yes p) (New {H = H} H∈Γ uᴴ) with H ⊑? A
 ε₁ᴾ-sim (yes p₁) (New H∈Γ uᴴ) | yes p = New (memberᴹ p H∈Γ) (updateᴹ p uᴴ)
-ε₁ᴾ-sim (yes p) (New {M = M} {τ∈π = ⟪ τ∈π ⟫} {l⊑h = l⊑h}  H∈Γ uᴴ) | no ¬p
+ε₁ᴾ-sim (yes p) (New {M = M} {τ∈π = ⟪ τ∈π ⟫} {l⊑H = l⊑H}  H∈Γ uᴴ) | no ¬p
   rewrite writeᴹ∙-≡ ¬p H∈Γ uᴴ = New∙
 ε₁ᴾ-sim (yes p) (New∙ {H = H}) with H ⊑? A
 ε₁ᴾ-sim (yes p₁) New∙ | yes p = New∙
@@ -593,30 +605,22 @@ open import Data.Product using (proj₁ ; proj₂)
 ε₁ᴾ-sim (yes l⊑A) (DeepDup₂ {L⊑l = L⊑l} τ∈π L∈Γ t∈Δ l∈Γ uᴱ)
   = DeepDup₂ {L⊑l = L⊑l} τ∈π (memberᴴ (trans-⊑ L⊑l l⊑A) L∈Γ) (memberᴱ τ∈π t∈Δ) (memberᴴ l⊑A l∈Γ) (updateᴴ l⊑A uᴱ)
 ε₁ᴾ-sim (yes p) Hole = Hole
-ε₁ᴾ-sim (no ¬p) (Pure l∈Γ step uᴴ) = {!Hole!}
-ε₁ᴾ-sim (no ¬p) (New H∈Γ uᴴ) = {!!}
-ε₁ᴾ-sim (no ¬p) New∙ = {!!}
-ε₁ᴾ-sim (no ¬p) (Write₂ H∈Γ uᴹ uˢ) = {!!}
-ε₁ᴾ-sim (no ¬p) (Writeᴰ₂ H∈Γ uᴹ uˢ) = {!!}
-ε₁ᴾ-sim (no ¬p) Write∙₂ = {!!}
-ε₁ᴾ-sim (no ¬p) (Read₂ l∈Γ n∈M) = {!!}
-ε₁ᴾ-sim (no ¬p) (Readᴰ₂ L∈Γ n∈M) = {!!}
-ε₁ᴾ-sim (no ¬p) (DeepDup₁ ¬var l∈Γ uᴱ) = {!!}
-ε₁ᴾ-sim (no ¬p) (DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = {!!}
-ε₁ᴾ-sim (no ¬p) Hole = Hole
+ε₁ᴾ-sim (no l⋤A) (Pure l∈Γ step uᴴ) rewrite writeᴴ∙-≡ l⋤A l∈Γ uᴴ = Hole
+ε₁ᴾ-sim (no H⋤A) (New {l⊑H = l⊑H} H∈Γ uᴴ) rewrite writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uᴴ = Hole
+ε₁ᴾ-sim (no l⋤A) New∙ = Hole
+ε₁ᴾ-sim (no H⋤A) (Write₂ {l⊑H = l⊑H} H∈Γ uᴹ uˢ) rewrite writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uˢ = Hole
+ε₁ᴾ-sim (no H⋤A) (Writeᴰ₂ {l⊑H = l⊑H} H∈Γ uᴹ uˢ) rewrite writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uˢ = Hole
+ε₁ᴾ-sim (no l⋤A) Write∙₂ = Hole
+ε₁ᴾ-sim (no l⋤A) (Read₂ l∈Γ n∈M) = Hole
+ε₁ᴾ-sim (no l⋤A) (Readᴰ₂ L∈Γ n∈M) = Hole
+ε₁ᴾ-sim (no l⋤A) (DeepDup₁ ¬var l∈Γ uᴱ) with writeᴴ∙-≡ l⋤A l∈Γ uᴱ
+... | eq rewrite eq = Hole
+ε₁ᴾ-sim (no l⋤A) (DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) with writeᴴ∙-≡ l⋤A l∈Γ uᴱ
+... | eq rewrite eq = Hole
+ε₁ᴾ-sim (no l⋤A) Hole = Hole
 
 εᴾ : ∀ {l ls τ} -> Program l ls τ -> Program l ls τ
 εᴾ {l} = ε₁ᴾ (l ⊑? A)
 
 εᴾ-sim : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} -> p₁ ⟼ p₂ -> εᴾ p₁ ⟼ εᴾ p₂
 εᴾ-sim {l} = ε₁ᴾ-sim (l ⊑? A)
-
---------------------------------------------------------------------------------
-
-writeᴴ∙-≡ : ∀ {H ls} {Γ₁ Γ₂ : Heaps ls} {Δ₁ Δ₂ : Heap∙ H} -> H ⋤ A -> H ↦ Δ₁ ∈ᴱ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ Δ₂ ]ᴱ -> (map-εᴴ Γ₁) ≡ (map-εᴴ Γ₂)
-writeᴴ∙-≡ {H} H⋤A here here with H ⊑? A
-... | yes H⊑A = ⊥-elim (H⋤A H⊑A)
-... | no _ = refl
-writeᴴ∙-≡ H⋤A here (there {u = u} uᴴ) = ⊥-elim (∈-not-unique (updateᴱ-∈ uᴴ) u)
-writeᴴ∙-≡ H⋤A (there {u = u} H∈Γ) here = ⊥-elim (∈-not-unique (memberᴱ-∈ H∈Γ) u)
-writeᴴ∙-≡ H⋤A (there H∈Γ) (there uᴴ) rewrite writeᴴ∙-≡ H⋤A H∈Γ uᴴ = refl

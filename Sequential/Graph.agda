@@ -402,22 +402,32 @@ unlift-map-εᴹ : ∀ {ls} {Ms Ms' : Memories ls} -> EraseMapᴹ Ms Ms' -> Ms' 
 unlift-map-εᴹ [] = refl
 unlift-map-εᴹ {l ∷ ls} (M ∷ Ms) rewrite unlift-εᴹ M | unlift-map-εᴹ Ms = refl
 
+--------------------------------------------------------------------------------
+
+data Eraseᵀˢ {l τ} : Dec (l ⊑ A) -> TS∙ l τ -> TS∙ l τ -> Set where
+  ⟨_,_⟩ : ∀ {π τ'} {l⊑A : l ⊑ A} {t₁ t₂ : Term π τ'} {S₁ S₂ : Stack _ _ _ _} ->
+            Eraseᵀ t₁ t₂ -> Eraseˢ S₁ S₂ -> Eraseᵀˢ (yes l⊑A) ⟨ t₁ , S₁ ⟩ ⟨ t₂ , S₂ ⟩
+  ∙ᴸ : ∀ {l⊑A : l ⊑ A} -> Eraseᵀˢ (yes l⊑A) ∙ ∙
+  ∙ : ∀ {l⋤A : l ⋤ A} {TS} -> Eraseᵀˢ (no l⋤A) TS ∙
+
+lift-εᵀˢ : ∀ {l τ} (x : Dec (l ⊑ A)) -> (Ts : TS∙ l τ) -> Eraseᵀˢ x Ts (εᵀˢ x Ts)
+lift-εᵀˢ (yes p) S.⟨ t , S ⟩ = ⟨ lift-εᵀ t , lift-εˢ S ⟩
+lift-εᵀˢ (yes p) S.∙ = ∙ᴸ
+lift-εᵀˢ (no ¬p) Ts = ∙
+
+unlift-εᵀˢ : ∀ {l τ} {x : Dec (l ⊑ A)} {Ts Ts' : TS∙ l τ}-> Eraseᵀˢ x Ts Ts' -> Ts' ≡ (εᵀˢ x Ts)
+unlift-εᵀˢ ⟨ e₁ , e₂ ⟩ rewrite unlift-εᵀ e₁ | unlift-εˢ e₂ = refl
+unlift-εᵀˢ ∙ᴸ = refl
+unlift-εᵀˢ ∙ = refl
 
 --------------------------------------------------------------------------------
 
-data Eraseᴾ {l ls τ} : Dec (l ⊑ A) -> Program l ls τ -> Program l ls τ -> Set where
-  ⟨_,_,_,_⟩ : ∀ {τ' π Γ Γ' Ms Ms'} {S S' : Stack l π τ' τ} {t t' : Term π τ'} {l⊑A : l ⊑ A} ->
-              EraseMapᴹ Ms Ms' -> EraseMapᴴ Γ Γ' -> Eraseᵀ t t' -> Eraseˢ S S' -> Eraseᴾ (yes l⊑A) ⟨ Ms , Γ , t , S ⟩ ⟨ Ms' , Γ' , t' , S' ⟩
-  ∙ : ∀ {p} {l⋤A : l ⋤ A} -> Eraseᴾ (no l⋤A) p ∙
-  ∙ᴸ : ∀ {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) ∙ ∙
+data Eraseᴾ {l ls τ} (x : Dec (l ⊑ A)) (p₁ p₂ : Program l ls τ) : Set where
+  ⟨_,_,_⟩ : EraseMapᴹ (Ms p₁) (Ms p₂) -> EraseMapᴴ (Γ p₁) (Γ p₂) -> Eraseᵀˢ x (TS p₁) (TS p₂) -> Eraseᴾ x p₁ p₂
 
 lift-εᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) (p : Program l ls τ) -> Eraseᴾ x p (ε₁ᴾ x p)
-lift-εᴾ (yes p) S.⟨ Ms , Γ , t , S ⟩ = ⟨ lift-map-εᴹ Ms , (lift-map-εᴴ Γ) , (lift-εᵀ t) , (lift-εˢ S) ⟩
-lift-εᴾ (yes p) S.∙ = ∙ᴸ
-lift-εᴾ (no ¬p) p = ∙
+lift-εᴾ x ⟨ Ms , Γ , TS ⟩ = ⟨ lift-map-εᴹ Ms , (lift-map-εᴴ Γ) , lift-εᵀˢ x TS ⟩
 
 unlift-εᴾ : ∀ {l ls τ} {p p' : Program l ls τ} {x : Dec (l ⊑ A)} -> Eraseᴾ x p p' -> p' ≡ ε₁ᴾ x p
-unlift-εᴾ ⟨ Ms , Γ , t , S ⟩
-  rewrite unlift-map-εᴹ Ms | unlift-map-εᴴ Γ | unlift-εᵀ t | unlift-εˢ S = refl
-unlift-εᴾ ∙ = refl
-unlift-εᴾ ∙ᴸ = refl
+unlift-εᴾ ⟨ Ms , Γ , TS ⟩
+  rewrite unlift-map-εᴹ Ms | unlift-map-εᴴ Γ | unlift-εᵀˢ TS  = refl

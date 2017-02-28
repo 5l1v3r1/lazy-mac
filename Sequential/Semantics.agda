@@ -107,34 +107,34 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
          -> (l∈Γ : l ↦ ⟨ Δ₁ ⟩ ∈ᴱ Γ)
          -> (step : ⟨ Δ₁ , t₁ , S₁ ⟩ ⇝ ⟨ Δ₂ , t₂ , S₂ ⟩)
          -> (uᴴ : Γ' ≔ Γ [ l ↦  ⟨ Δ₂ ⟩ ]ᴱ)
-         -> ⟨ Ms , Γ , t₁ , S₁ ⟩ ⟼ ⟨ Ms , Γ' , t₂ , S₂ ⟩
+         -> ⟨ Ms , Γ , ⟨ t₁ , S₁ ⟩ ⟩ ⟼ ⟨ Ms , Γ' , ⟨ t₂ , S₂ ⟩ ⟩
 
    -- We have to write the term in the memory segment labeled as the reference (H)
    -- so that it can be correctly read by threads labeled with H or more.
    -- Note that if the current thread can also read the reference, then l ≡ H and we
    -- are still writing in the right memory.
-  New : ∀ {Ms Ms' Γ τ τ' H} {π : Context} {M : Memory H} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ l ⟩ᴿ π} {l⊑h : l ⊑ H}
+  New : ∀ {Ms Ms' Γ τ τ' H} {π : Context} {M : Memory H} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ l ⟩ᴿ π} {l⊑H : l ⊑ H}
          -> (H∈Γ : H ↦  M ∈ˢ Ms)
-         -> (uᴴ : Ms' ≔ Ms [ H ↦ newᴹ ∥ l⊑h , τ∈π ∥ M ]ˢ ) ->
-         ⟨ Ms , Γ , new {π = π} l⊑h (Var τ∈π) , S ⟩ ⟼ ⟨ Ms' , Γ , Return l (Res {π = π} H #[ lengthᴹ M ]) , S ⟩
+         -> (uᴴ : Ms' ≔ Ms [ H ↦ newᴹ ∥ l⊑H , τ∈π ∥ M ]ˢ ) ->
+         ⟨ Ms , Γ , ⟨ new {π = π} l⊑H (Var τ∈π) , S ⟩ ⟩ ⟼ ⟨ Ms' , Γ , ⟨ Return l (Res {π = π} H #[ lengthᴹ M ]) , S ⟩ ⟩
 
-  New∙ : ∀ {Ms Γ τ τ' H} {π : Context} {S : Stack l π _ τ'} {l⊑h : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
-         ⟨ Ms , Γ , new∙ l⊑h (Var τ∈π) , S ⟩ ⟼ ⟨ Ms , Γ , Return l (Res {π = π} H ∙) , S ⟩
+  New∙ : ∀ {Ms Γ τ τ' H} {π : Context} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
+         ⟨ Ms , Γ , ⟨ new∙ l⊑H (Var τ∈π) , S ⟩ ⟩ ⟼ ⟨ Ms , Γ , ⟨ Return l (Res {π = π} H ∙) , S ⟩ ⟩
 
   Write₂ : ∀ {Ms Ms' Γ τ τ' n π H} {M M' : Memory H} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
           -> (H∈Γ : H ↦ M  ∈ˢ Ms)
           -> (uᴹ : M' ≔ M [ n ↦ ∥ l⊑H , τ∈π ∥ ]ᴹ)
           -> (uˢ : Ms' ≔ Ms [ H ↦ M' ]ˢ) ->
-         ⟨ Ms , Γ , Res {π = π} H #[ n ] , write l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Ms' , Γ , Return {π = π} l （） , S ⟩
+         ⟨ Ms , Γ , ⟨ Res {π = π} H #[ n ] , write l⊑H τ∈π ∷ S ⟩ ⟩ ⟼ ⟨ Ms' , Γ , ⟨ Return {π = π} l （） , S ⟩ ⟩
 
   Writeᴰ₂ : ∀ {Ms Ms' Γ τ τ' n π H} {M M' : Memory H} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
           -> (H∈Γ : H ↦ M  ∈ˢ Ms)
           -> (uᴹ : M' ≔ M [ n ↦ ∥ l⊑H , τ∈π ∥ ]ᴹ)
           -> (uˢ : Ms' ≔ Ms [ H ↦ M' ]ˢ) ->
-         ⟨ Ms , Γ , Res {π = π} H #[ n ]ᴰ , write l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Ms' , Γ , Return {π = π} l （） , S ⟩
+         ⟨ Ms , Γ , ⟨ Res {π = π} H #[ n ]ᴰ , write l⊑H τ∈π ∷ S ⟩ ⟩ ⟼ ⟨ Ms' , Γ , ⟨ Return {π = π} l （） , S ⟩ ⟩
 
   Write∙₂ :  ∀ {Ms Γ τ τ' H} {π : Context} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {t : Term π Addr} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
-            ⟨ Ms , Γ , Res {π = π} H t , write∙ l⊑H τ∈π ∷ S ⟩ ⟼ ⟨ Ms , Γ , Return {π = π} l （） , S ⟩
+            ⟨ Ms , Γ , ⟨ Res {π = π} H t , write∙ l⊑H τ∈π ∷ S ⟩ ⟩ ⟼ ⟨ Ms , Γ , ⟨ Return {π = π} l （） , S ⟩ ⟩
 
   -- If we read without duplicating it must be from the same level, otherwise we are leaking
   -- (We could write this using different L and l and from the inequalities L ⊑ l and l ⊑ L conclude the same,
@@ -142,13 +142,13 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
   Read₂ : ∀ {Ms Γ τ τ' n} {π : Context} {M : Memory l} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
          -> (l∈Γ : l ↦ M ∈ˢ Ms)
          -> (n∈M : n ↦ ∥ refl-⊑ , τ∈π ∥ ∈ᴹ M) ->
-           ⟨ Ms , Γ , Res {π = π} l #[ n ] , read refl-⊑ ∷ S ⟩ ⟼ ⟨ Ms , Γ , Return {π = π} l (Var τ∈π) , S ⟩
+           ⟨ Ms , Γ , ⟨ Res {π = π} l #[ n ] , read refl-⊑ ∷ S ⟩ ⟩ ⟼ ⟨ Ms , Γ , ⟨ Return {π = π} l (Var τ∈π) , S ⟩ ⟩
 
   -- When we read a reference from a possibly lower level we must deepDup that
   Readᴰ₂ : ∀ {Ms Γ τ τ' n L} {π : Context} {M : Memory L} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ L ⟩ᴿ π} {L⊑l : L ⊑ l}
          -> (L∈Γ : L ↦ M ∈ˢ Ms)
          -> (n∈M : n ↦ ∥ refl-⊑ , τ∈π ∥ ∈ᴹ M) ->
-           ⟨ Ms , Γ , Res {π = π} L #[ n ]ᴰ , read L⊑l ∷ S ⟩ ⟼ ⟨ Ms , Γ , Return {π = π} l (deepDup (Var τ∈π)) , S ⟩
+           ⟨ Ms , Γ , ⟨ Res {π = π} L #[ n ]ᴰ , read L⊑l ∷ S ⟩ ⟩ ⟼ ⟨ Ms , Γ , ⟨ Return {π = π} l (deepDup (Var τ∈π)) , S ⟩ ⟩
 
 
   -- If the argument to deepDup is not a variable we introduce a new fresh variable (similarly to
@@ -157,7 +157,7 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
             -> (¬var : ¬ (IsVar t))
             -> (l∈Γ : l ↦ ⟨ Δ ⟩ ∈ᴱ Γ)
              -> (uᴱ : Γ' ≔ Γ [ l ↦  ⟨ just t ∷ Δ ⟩ ]ᴱ)
-            -> ⟨ Ms , Γ , deepDup t , S ⟩ ⟼ ⟨ Ms , Γ' , deepDup (Var {l = l} ⟪ hereᴿ ⟫) , wkenˢ S (drop refl-⊆) ⟩
+            -> ⟨ Ms , Γ , ⟨ deepDup t , S ⟩ ⟩ ⟼ ⟨ Ms , Γ' , ⟨ deepDup (Var {l = l} ⟪ hereᴿ ⟫) , wkenˢ S (drop refl-⊆) ⟩ ⟩
 
   -- deepDupᵀ t takes care of replacing unguarded free variables with deepDup.
   -- Note that deepDupᵀ (deepDup t) = deepDup t, so also in case of
@@ -169,15 +169,20 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
              -> (t∈Δ : τ∈π ↦ t ∈ᴴ Δᴸ)
              -> (l∈Γ : l ↦ ⟨ Δˡ ⟩ ∈ᴱ Γ)
              -> (uᴱ : Γ' ≔ Γ [ l ↦  ⟨ just (deepDupᵀ t) ∷ Δˡ ⟩ ]ᴱ)
-             -> ⟨ Ms , Γ , deepDup (Var {π = π} τ∈π) , S ⟩ ⟼ ⟨ Ms , Γ' , Var {π = τ ∷ π} {l} ⟪ hereᴿ ⟫ , wkenˢ S (drop refl-⊆) ⟩
+             -> ⟨ Ms , Γ , ⟨ deepDup (Var {π = π} τ∈π) , S ⟩ ⟩ ⟼ ⟨ Ms , Γ' , ⟨ Var {π = τ ∷ π} {l} ⟪ hereᴿ ⟫ , wkenˢ S (drop refl-⊆) ⟩ ⟩
 
-  Hole : ∀ {τ π} {Ms : Memories ls} {Γ : Heaps ls} -> ⟨ Ms , Γ , ∙ {π} {{τ = τ}} , ∙ ⟩ ⟼ ⟨ Ms , Γ , ∙ {π = π} , ∙ ⟩
+  Hole : ∀ {τ} {Ms : Memories ls} {Γ : Heaps ls} -> ⟨ Ms , Γ , ∙ {τ = τ} ⟩ ⟼ ⟨ Ms , Γ , ∙ ⟩
 
 --------------------------------------------------------------------------------
 
+data IsForkTS {l τ} : TS∙ l τ -> Set where
+  isForkTS : ∀ {π τ' S} {t : Term π τ'} -> IsFork t -> IsForkTS ⟨ t , S ⟩
 
-data Doneᴾ {l ls τ} : Program l ls τ -> Set where
-  Done : ∀ {Ms Γ π} {v : Term π τ} -> (isVal : Value v) -> Doneᴾ ⟨ Ms , Γ , v , [] ⟩
+data IsDoneTS {l τ} : TS∙ l τ -> Set where
+  isDoneTS : ∀ {π} {v : Term π τ} -> (isVal : Value v) -> IsDoneTS ⟨ v , [] ⟩
+
+Doneᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
+Doneᴾ p = IsDoneTS (TS p)
 
 data Redexᴾ {l ls τ} (p : Program l ls τ) : Set where
   Step : ∀ {p'} -> p ⟼ p' -> Redexᴾ p
@@ -186,10 +191,10 @@ open import Data.Product using (proj₁ ; proj₂ ; _×_)
 open import Data.Empty
 
 Stuckᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
-Stuckᴾ ⟨ Ms , Γ , t , S ⟩ = (¬ (Doneᴾ ⟨ Ms , Γ , t , S ⟩)) × (¬ (Redexᴾ ⟨ Ms , Γ , t , S ⟩)) × ¬ IsFork t
+Stuckᴾ p = (¬ Doneᴾ p) × (¬ (Redexᴾ p)) × ¬ IsForkTS (TS p)
 
-¬Done⇒¬Val :  ∀ {l π ls τ Ms} {Γ : Heaps ls} {t : Term π τ} -> ¬ (Doneᴾ {l} ⟨ Ms , Γ , t , [] ⟩) -> ¬ Value t
-¬Done⇒¬Val x v = ⊥-elim (x (Done v))
+-- ¬Done⇒¬Val :  ∀ {l π ls τ Ms} {Γ : Heaps ls} {t : Term π τ} -> ¬ (Doneᴾ {l} ⟨ Ms , Γ , t , [] ⟩) -> ¬ Value t
+-- ¬Done⇒¬Val x v = ⊥-elim (x (Done v))
 
 data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
   isD :  Doneᴾ p -> Stateᴾ p
@@ -200,28 +205,28 @@ data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
 -- Lemmas
 
 ⊥-stuckSteps : ∀ {l ls τ} {p₁ : Program l ls τ } -> Stuckᴾ p₁ -> ¬ (Redexᴾ p₁)
-⊥-stuckSteps {p₁ = ⟨ Ms , Γ , t , S ⟩} x y = proj₁ (proj₂ x) y
+⊥-stuckSteps x y = proj₁ (proj₂ x) y
 
-⊥-stuckForks : ∀ {l ls π τ₁ τ₂} {Ms : Memories ls} {Γ : Heaps ls} {t : Term π τ₁} {S : Stack l _ _ τ₂} -> Stuckᴾ ⟨ Ms , Γ , t , S ⟩ -> ¬ (IsFork t)
-⊥-stuckForks stuck = proj₂ (proj₂ stuck)
+⊥-stuckForks : ∀ {l ls π τ₁ τ₂} {Ms : Memories ls} {Γ : Heaps ls} {t : Term π τ₁} {S : Stack l _ _ τ₂} -> Stuckᴾ ⟨ Ms , Γ , ⟨ t , S ⟩ ⟩ -> ¬ (IsFork t)
+⊥-stuckForks stuck x = proj₂ (proj₂ stuck) (isForkTS x)
 
 ⊥-doneSteps : ∀ {l ls τ} {p₁ : Program l ls τ} -> Doneᴾ p₁ -> ¬ (Redexᴾ p₁)
-⊥-doneSteps (Done （）) (Step (Pure l∈Γ () uᴴ))
-⊥-doneSteps (Done True) (Step (Pure l∈Γ () uᴴ))
-⊥-doneSteps (Done False) (Step (Pure l∈Γ () uᴴ))
-⊥-doneSteps (Done (Abs t)) (Step (Pure l∈Γ () uᴴ))
-⊥-doneSteps (Done (Id t)) (Step (Pure l∈Γ () uᴴ))
-⊥-doneSteps (Done (Mac t)) (Step (Pure l∈Γ () uᴴ))
-⊥-doneSteps (Done (Res t)) (Step (Pure l∈Γ () uᴴ))
-⊥-doneSteps (Done #[ n ]) (Step (Pure l∈Γ () uᴴ))
-⊥-doneSteps (Done #[ n ]ᴰ) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (isDoneTS （）) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (isDoneTS True) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (isDoneTS False) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (isDoneTS (Abs t)) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (isDoneTS (Id t)) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (isDoneTS (Mac t)) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (isDoneTS (Res t)) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (isDoneTS #[ n ]) (Step (Pure l∈Γ () uᴴ))
+⊥-doneSteps (isDoneTS #[ n ]ᴰ) (Step (Pure l∈Γ () uᴴ))
 
 ⊥-stuckDone : ∀ {l ls τ} {p : Program l ls τ} -> Stuckᴾ p -> ¬ (Doneᴾ p)
-⊥-stuckDone {p = ⟨ Ms , Γ , t , S ⟩} stuck don = proj₁ stuck don
+⊥-stuckDone stuck don = proj₁ stuck don
 
-⊥-doneForks : ∀ {l ls π τ₁ τ₂} {Ms : Memories ls} {Γ : Heaps ls} {t : Term π τ₁} {S : Stack l _ _ τ₂} -> Doneᴾ ⟨ Ms , Γ , t , S ⟩ -> ¬ (IsFork t)
-⊥-doneForks (Done ()) (Fork p t)
-⊥-doneForks (Done ()) (Fork∙ p t)
+⊥-doneForks : ∀ {l ls π τ₁ τ₂} {Ms : Memories ls} {Γ : Heaps ls} {t : Term π τ₁} {S : Stack l _ _ τ₂} -> Doneᴾ ⟨ Ms , Γ , ⟨ t , S ⟩ ⟩ -> ¬ (IsFork t)
+⊥-doneForks (isDoneTS ()) (Fork p t)
+⊥-doneForks (isDoneTS ()) (Fork∙ p t)
 
 --------------------------------------------------------------------------------
 
@@ -254,7 +259,7 @@ step-⊆ Read₁ = refl-⊆
 
 stepᴾ-⊆ : ∀ {l ls τ τ₁ τ₂ π₁ π₂ Ms₁ Ms₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂}
            {S₁ : Stack l π₁ τ₁ τ} {S₂ : Stack l π₂ τ₂ τ} {Γ₁ Γ₂ : Heaps ls} ->
-           ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩ -> π₁ ⊆ π₂
+           ⟨ Ms₁ , Γ₁ , ⟨ t₁ , S₁ ⟩ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , ⟨ t₂ , S₂ ⟩ ⟩ -> π₁ ⊆ π₂
 stepᴾ-⊆ (Pure l∈Γ step uᴴ) = step-⊆ step
 stepᴾ-⊆ (New H∈Γ uᴴ) = refl-⊆
 stepᴾ-⊆ New∙ = refl-⊆
@@ -265,4 +270,3 @@ stepᴾ-⊆ (Read₂ l∈Γ n∈M) = refl-⊆
 stepᴾ-⊆ (Readᴰ₂ L∈Γ n∈M) = refl-⊆
 stepᴾ-⊆ (DeepDup₁ ¬var l∈Γ uᴱ) = drop refl-⊆
 stepᴾ-⊆ (DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = drop refl-⊆
-stepᴾ-⊆ Hole = refl-⊆

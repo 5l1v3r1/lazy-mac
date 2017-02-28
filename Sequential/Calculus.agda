@@ -357,9 +357,19 @@ data State (l : Label) (τ : Ty) : Set where
   ⟨_,_,_⟩ : ∀ {τ'} {π : Context} -> (Δ : Heap l π) (t : Term π τ') (S : Stack l π τ' τ) -> State l τ
   ∙ : State l τ
 
+-- Term + Stack / ∙
+data TS∙ (l : Label) (τ : Ty) : Set where
+  ⟨_,_⟩ : ∀ {π τ'} -> (t : Term π τ')(S : Stack l π τ' τ) -> TS∙ l τ
+  ∙ : TS∙ l τ
+
 -- Adds labeled memory and heap to a term and stack
-data Program (l : Label) (ls : List Label) (τ : Ty) : Set where
-  ⟨_,_,_,_⟩ : ∀ {π} {τ'} -> (Ms : Memories ls) (Γ : Heaps ls) (t : Term π τ') (S : Stack l π τ' τ) -> Program l ls τ
+record Program (l : Label) (ls : List Label) (τ : Ty) : Set where
+  constructor ⟨_,_,_⟩
+  field Ms : Memories ls
+        Γ : Heaps ls
+        TS : TS∙ l τ
+
+open Program public
 
 --------------------------------------------------------------------------------
 -- DeepDup
