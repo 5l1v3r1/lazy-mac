@@ -527,8 +527,7 @@ map-εᴹ (M ∷ Ms) = (εᴹ (_ ⊑? A) M) ∷ (map-εᴹ Ms)
 -- Erasure for Programs
 ε₁ᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) -> Program l ls τ -> Program l ls τ
 ε₁ᴾ (yes p) ⟨ Ms , Γ , t , S ⟩ = ⟨ map-εᴹ Ms , (map-εᴴ Γ) , (εᵀ t) , (εˢ S) ⟩
-ε₁ᴾ (yes p) ∙ = ∙
-ε₁ᴾ {l} {ls} {τ} (no ¬p) _ = ∙
+ε₁ᴾ {l} {ls} {τ} (no ¬p) (⟨_,_,_,_⟩ {π = π} Ms Γ t S) = ⟨ (map-εᴹ Ms) , map-εᴴ Γ , ∙ {π = π} , ∙ ⟩
 
 writeᴹ∙-≡ : ∀ {H ls} {Ms₁ Ms₂ : Memories ls} {X Y : Memory H} -> H ⋤ A -> H ↦ X ∈ˢ Ms₁ -> Ms₂ ≔ Ms₁ [ H ↦ Y ]ˢ -> (map-εᴹ Ms₁) ≡ (map-εᴹ Ms₂)
 writeᴹ∙-≡ {H} H⋢A here here with H ⊑? A
@@ -594,7 +593,17 @@ open import Data.Product using (proj₁ ; proj₂)
 ε₁ᴾ-sim (yes l⊑A) (DeepDup₂ {L⊑l = L⊑l} τ∈π L∈Γ t∈Δ l∈Γ uᴱ)
   = DeepDup₂ {L⊑l = L⊑l} τ∈π (memberᴴ (trans-⊑ L⊑l l⊑A) L∈Γ) (memberᴱ τ∈π t∈Δ) (memberᴴ l⊑A l∈Γ) (updateᴴ l⊑A uᴱ)
 ε₁ᴾ-sim (yes p) Hole = Hole
-ε₁ᴾ-sim (no ¬p) x = Hole
+ε₁ᴾ-sim (no ¬p) (Pure l∈Γ step uᴴ) = {!Hole!}
+ε₁ᴾ-sim (no ¬p) (New H∈Γ uᴴ) = {!!}
+ε₁ᴾ-sim (no ¬p) New∙ = {!!}
+ε₁ᴾ-sim (no ¬p) (Write₂ H∈Γ uᴹ uˢ) = {!!}
+ε₁ᴾ-sim (no ¬p) (Writeᴰ₂ H∈Γ uᴹ uˢ) = {!!}
+ε₁ᴾ-sim (no ¬p) Write∙₂ = {!!}
+ε₁ᴾ-sim (no ¬p) (Read₂ l∈Γ n∈M) = {!!}
+ε₁ᴾ-sim (no ¬p) (Readᴰ₂ L∈Γ n∈M) = {!!}
+ε₁ᴾ-sim (no ¬p) (DeepDup₁ ¬var l∈Γ uᴱ) = {!!}
+ε₁ᴾ-sim (no ¬p) (DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = {!!}
+ε₁ᴾ-sim (no ¬p) Hole = Hole
 
 εᴾ : ∀ {l ls τ} -> Program l ls τ -> Program l ls τ
 εᴾ {l} = ε₁ᴾ (l ⊑? A)

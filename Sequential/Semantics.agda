@@ -171,7 +171,7 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
              -> (uᴱ : Γ' ≔ Γ [ l ↦  ⟨ just (deepDupᵀ t) ∷ Δˡ ⟩ ]ᴱ)
              -> ⟨ Ms , Γ , deepDup (Var {π = π} τ∈π) , S ⟩ ⟼ ⟨ Ms , Γ' , Var {π = τ ∷ π} {l} ⟪ hereᴿ ⟫ , wkenˢ S (drop refl-⊆) ⟩
 
-  Hole : ∀ {τ} -> ∙ {τ = τ} ⟼ ∙
+  Hole : ∀ {τ π} {Ms : Memories ls} {Γ : Heaps ls} -> ⟨ Ms , Γ , ∙ {π} {{τ = τ}} , ∙ ⟩ ⟼ ⟨ Ms , Γ , ∙ {π = π} , ∙ ⟩
 
 --------------------------------------------------------------------------------
 
@@ -187,7 +187,6 @@ open import Data.Empty
 
 Stuckᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
 Stuckᴾ ⟨ Ms , Γ , t , S ⟩ = (¬ (Doneᴾ ⟨ Ms , Γ , t , S ⟩)) × (¬ (Redexᴾ ⟨ Ms , Γ , t , S ⟩)) × ¬ IsFork t
-Stuckᴾ ∙ = ⊥
 
 ¬Done⇒¬Val :  ∀ {l π ls τ Ms} {Γ : Heaps ls} {t : Term π τ} -> ¬ (Doneᴾ {l} ⟨ Ms , Γ , t , [] ⟩) -> ¬ Value t
 ¬Done⇒¬Val x v = ⊥-elim (x (Done v))
@@ -202,7 +201,6 @@ data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
 
 ⊥-stuckSteps : ∀ {l ls τ} {p₁ : Program l ls τ } -> Stuckᴾ p₁ -> ¬ (Redexᴾ p₁)
 ⊥-stuckSteps {p₁ = ⟨ Ms , Γ , t , S ⟩} x y = proj₁ (proj₂ x) y
-⊥-stuckSteps {p₁ = ∙} x y = x
 
 ⊥-stuckForks : ∀ {l ls π τ₁ τ₂} {Ms : Memories ls} {Γ : Heaps ls} {t : Term π τ₁} {S : Stack l _ _ τ₂} -> Stuckᴾ ⟨ Ms , Γ , t , S ⟩ -> ¬ (IsFork t)
 ⊥-stuckForks stuck = proj₂ (proj₂ stuck)
@@ -220,7 +218,6 @@ data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
 
 ⊥-stuckDone : ∀ {l ls τ} {p : Program l ls τ} -> Stuckᴾ p -> ¬ (Doneᴾ p)
 ⊥-stuckDone {p = ⟨ Ms , Γ , t , S ⟩} stuck don = proj₁ stuck don
-⊥-stuckDone {p = ∙} stuck don = stuck
 
 ⊥-doneForks : ∀ {l ls π τ₁ τ₂} {Ms : Memories ls} {Γ : Heaps ls} {t : Term π τ₁} {S : Stack l _ _ τ₂} -> Doneᴾ ⟨ Ms , Γ , t , S ⟩ -> ¬ (IsFork t)
 ⊥-doneForks (Done ()) (Fork p t)
@@ -268,3 +265,4 @@ stepᴾ-⊆ (Read₂ l∈Γ n∈M) = refl-⊆
 stepᴾ-⊆ (Readᴰ₂ L∈Γ n∈M) = refl-⊆
 stepᴾ-⊆ (DeepDup₁ ¬var l∈Γ uᴱ) = drop refl-⊆
 stepᴾ-⊆ (DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = drop refl-⊆
+stepᴾ-⊆ Hole = refl-⊆

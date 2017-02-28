@@ -360,7 +360,6 @@ data State (l : Label) (τ : Ty) : Set where
 -- Adds labeled memory and heap to a term and stack
 data Program (l : Label) (ls : List Label) (τ : Ty) : Set where
   ⟨_,_,_,_⟩ : ∀ {π} {τ'} -> (Ms : Memories ls) (Γ : Heaps ls) (t : Term π τ') (S : Stack l π τ' τ) -> Program l ls τ
-  ∙ : Program l ls τ
 
 --------------------------------------------------------------------------------
 -- DeepDup
