@@ -21,12 +21,6 @@ open import Data.Maybe as M
 open import Data.Product using (_×_ ; proj₁ ; proj₂)
 import Data.Product as P
 
-_≡ᴱ_ : ∀ {l π} -> Heap l π -> Heap l π -> Set
-_≡ᴱ_ = _≡_
-
-_≅ᴴ_ : ∀ {ls} (H₁ H₂ : Heaps ls) -> Set
-H₁ ≅ᴴ H₂ = map-εᴴ H₁ ≡ map-εᴴ H₂
-
 --------------------------------------------------------------------------------
 
 _≅ᵀ_ : ∀ {π τ} (t₁ t₂ : Term π τ) -> Set
@@ -93,88 +87,43 @@ mt₁ ≅ᴹᵀ mt₂ = M.map εᵀ mt₁ ≡ M.map εᵀ mt₂
 
 --------------------------------------------------------------------------------
 
--- data _map-≈ᵀ_ {l π} (Δ₁ Δ₂ : Heap l π) : Set where
---   map-Kᵀ : ∀ {Δᴱ : Heap l π} -> EraseMapᵀ Δ₁ Δᴱ -> EraseMapᵀ Δ₂ Δᴱ -> Δ₁ map-≈ᵀ Δ₂
-
--- _≅ᴱ_ : ∀ {π l} -> (Δ₁ Δ₂ : Heap l π) -> Set
--- Δ₁ ≅ᴱ Δ₂ = map-εᵀ Δ₁ ≡ map-εᵀ Δ₂
-
--- ⌜_⌝ᴱ : ∀ {l π} {Δ₁ Δ₂ : Heap l π} -> Δ₁ ≅ᴱ Δ₂ -> Δ₁ map-≈ᵀ Δ₂
--- ⌜_⌝ᴱ {Δ₁ = SC.[]} {SC.[]} refl = []
--- ⌜_⌝ᴱ {Δ₁ = SC.[]} {SC.∙} ()
--- ⌜_⌝ᴱ {Δ₁ = t SC.∷ Δ₁} {t₁ SC.∷ Δ₂} eq =  ⌜ (proj₁ (split eq)) ⌝ᴹᵀ ∷ ⌜ proj₂ (split eq) ⌝ᴱ
---   where split : ∀ {l π τ} {mt₁ mt₂ : Maybe (Term π τ)} {Δ₁ Δ₂ : Heap l π} -> (mt₁ ∷ Δ₁) ≡ᴱ (mt₂ ∷ Δ₂) -> mt₁ ≡ mt₂ × Δ₁ ≡ Δ₂
---         split refl = refl P., refl
--- ⌜_⌝ᴱ {Δ₁ = t SC.∷ Δ₁} {SC.∙} ()
--- ⌜_⌝ᴱ {Δ₁ = SC.∙} {SC.[]} ()
--- ⌜_⌝ᴱ {Δ₁ = SC.∙} {t SC.∷ Δ₂} ()
--- ⌜_⌝ᴱ {Δ₁ = SC.∙} {SC.∙} refl = ∙
-
--- ⌞_⌟ᴱ : ∀ {l π} {Δ₁ Δ₂ : Heap l π} -> Δ₁ map-≈ᵀ Δ₂ -> Δ₁ ≅ᴱ Δ₂
--- ⌞ [] ⌟ᴱ = refl
--- ⌞ nothing ∷ eq ⌟ᴱ rewrite  ⌞ eq ⌟ᴱ = refl
--- ⌞ just x ∷ eq ⌟ᴱ rewrite ⌞ x ⌟ᵀ | ⌞ eq ⌟ᴱ  = refl
--- ⌞ ∙ ⌟ᴱ = refl
-
---------------------------------------------------------------------------------
+-- TODO remove?
 
 data _≈ᴴ⟨_⟩_ {l π} (Δ₁ : Heap l π) (x : Dec (l ⊑ A)) (Δ₂ : Heap l π) : Set where
   Kᴴ : ∀ {Δᴱ : Heap l π} -> Eraseᴴ x Δ₁ Δᴱ -> Eraseᴴ x Δ₂ Δᴱ -> Δ₁ ≈ᴴ⟨ x ⟩ Δ₂
 
--- ⟨_,_⟩ : ∀ {π} {l⊑A : l ⊑ A} {Δ₁ Δ₂ : Heap l π} -> (M : Memory l) -> Δ₁ map-≈ᵀ Δ₂ -> ⟨ M , Δ₁ ⟩ ≈ᴴ⟨ yes l⊑A ⟩ ⟨ M , Δ₂ ⟩
---   ∙ᴸ : {l⊑A : l ⊑ A} -> ∙ ≈ᴴ⟨ yes l⊑A ⟩ ∙
---   ∙ : ∀ {H₁ H₂ : Heap l} {l⋤A : l ⋤ A} -> H₁ ≈ᴴ⟨ no l⋤A ⟩ H₂
+--------------------------------------------------------------------------------
+-- Structural low-equivalence for Heaps
 
+_map-≅ᴴ_ : ∀ {ls} (Γ₁ Γ₂ : Heaps ls) -> Set
+Γ₁ map-≅ᴴ Γ₂ = map-εᴴ Γ₁ ≡ map-εᴴ Γ₂
 
--- data _≈ᴹ⟨_⟩_ {l} : Heap l -> Dec (l ⊑ A) -> Heap l -> Set where
---   ⟨_,_⟩ : ∀ {π} {l⊑A : l ⊑ A} {Δ₁ Δ₂ : Heap l π} -> (M : Memory l) -> Δ₁ map-≈ᵀ Δ₂ -> ⟨ M , Δ₁ ⟩ ≈ᴹ⟨ yes l⊑A ⟩ ⟨ M , Δ₂ ⟩
---   ∙ᴸ : {l⊑A : l ⊑ A} -> ∙ ≈ᴹ⟨ yes l⊑A ⟩ ∙
---   ∙ : ∀ {H₁ H₂ : Heap l} {l⋤A : l ⋤ A} -> H₁ ≈ᴹ⟨ no l⋤A ⟩ H₂
+data _map-≈ᴴ_ {ls} (Γ₁ Γ₂ : Heaps ls) : Set where
+  K-mapᴴ : ∀ {Γᴱ : Heaps ls} -> EraseMapᴴ Γ₁ Γᴱ -> EraseMapᴴ Γ₂ Γᴱ -> Γ₁ map-≈ᴴ Γ₂
 
+map-⌞_⌟ᴴ : ∀ {ls} {Γ₁ Γ₂ : Heaps ls} -> Γ₁ map-≈ᴴ Γ₂ -> Γ₁ map-≅ᴴ Γ₂
+map-⌞ K-mapᴴ e₁ e₂ ⌟ᴴ rewrite unlift-map-εᴴ e₁ | unlift-map-εᴴ e₂ = refl
+
+map-⌜_⌝ᴴ : ∀ {ls} {Γ₁ Γ₂ : Heaps ls} -> Γ₁ map-≅ᴴ Γ₂ -> Γ₁ map-≈ᴴ Γ₂
+map-⌜_⌝ᴴ {Γ₁ = Γ₁} {Γ₂} eq with lift-map-εᴴ Γ₁ | lift-map-εᴴ Γ₂
+... | e₁ | e₂ rewrite eq = K-mapᴴ e₁ e₂
 
 --------------------------------------------------------------------------------
 
--- -- Structural low-equivalence for Heaps
--- data _≈ᴴ_ : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
---   nil : [] ≈ᴴ []
---   cons : ∀ {ls} {l} {u : Unique l ls} {Γ₁ Γ₂ : Heaps ls} {H₁ H₂ : Heap l} (x : Dec (l ⊑ A)) ->
---                H₁ ≈ˣ⟨ x ⟩ H₂ -> Γ₁ ≈ᴴ Γ₂ -> (_∷_ {{u}} H₁ Γ₁) ≈ᴴ (_∷_ {{u}} H₂ Γ₂)
+_map-≅ᴹ_ : ∀ {ls} (Ms₁ Ms₂ : Memories ls) -> Set
+Ms₁ map-≅ᴹ Ms₂ = map-εᴹ Ms₁ ≡ map-εᴹ Ms₂
 
+data _map-≈ᴹ_ {ls} (Ms₁ Ms₂ : Memories ls) : Set where
+  K-mapᴹ : ∀ {Msᴱ : Memories ls} -> EraseMapᴹ Ms₁ Msᴱ -> EraseMapᴹ Ms₂ Msᴱ -> Ms₁ map-≈ᴹ Ms₂
 
--- split : ∀ {ls} {l} {u₁ u₂ : Unique l ls} {Γ₁ Γ₂ : Heaps ls} {H₁ H₂ : Heap l} ->
---                  _≡_ {_} {Heaps (l ∷ ls)}  (_∷_ {{u₁}} H₁ Γ₁) (_∷_ {{u₂}} H₂ Γ₂ ) -> u₁ ≡ u₂ × H₁ ≡ H₂ × Γ₁ ≡ Γ₂
--- split refl = refl P., refl P., refl
+map-⌞_⌟ᴹ : ∀ {ls} {Ms₁ Ms₂ : Memories ls} -> Ms₁ map-≈ᴹ Ms₂ -> Ms₁ map-≅ᴹ Ms₂
+map-⌞ K-mapᴹ e₁ e₂ ⌟ᴹ rewrite unlift-map-εᴹ e₁ | unlift-map-εᴹ e₂ = refl
 
--- split₁ᴴ : ∀ {l π₁ π₂} {M₁ M₂ : Memory l} {Δ₁ : Heap l π₁} {Δ₂ : Heap l π₂} -> _≡_ {_} {Heap l} ⟨ M₁ , Δ₁ ⟩ ⟨ M₂ , Δ₂ ⟩ -> π₁ ≡ π₂ × M₁ ≡ M₂
--- split₁ᴴ refl = refl P., refl
+map-⌜_⌝ᴹ : ∀ {ls} {Ms₁ Ms₂ : Memories ls} -> Ms₁ map-≅ᴹ Ms₂ -> Ms₁ map-≈ᴹ Ms₂
+map-⌜_⌝ᴹ {Ms₁ = Ms₁} {Ms₂} eq with lift-map-εᴹ Ms₁ | lift-map-εᴹ Ms₂
+... | e₁ | e₂ rewrite eq = K-mapᴹ e₁ e₂
 
--- split₂ᴴ : ∀ {l π} {M₁ M₂ : Memory l} {Δ₁ Δ₂ : Heap l π} -> _≡_ {_} {Heap l} ⟨ M₁ , Δ₁ ⟩ ⟨ M₂ , Δ₂ ⟩ -> Δ₁ ≡ Δ₂
--- split₂ᴴ refl = refl
-
--- aux₂ : ∀ {l} {H₁ H₂ : Heap l} -> (x : Dec (l ⊑ A)) -> SE.εᴹ x H₁ ≡ SE.εᴹ x H₂ -> H₁ ≈ˣ⟨ x ⟩ H₂
--- aux₂ {H₁ = SC.⟨ x , x₁ ⟩} {SC.⟨ x₂ , x₃ ⟩} (yes p) eq with split₁ᴴ eq
--- aux₂ {l} {SC.⟨ M , x₁ ⟩} {SC.⟨ .M , x₃ ⟩} (yes p) eq₁ | refl P., refl = ⟨ M , ⌜ split₂ᴴ eq₁ ⌝ᴱ ⟩
--- aux₂ {H₁ = SC.⟨ x , x₁ ⟩} {SC.∙} (yes p) ()
--- aux₂ {H₁ = SC.∙} {SC.⟨ x , x₁ ⟩} (yes p) ()
--- aux₂ {H₁ = SC.∙} {SC.∙} (yes p) refl = ∙ᴸ
--- aux₂ (no ¬p) eq₁ = ∙
-
--- ⌜_⌝ᴴ : ∀ {ls} {Γ₁ Γ₂ : Heaps ls} -> Γ₁ ≅ᴴ Γ₂ -> Γ₁ ≈ᴴ Γ₂
--- ⌜_⌝ᴴ {Γ₁ = []} {[]} refl = nil
--- ⌜_⌝ᴴ {Γ₁ = H₁ ∷ Γ₁} {H₂ ∷ Γ₂} eq with split eq
--- ... | eq₁ P., eq₂ P., eq₃ rewrite eq₁ = cons (_ ⊑? A) (aux₂ (_ ⊑? A) eq₂) ⌜ eq₃ ⌝ᴴ
-
--- ⌞_⌟ᴴ : ∀ {ls} {Γ₁ Γ₂ : Heaps ls} -> Γ₁ ≈ᴴ Γ₂ -> Γ₁ ≅ᴴ Γ₂
--- ⌞ nil ⌟ᴴ = refl
--- ⌞ cons {l = l}  (yes l⊑A) ⟨ M , x ⟩ eq₂ ⌟ᴴ with l ⊑? A
--- ... | yes p rewrite ⌞ x ⌟ᴱ | ⌞ eq₂ ⌟ᴴ = refl
--- ... | no ¬p = ⊥-elim (¬p l⊑A)
--- ⌞ cons ._ ∙ᴸ eq₂ ⌟ᴴ rewrite ⌞ eq₂ ⌟ᴴ = refl
--- ⌞ cons {l = l} (no _) ∙ eq₂ ⌟ᴴ rewrite ⌞ eq₂ ⌟ᴴ with l ⊑? A
--- ⌞ cons (no l⋤A) ∙ eq₂ ⌟ᴴ | yes p = ⊥-elim (l⋤A p)
--- ⌞ cons (no _) ∙ eq₂ ⌟ᴴ | no ¬p = refl
-
--- --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 
 _≅ᴾ⟨_⟩_ : ∀ {l ls τ} -> Program l ls τ -> Dec (l ⊑ A) -> Program l ls τ -> Set
 p₁ ≅ᴾ⟨ x ⟩ p₂ = ε₁ᴾ x p₁ ≡ ε₁ᴾ x p₂
