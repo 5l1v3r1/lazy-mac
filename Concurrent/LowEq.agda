@@ -170,6 +170,20 @@ trans-≈ᴳ x y = ⌜ trans ⌞ x ⌟ᴳ ⌞ y ⌟ᴳ ⌝ᴳ
 
 --------------------------------------------------------------------------------
 
+-- Lifts annotations in the scheduler to configurations
+data _≈ᴳ-⟨_,_⟩_ {ls} (g₁ : Global ls) (n₁ : ℕ) (n₂ : ℕ) (g₂ : Global ls) : Set where
+  ⟨_,_,_,_⟩ : (Σ₁≈Σ₂ : (Σ g₁) ≈ˢ-⟨ n₁ , n₂ ⟩ (Σ g₂)) (Ms₁≈Ms₂ : (Ms g₁) map-≈ᴹ (Ms g₂))
+              (Γ₁≈Γ₂ : (Γ g₁) map-≈ᴴ (Γ g₂)) (P₁≈P₂ : (P g₁) map-≈ᴾ (P g₂)) -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂
+
+
+alignᴳ : ∀ {ls} {g₁ g₂ : Global ls} -> (g₁≈g₂ : g₁ ≈ᴳ g₂) -> g₁ ≈ᴳ-⟨ offset₁ (Σ₁≈Σ₂ g₁≈g₂) , offset₂ (Σ₁≈Σ₂ g₁≈g₂) ⟩ g₂
+alignᴳ ⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = ⟨ (align Σ₁≈Σ₂) , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
+
+forgetᴳ : ∀ {ls n₁ n₂} {g₁ g₂ : Global ls} -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> g₁ ≈ᴳ g₂
+forgetᴳ ⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = ⟨ (forget Σ₁≈Σ₂) , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
+
+--------------------------------------------------------------------------------
+
 -- TODO move to Concurrent.LowEq ?
 
 open import Function

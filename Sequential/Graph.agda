@@ -223,6 +223,11 @@ val₁ᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Value t -> Value
 val₁ᴱ e val with εᵀ-Val val
 ... | val' rewrite unlift-εᵀ e = val'
 
+forkᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> IsFork t' -> IsFork t
+forkᴱ (fork p h⊑A e) (S.Fork .p t₁) = S.Fork p _
+forkᴱ (fork' p h⋤A e) (S.Fork∙ .p t₁) = S.Fork p _
+forkᴱ (fork∙ p e) (S.Fork∙ .p t₁) = S.Fork∙ p _
+
 -- ε¬fork : ∀ {π τ l} {t : Term π (Mac l τ)} -> ¬ (IsFork t) -> ¬ (IsFork (εᵀ t))
 -- ε¬fork ¬fork ¬fork-ε = {!aux!}
 --   where aux : ∀ {π τ l} {t t' : Term π (Mac l τ)} -> Eraseᵀ t t' -> ¬ (IsFork t) -> ¬ (IsFork t')

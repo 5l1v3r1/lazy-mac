@@ -4,7 +4,8 @@ module Sequential.LowEq (𝓛 : L.Lattice) (A : L.Label 𝓛) where
 
 open import Types 𝓛
 open import Sequential.Erasure 𝓛 A as SE
-open import Sequential.Graph 𝓛 A
+import Sequential.Graph as G
+open G 𝓛 A
 
 --------------------------------------------------------------------------------
 -- Temporarily side-step bug #2245
@@ -173,7 +174,8 @@ p₁ ≅ᴾ p₂ = p₁ ≅ᴾ⟨ (_ ⊑? A) ⟩ p₂
 
 --------------------------------------------------------------------------------
 
-open import Sequential.Semantics 𝓛
+import Sequential.Semantics as SS
+open SS 𝓛
 
 val-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> Value t₁ -> Value t₂
 val-≈ ⟨ e₁ , e₂ ⟩ val = valᴱ e₂ (val₁ᴱ e₁ val)
@@ -202,6 +204,9 @@ postulate stuck-≈ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (l⊑A : l ⊑
 ¬fork-≈ ⟨ ∙ , () ⟩ ¬fork₁ (SC.Fork p t)
 ¬fork-≈ ⟨ fork' p h⋤A e₁ , fork∙ .p e₂ ⟩ ¬fork₁ (SC.Fork∙ .p t₁) = ¬fork₁ (SC.Fork p _)
 ¬fork-≈ ⟨ fork∙ p e₁ , fork∙ .p e₂ ⟩ ¬fork₁ (SC.Fork∙ .p t₁) = ¬fork₁ (SC.Fork∙ p _)
+
+¬IsForkTS-≈ : ∀ {τ l} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> ¬ (IsForkTS Ts₁) -> ¬ (IsForkTS Ts₂)
+¬IsForkTS-≈ (Kᵀˢ G.⟨ e₁ , e₂ ⟩ G.⟨ e₁' , e₂' ⟩) ¬fork (isForkTS isF) = ¬fork-≈ ⟨ e₁ , e₁' ⟩ (¬IsForkTs¬IsFork ¬fork) isF
 
 open import Data.Product
 
