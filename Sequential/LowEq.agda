@@ -170,3 +170,42 @@ record _≈ᴾ⟨_⟩_ {l ls τ} (p₁ : Program l ls τ) (x : Dec (l ⊑ A)) (p
 
 _≅ᴾ_ : ∀ {l ls τ} -> Program l ls τ -> Program l ls τ -> Set
 p₁ ≅ᴾ p₂ = p₁ ≅ᴾ⟨ (_ ⊑? A) ⟩ p₂
+
+--------------------------------------------------------------------------------
+
+open import Sequential.Semantics 𝓛
+
+val-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> Value t₁ -> Value t₂
+val-≈ ⟨ e₁ , e₂ ⟩ val = valᴱ e₂ (val₁ᴱ e₁ val)
+
+-- TODO can this be proven using Sequential.Lemmas ?
+postulate stuck-≈ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (l⊑A : l ⊑ A) -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Stuckᴾ p₁ -> Stuckᴾ p₂
+-- stuck-≈ l⊑A eq stuck₁ = {!!}
+
+¬fork-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> ¬ (IsFork t₁) -> ¬ (IsFork t₂)
+¬fork-≈ ⟨ unId e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
+¬fork-≈ ⟨ Var τ∈π , () ⟩ ¬fork₁ (SC.Fork p t)
+¬fork-≈ ⟨ App e₂ e₁ , () ⟩ ¬fork₁ (SC.Fork p t)
+¬fork-≈ ⟨ If e₁ Then e₂ Else e₃ , () ⟩ ¬fork₁ (SC.Fork p t)
+¬fork-≈ ⟨ Return e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
+¬fork-≈ ⟨ e₁ >>= e₂ , () ⟩ ¬fork₁ (SC.Fork p t)
+¬fork-≈ ⟨ Mac e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
+¬fork-≈ ⟨ unlabel l⊑h e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
+¬fork-≈ ⟨ read l⊑h e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
+¬fork-≈ ⟨ write l⊑h h⊑A e₁ e₂ , () ⟩ ¬fork₁ (SC.Fork p t)
+¬fork-≈ ⟨ write' l⊑h h⋤A e₁ e₂ , () ⟩ ¬fork₁ (SC.Fork p t)
+¬fork-≈ ⟨ write∙ l⊑h e₁ e₂ , () ⟩ ¬fork₁ (SC.Fork p t)
+¬fork-≈ ⟨ fork l⊑h h⊑A e₁ , fork .l⊑h h⊑A₁ e₂ ⟩ ¬fork₁ (SC.Fork .l⊑h t₁) = ¬fork₁ (SC.Fork l⊑h _)
+¬fork-≈ ⟨ fork' l⊑h h⋤A e₁ , fork' .l⊑h h⋤A₁ e₂ ⟩ ¬fork₁ (SC.Fork .l⊑h t₁) = ¬fork₁ (SC.Fork l⊑h _)
+¬fork-≈ ⟨ fork∙ l⊑h e₁ , fork' .l⊑h h⋤A e₂ ⟩ ¬fork₁ (SC.Fork .l⊑h t₁) = ¬fork₁ (SC.Fork∙ l⊑h _)
+¬fork-≈ ⟨ deepDup e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
+¬fork-≈ ⟨ ∙ , () ⟩ ¬fork₁ (SC.Fork p t)
+¬fork-≈ ⟨ fork' p h⋤A e₁ , fork∙ .p e₂ ⟩ ¬fork₁ (SC.Fork∙ .p t₁) = ¬fork₁ (SC.Fork p _)
+¬fork-≈ ⟨ fork∙ p e₁ , fork∙ .p e₂ ⟩ ¬fork₁ (SC.Fork∙ .p t₁) = ¬fork₁ (SC.Fork∙ p _)
+
+open import Data.Product
+
+-- TODO can this be proven using Sequential.Lemmas ?
+postulate redex-≈ : ∀ {l ls τ} {p₁ p₁' p₂ : Program l ls τ} -> (l⊑A : l ⊑ A) -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> p₁ ⟼ p₁' ->
+            ∃ (λ p₂' -> (p₁' ≈ᴾ⟨ yes l⊑A ⟩ p₂') × (p₂ ⟼ p₂'))
+-- redex-≈ = {!!}
