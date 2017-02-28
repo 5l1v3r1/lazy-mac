@@ -27,9 +27,9 @@ pini eq s₁ s₂ = aux eq (εᴾ-sim s₁) (εᴾ-sim s₂)
         aux refl x y = determinismᴾ x y
 
 -- Simulation of low-step (shows that we maintain the program structure)
-stepᴸ : ∀ {ls π₁ π₂ τ l τ₁ τ₂ Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack l _ _ τ} {S₂ : Stack l _ _ τ}
-             -> l ⊑ A -> ⟨ Ms₁ , Γ₁ , ⟨ t₁ , S₁ ⟩ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , ⟨ t₂ , S₂ ⟩ ⟩ ->
-                ⟨ map-εᴹ Ms₁ , map-εᴴ Γ₁ , ⟨ εᵀ t₁ , εˢ S₁ ⟩ ⟩ ⟼ ⟨ map-εᴹ Ms₂ , map-εᴴ Γ₂ , ⟨ εᵀ t₂ , εˢ S₂ ⟩ ⟩
+stepᴸ : ∀ {ls τ l Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {Ts₁ Ts₂ : TS∙ l τ}
+             -> (l⊑A : l ⊑ A) -> ⟨ Ms₁ , Γ₁ , Ts₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , Ts₂ ⟩ ->
+                ⟨ map-εᴹ Ms₁ , map-εᴴ Γ₁ , εᵀˢ (yes l⊑A) Ts₁ ⟩ ⟼ ⟨ map-εᴹ Ms₂ , map-εᴴ Γ₂ , εᵀˢ (yes l⊑A) Ts₂ ⟩
 stepᴸ l⊑A step = ε₁ᴾ-sim (yes l⊑A) step
 
 -- We need these lemmas separatedly from stepᴴ, because if we collapse

@@ -529,6 +529,17 @@ map-εᴹ (M ∷ Ms) = (εᴹ (_ ⊑? A) M) ∷ (map-εᴹ Ms)
 εᵀˢ (yes _) ∙ = ∙
 εᵀˢ (no _) _ = ∙
 
+εᵀˢ¬IsForkTS : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> ¬ (IsForkTS Ts) -> ¬ (IsForkTS (εᵀˢ (yes l⊑A) Ts))
+εᵀˢ¬IsForkTS {Ts = ⟨ t , S ⟩} l⊑A ¬fork (isForkTS fork-ε) = εᵀ¬Fork (¬IsForkTs¬IsFork ¬fork) fork-ε
+εᵀˢ¬IsForkTS {Ts = ∙} l⊑A ¬fork ()
+
+εᵀˢ-ext-≡ : ∀ {l τ} -> (x y : Dec (l ⊑ A)) (Ts : TS∙ l τ) -> εᵀˢ x Ts ≡ εᵀˢ y Ts
+εᵀˢ-ext-≡ (yes p) (yes p₁) ⟨ t , S ⟩ = refl
+εᵀˢ-ext-≡ (yes p) (yes p₁) ∙ = refl
+εᵀˢ-ext-≡ (yes p) (no ¬p) Ts = ⊥-elim (¬p p)
+εᵀˢ-ext-≡ (no ¬p) (yes p) Ts = ⊥-elim (¬p p)
+εᵀˢ-ext-≡ (no ¬p) (no ¬p₁) Ts = refl
+
 -- Erasure for Programs
 ε₁ᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) -> Program l ls τ -> Program l ls τ
 ε₁ᴾ x ⟨ Ms , Γ , TS ⟩ = ⟨ map-εᴹ Ms , map-εᴴ Γ , εᵀˢ x TS ⟩

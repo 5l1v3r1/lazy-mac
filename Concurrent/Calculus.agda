@@ -4,13 +4,13 @@ import Scheduler as S
 module Concurrent.Calculus (𝓛 : L.Lattice) (𝓢 : S.Scheduler 𝓛) where
 
 open import Types 𝓛
-open import Sequential.Calculus 𝓛
+open import Sequential.Calculus 𝓛 hiding (Ms ; Γ)
 open S.Scheduler 𝓛 𝓢 renaming (State to Stateˢ)
 
 --------------------------------------------------------------------------------
 
-data Thread (l : Label) : Set where
-  ⟨_,_⟩ :  ∀ {τ π} -> (t : Term π τ) (S : Stack l π τ (Mac l （）)) -> Thread l
+Thread : Label -> Set
+Thread l = TS∙ l (Mac l （）)
 
 -- Pool of threads at a certain label
 data Pool (l : Label) : Set where

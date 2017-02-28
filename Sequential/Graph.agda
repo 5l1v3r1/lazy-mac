@@ -420,6 +420,13 @@ unlift-εᵀˢ ⟨ e₁ , e₂ ⟩ rewrite unlift-εᵀ e₁ | unlift-εˢ e₂ 
 unlift-εᵀˢ ∙ᴸ = refl
 unlift-εᵀˢ ∙ = refl
 
+ext-εᵀˢ : ∀ {l τ} {x y : Dec (l ⊑ A)} {Ts Ts' : TS∙ l τ} -> Eraseᵀˢ x Ts Ts' -> Eraseᵀˢ y Ts Ts'
+ext-εᵀˢ {x = yes p} {yes p₁} ⟨ x , x₁ ⟩ = ⟨ x , x₁ ⟩
+ext-εᵀˢ {x = yes p} {yes p₁} ∙ᴸ = ∙ᴸ
+ext-εᵀˢ {x = yes p} {no ¬p} e = ⊥-elim (¬p p)
+ext-εᵀˢ {x = no ¬p} {yes p} e = ⊥-elim (¬p p)
+ext-εᵀˢ {x = no ¬p} {no ¬p₁} ∙ = ∙
+
 --------------------------------------------------------------------------------
 
 data Eraseᴾ {l ls τ} (x : Dec (l ⊑ A)) (p₁ p₂ : Program l ls τ) : Set where

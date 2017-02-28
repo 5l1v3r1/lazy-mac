@@ -17,43 +17,49 @@ open import Concurrent.Erasure A 𝓝
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
 
-data Eraseᵀ {l : Label} : Thread l -> Thread l -> Set where
-  ⟨_,_⟩ : ∀ {τ π} {t t' : Term π τ} {S S' : Stack _ _ _ _}
-          -> G.Eraseᵀ t t' -> G.Eraseˢ S S' -> Eraseᵀ ⟨ t , S ⟩ ⟨ t' , S' ⟩
+-- data Eraseᵀ {l : Label} : Thread l -> Thread l -> Set where
+--   ⟨_,_⟩ : ∀ {τ π} {t t' : Term π τ} {S S' : Stack _ _ _ _}
+--           -> G.Eraseᵀ t t' -> G.Eraseˢ S S' -> Eraseᵀ ⟨ t , S ⟩ ⟨ t' , S' ⟩
 
 
-lift-εᵀ : ∀ {l} (t : Thread l) -> Eraseᵀ t (εᵀ t)
-lift-εᵀ C.⟨ t , S ⟩ = ⟨ (G.lift-εᵀ t) , (G.lift-εˢ S) ⟩
+-- lift-εᵀ : ∀ {l} (t : Thread l) -> Eraseᵀ t (εᵀ t)
+-- lift-εᵀ C.⟨ t , S ⟩ = ⟨ (G.lift-εᵀ t) , (G.lift-εˢ S) ⟩
 
-unlift-εᵀ : ∀ {l} {t t' : Thread l} -> Eraseᵀ t t' -> t' ≡ εᵀ t
-unlift-εᵀ ⟨ e₁ , e₂ ⟩ rewrite G.unlift-εᵀ e₁ | G.unlift-εˢ e₂ = refl
+-- unlift-εᵀ : ∀ {l} {t t' : Thread l} -> Eraseᵀ t t' -> t' ≡ εᵀ t
+-- unlift-εᵀ ⟨ e₁ , e₂ ⟩ rewrite G.unlift-εᵀ e₁ | G.unlift-εˢ e₂ = refl
 
 --------------------------------------------------------------------------------
 
-data EraseMapᵀ {l} : Pool l -> Pool l -> Set where
-  [] : EraseMapᵀ [] []
-  _◅_ : ∀ {T₁ T₂ P₁ P₂} -> Eraseᵀ T₁ T₂ -> EraseMapᵀ P₁ P₂ -> EraseMapᵀ (T₁ ◅ P₁) (T₂ ◅ P₂)
-  ∙ : EraseMapᵀ ∙ ∙
+data EraseMapᵀ {l} (l⊑A : l ⊑ A) : Pool l -> Pool l -> Set where
+  [] : EraseMapᵀ l⊑A [] []
+  _◅_ : ∀ {T₁ T₂ P₁ P₂} -> G.Eraseᵀˢ (yes l⊑A) T₁ T₂ -> EraseMapᵀ l⊑A P₁ P₂ -> EraseMapᵀ l⊑A (T₁ ◅ P₁) (T₂ ◅ P₂)
+  ∙ : EraseMapᵀ l⊑A ∙ ∙
 
-lift-map-εᵀ : ∀ {l} (P : Pool l) -> EraseMapᵀ P (map-εᵀ P)
-lift-map-εᵀ C.[] = []
-lift-map-εᵀ (t C.◅ P) = (lift-εᵀ t) ◅ (lift-map-εᵀ P)
-lift-map-εᵀ C.∙ = ∙
+lift-map-εᵀ : ∀ {l} (l⊑A : l ⊑ A) (P : Pool l) -> EraseMapᵀ l⊑A P (map-εᵀ l⊑A P)
+lift-map-εᵀ l⊑A C.[] = []
+lift-map-εᵀ l⊑A (t C.◅ P) = (G.lift-εᵀˢ (yes l⊑A) t) ◅ (lift-map-εᵀ l⊑A P)
+lift-map-εᵀ l⊑A C.∙ = ∙
 
 
-unlift-map-εᵀ : ∀ {l} {P P' : Pool l } -> EraseMapᵀ P P' -> P' ≡ map-εᵀ P
+unlift-map-εᵀ : ∀ {l} {P P' : Pool l } {l⊑A : l ⊑ A} -> EraseMapᵀ l⊑A P P' -> P' ≡ map-εᵀ l⊑A P
 unlift-map-εᵀ [] = refl
-unlift-map-εᵀ (e₁ ◅ e₂) rewrite unlift-εᵀ e₁ | unlift-map-εᵀ e₂ = refl
+unlift-map-εᵀ (e₁ ◅ e₂) with G.unlift-εᵀˢ e₁ | unlift-map-εᵀ e₂
+... | eq₁ | eq₂ rewrite eq₁ | eq₂ = refl
 unlift-map-εᵀ ∙ = refl
+
+ext-ε-mapᵀ : ∀ {l} {P P' : Pool l } {l⊑A l⊑A' : l ⊑ A} -> EraseMapᵀ l⊑A P P' -> EraseMapᵀ l⊑A' P P'
+ext-ε-mapᵀ [] = []
+ext-ε-mapᵀ (x ◅ x₁) = G.ext-εᵀˢ x ◅ (ext-ε-mapᵀ x₁)
+ext-ε-mapᵀ ∙ = ∙
 
 --------------------------------------------------------------------------------
 
 data Eraseᴾ {l : Label} : Dec (l ⊑ A) -> Pool l -> Pool l -> Set where
-  Mapᵀ : ∀ {P₁ P₂ : Pool l} {l⊑A : l ⊑ A} -> EraseMapᵀ P₁ P₂ -> Eraseᴾ (yes l⊑A) P₁ P₂
+  Mapᵀ : ∀ {P₁ P₂ : Pool l} {l⊑A : l ⊑ A} -> EraseMapᵀ l⊑A P₁ P₂ -> Eraseᴾ (yes l⊑A) P₁ P₂
   ∙ : ∀ {P} {l⋤A : l ⋤ A} -> Eraseᴾ (no l⋤A) P ∙
 
 lift-εᴾ : ∀ {l} (x : Dec (l ⊑ A)) (P : Pool l) -> Eraseᴾ x P (εᴾ x P)
-lift-εᴾ (yes p) P = Mapᵀ (lift-map-εᵀ P)
+lift-εᴾ (yes l⊑A) P = Mapᵀ (lift-map-εᵀ l⊑A P)
 lift-εᴾ (no ¬p) P = ∙
 
 unlift-εᴾ : ∀ {l} {x : Dec (l ⊑ A)} {P P' : Pool l} -> Eraseᴾ x P P' -> P' ≡ εᴾ x P
@@ -63,7 +69,7 @@ unlift-εᴾ ∙ = refl
 open import Data.Empty
 
 ext-εᴾ : ∀ {l} {x : Dec (l ⊑ A)} {T T' : Pool l} -> Eraseᴾ x T T' -> (y : Dec (l ⊑ A)) -> Eraseᴾ y T T'
-ext-εᴾ (Mapᵀ x) (yes p) = Mapᵀ x
+ext-εᴾ (Mapᵀ x) (yes p) = Mapᵀ (ext-ε-mapᵀ x)
 ext-εᴾ (Mapᵀ {l⊑A = l⊑A} x) (no ¬p) = ⊥-elim (¬p l⊑A)
 ext-εᴾ {x = no l⋤A} ∙ (yes p) = ⊥-elim (l⋤A p)
 ext-εᴾ ∙ (no ¬p) = ∙

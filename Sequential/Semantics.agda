@@ -178,6 +178,9 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
 data IsForkTS {l τ} : TS∙ l τ -> Set where
   isForkTS : ∀ {π τ' S} {t : Term π τ'} -> IsFork t -> IsForkTS ⟨ t , S ⟩
 
+¬IsForkTs¬IsFork : ∀ {π l τ₁ τ₂} {t : Term π τ₁} {S : Stack l _ _ τ₂} -> ¬ IsForkTS ⟨ t , S ⟩ -> ¬ IsFork t
+¬IsForkTs¬IsFork ¬fork isF = ¬fork (isForkTS isF)
+
 data IsDoneTS {l τ} : TS∙ l τ -> Set where
   isDoneTS : ∀ {π} {v : Term π τ} -> (isVal : Value v) -> IsDoneTS ⟨ v , [] ⟩
 

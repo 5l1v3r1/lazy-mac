@@ -10,7 +10,7 @@ open import Types 𝓛
 open import Sequential.Semantics 𝓛
 
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
-open import Sequential.LowEq 𝓛 A as LE using (_map-≅ᴴ_ ; map-⌞_⌟ᴴ ; _map-≈ᴴ_ ; map-⌜_⌝ᴴ ; _map-≅ᴹ_ ; map-⌞_⌟ᴹ ; _map-≈ᴹ_ ; map-⌜_⌝ᴹ ; ⟨_,_⟩ ; Kˢ)
+open import Sequential.LowEq 𝓛 A as LE using (_map-≅ᴴ_ ; map-⌞_⌟ᴴ ; _map-≈ᴴ_ ; map-⌜_⌝ᴴ ; _map-≅ᴹ_ ; map-⌞_⌟ᴹ ; _map-≈ᴹ_ ; map-⌜_⌝ᴹ ; ⟨_,_⟩ ; Kˢ ; Kᵀˢ)
 open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-≅ᴹ)
 
 --------------------------------------------------------------------------------
@@ -23,7 +23,7 @@ import Concurrent.Semantics as CS
 open CS 𝓛 𝓢
 -- open import Concurrent.Semantics 𝓛 𝓢 public
 
-import Sequential.Calculus as SC
+import Sequential.Calculus as SC hiding (Ms ; Γ)
 open SC 𝓛
 
 open import Concurrent.Erasure A 𝓝
@@ -39,21 +39,21 @@ open import Data.Product using (_×_)
 import Data.Product as P
 
 
-_≌ᵀ_ : ∀ {l} -> Thread l -> Thread l -> Set
-t₁ ≌ᵀ t₂ = εᵀ t₁ ≡ εᵀ t₂
+-- _≌ᵀ_ : ∀ {l} -> Thread l -> Thread l -> Set
+-- t₁ ≌ᵀ t₂ = εᵀ t₁ ≡ εᵀ t₂
 
-_≡ᵀ_ : ∀ {l} -> Thread l -> Thread l -> Set
-_≡ᵀ_ = _≡_
+-- _≡ᵀ_ : ∀ {l} -> Thread l -> Thread l -> Set
+-- _≡ᵀ_ = _≡_
 
-data _≈ᵀ_ {l : Label} (t₁ t₂ : Thread l) : Set where
-  Kᵀ : ∀ {tᴱ : Thread l} -> Eraseᵀ t₁ tᴱ -> Eraseᵀ t₂ tᴱ -> t₁ ≈ᵀ t₂
+-- data _≈ᵀ_ {l : Label} (t₁ t₂ : Thread l) : Set where
+--   Kᵀ : ∀ {tᴱ : Thread l} -> Eraseᵀ t₁ tᴱ -> Eraseᵀ t₂ tᴱ -> t₁ ≈ᵀ t₂
 
-⌞_⌟ᵀ : ∀ {l} {t₁ t₂ : Thread l} -> t₁ ≈ᵀ t₂ -> t₁ ≌ᵀ t₂
-⌞ Kᵀ e₁ e₂ ⌟ᵀ rewrite unlift-εᵀ e₁ | unlift-εᵀ e₂ = refl
+-- ⌞_⌟ᵀ : ∀ {l} {t₁ t₂ : Thread l} -> t₁ ≈ᵀ t₂ -> t₁ ≌ᵀ t₂
+-- ⌞ Kᵀ e₁ e₂ ⌟ᵀ rewrite unlift-εᵀ e₁ | unlift-εᵀ e₂ = refl
 
-⌜_⌝ᵀ : ∀ {l} {t₁ t₂ : Thread l} -> t₁ ≌ᵀ t₂ -> t₁ ≈ᵀ t₂
-⌜_⌝ᵀ {t₁ = t₁} {t₂} eq with lift-εᵀ t₁ | lift-εᵀ t₂
-... | e₁ | e₂ rewrite eq = Kᵀ e₁ e₂
+-- ⌜_⌝ᵀ : ∀ {l} {t₁ t₂ : Thread l} -> t₁ ≌ᵀ t₂ -> t₁ ≈ᵀ t₂
+-- ⌜_⌝ᵀ {t₁ = t₁} {t₂} eq with lift-εᵀ t₁ | lift-εᵀ t₂
+-- ... | e₁ | e₂ rewrite eq = Kᵀ e₁ e₂
 
 
 --Don't know why Agda rejects this ...
@@ -62,8 +62,8 @@ data _≈ᵀ_ {l : Label} (t₁ t₂ : Thread l) : Set where
 --   where aux : ∀ {π l τ} {t₁ t₂ : Term π τ} {S₁ S₂ : Stack l π τ _} -> t₁ LE.≅ᵀ t₂ -> S₁ LE.≅ˢ S₂ -> ⟨ t₁ , S₁ ⟩ ≌ᵀ ⟨ t₂ , S₂ ⟩
 --         aux eq₁ eq₂ rewrite eq₁ | eq₂ = refl
 
-lift-≈ᵀ : ∀ {π l τ} {t₁ t₂ : Term π τ} {S₁ S₂ : Stack l π τ _} -> t₁ LE.≈ᵀ t₂ -> S₁ LE.≈ˢ S₂ -> ⟨ t₁ , S₁ ⟩ ≈ᵀ ⟨ t₂ , S₂ ⟩
-lift-≈ᵀ ⟨ e₁ , e₂ ⟩ (Kˢ e₁' e₂') = Kᵀ ⟨ e₁ , e₁' ⟩ ⟨ e₂ , e₂' ⟩
+-- lift-≈ᵀ : ∀ {π l τ} {t₁ t₂ : Term π τ} {S₁ S₂ : Stack l π τ _} -> t₁ LE.≈ᵀ t₂ -> S₁ LE.≈ˢ S₂ -> ⟨ t₁ , S₁ ⟩ ≈ᵀ ⟨ t₂ , S₂ ⟩
+-- lift-≈ᵀ ⟨ e₁ , e₂ ⟩ (Kˢ e₁' e₂') = Kᵀ ⟨ e₁ , e₁' ⟩ ⟨ e₂ , e₂' ⟩
 
 --------------------------------------------------------------------------------
 
@@ -83,6 +83,10 @@ data _≈ᴾ⟨_⟩_ {l : Label} (T₁ : Pool l) (x : Dec (l ⊑ A)) (T₂ : Poo
 
 ext-≈ᴾ : ∀ {l} {x : Dec (l ⊑ A)} {T₁ T₂ : Pool l} -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> (y : Dec (l ⊑ A)) -> T₁ ≈ᴾ⟨ y ⟩ T₂
 ext-≈ᴾ (Kᴾ e₁ e₂) y = Kᴾ (ext-εᴾ e₁ y) (ext-εᴾ e₂ y)
+
+cons≈ᴾ : ∀ {l} {t₁ t₂ : Thread l} {x : Dec (l ⊑ A)} {T₁ T₂ : Pool l} -> t₁ LE.≈ᵀˢ⟨ x ⟩ t₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> (t₁ ◅ T₁) ≈ᴾ⟨ x ⟩ (t₂ ◅ T₂)
+cons≈ᴾ (Kᵀˢ e₁ e₂)  (Kᴾ (Mapᵀ x) (Mapᵀ x₁)) = Kᴾ (Mapᵀ (e₁ ◅ x)) (Mapᵀ (e₂ ◅ x₁))
+cons≈ᴾ eq₁ (Kᴾ ∙ ∙) = Kᴾ ∙ ∙
 
 --------------------------------------------------------------------------------
 
@@ -108,6 +112,9 @@ sym-≈ᴾ x  = map-⌜ sym map-⌞ x ⌟ᴾ ⌝ᴾ
 
 trans-≈ᴾ :  ∀ {ls} {P₁ P₂ P₃ : Pools ls} -> P₁ map-≈ᴾ P₂ -> P₂ map-≈ᴾ P₃ -> P₁ map-≈ᴾ P₃
 trans-≈ᴾ x y = map-⌜ trans map-⌞ x ⌟ᴾ map-⌞ y ⌟ᴾ ⌝ᴾ
+
+cons-map-≈ᵀ : ∀ {l ls} {u : Unique l ls} {T₁ T₂} {P₁ P₂ : Pools ls} -> T₁ ≈ᴾ⟨ l ⊑? A ⟩ T₂ -> P₁ map-≈ᴾ P₂ -> (T₁ ◅ P₁) map-≈ᴾ (T₂ ◅ P₂)
+cons-map-≈ᵀ (Kᴾ x₁ x₂) (K-mapᴾ x₃ x₄) = K-mapᴾ (x₁ ◅ x₃) (x₂ ◅ x₄)
 
 --------------------------------------------------------------------------------
 

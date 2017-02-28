@@ -16,13 +16,13 @@ open import Relation.Nullary
 
 -- Concurrent semantics
 data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
-  step-∅ : ∀ {π₁ π₂ τ₁ τ₂ S₁ S₂ Σ₁ Σ₂ Ms₁ Ms₂} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {Γ₁ Γ₂ : Heaps ls} {P₁ P₂ : Pools ls} {T₁ T₂ : Pool l}
+  step-∅ : ∀ {Σ₁ Σ₂ Ms₁ Ms₂} {Ts₁ Ts₂ : Thread l} {Γ₁ Γ₂ : Heaps ls} {P₁ P₂ : Pools ls} {T₁ T₂ : Pool l}
            (l∈P : l ↦ T₁ ∈ᴾ P₁)
-           (t∈T : n ↦ ⟨ t₁ , S₁ ⟩ ∈ᵀ T₁)
-           (¬fork : ¬ (IsFork t₁))
-           (step : ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩)
+           (t∈T : n ↦ Ts₁ ∈ᵀ T₁)
+           (¬fork : ¬ (IsForkTS Ts₁))
+           (step : ⟨ Ms₁ , Γ₁ , Ts₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , Ts₂ ⟩)
            (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Step ⟫ )
-           (uᵀ : T₂ ≔ T₁ [ n ↦ ⟨ t₂ , S₂ ⟩ ]ᵀ )
+           (uᵀ : T₂ ≔ T₁ [ n ↦  Ts₂  ]ᵀ )
            (uᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ ) ->
            Stepᶜ l n ⟨ Σ₁ , Ms₁ , Γ₁ , P₁ ⟩ ⟨ Σ₂ , Ms₂ , Γ₂ , P₂ ⟩
 
@@ -46,17 +46,17 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Step ⟫) ->
            Stepᶜ l n ⟨ Σ₁ , Ms , Γ , P₁ ⟩ ⟨ Σ₂ , Ms , Γ , P₂ ⟩
 
-  skip : ∀ {Σ₁ Σ₂ τ π Ms S} {t : Term π τ} {Γ : Heaps ls} {P : Pools ls} {T : Pool l}
+  skip : ∀ {Σ₁ Σ₂ Ms} {Ts : Thread _} {Γ : Heaps ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
-            (t∈T : n ↦ ⟨ t , S ⟩ ∈ᵀ T)
-            (stuck : Stuckᴾ ⟨ Ms , Γ , t , S ⟩)
+            (t∈T : n ↦ Ts ∈ᵀ T)
+            (stuck : Stuckᴾ ⟨ Ms , Γ , Ts ⟩)
             (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Skip ⟫ ) ->
             Stepᶜ l n ⟨ Σ₁ , Ms , Γ , P ⟩ ⟨ Σ₂ , Ms , Γ , P ⟩
 
-  done : ∀ {Σ₁ Σ₂ τ π Ms S} {t : Term π τ} {Γ : Heaps ls} {P : Pools ls} {T : Pool l}
+  done : ∀ {Σ₁ Σ₂ Ms} {Ts : Thread _} {Γ : Heaps ls} {P : Pools ls} {T : Pool l}
             (l∈P : l ↦ T ∈ᴾ P)
-            (t∈T : n ↦ ⟨ t , S ⟩ ∈ᵀ T)
-            (don : Doneᴾ ⟨ Ms , Γ , t , S ⟩)
+            (t∈T : n ↦ Ts ∈ᵀ T)
+            (don : Doneᴾ ⟨ Ms , Γ , Ts ⟩)
             (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Done ⟫ ) ->
             Stepᶜ l n ⟨ Σ₁ , Ms , Γ , P ⟩ ⟨ Σ₂ , Ms , Γ , P ⟩
 
