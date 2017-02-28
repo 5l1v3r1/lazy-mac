@@ -10,7 +10,8 @@ open import Types 𝓛
 open import Sequential.Semantics 𝓛
 
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
-open import Sequential.LowEq 𝓛 A as LE using (_map-≅ᴴ_ ; map-⌞_⌟ᴴ ; _map-≈ᴴ_ ; map-⌜_⌝ᴴ ; _map-≅ᴹ_ ; map-⌞_⌟ᴹ ; _map-≈ᴹ_ ; map-⌜_⌝ᴹ ; ⟨_,_⟩ ; Kˢ ; Kᵀˢ)
+-- For some reason hiding the clashing name _≈ᴾ⟨_⟩_ does not work :-(
+open import Sequential.LowEq 𝓛 A as LE using (_map-≅ᴴ_ ; map-⌞_⌟ᴴ ; _map-≈ᴴ_ ; map-⌜_⌝ᴴ ; _map-≅ᴹ_ ; map-⌞_⌟ᴹ ; _map-≈ᴹ_ ; map-⌜_⌝ᴹ ; ⟨_,_⟩ ; Kˢ ; Kᵀˢ ; _≈ᵀˢ⟨_⟩_)
 open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-≅ᴹ)
 
 --------------------------------------------------------------------------------
@@ -166,3 +167,40 @@ sym-≈ᴳ x = ⌜ sym ⌞ x ⌟ᴳ ⌝ᴳ
 
 trans-≈ᴳ : ∀ {ls} {g₁ g₂ g₃ : Global ls} -> g₁ ≈ᴳ g₂ -> g₂ ≈ᴳ g₃ -> g₁ ≈ᴳ g₃
 trans-≈ᴳ x y = ⌜ trans ⌞ x ⌟ᴳ ⌞ y ⌟ᴳ ⌝ᴳ
+
+--------------------------------------------------------------------------------
+
+-- TODO move to Concurrent.LowEq ?
+
+open import Function
+open import Data.Product
+
+memberᴾ-≈ : ∀ {ls L} {T₁ : Pool L} {P₁ P₂ : Pools ls} -> (x : Dec (L ⊑ A)) -> L ↦ T₁ ∈ᴾ P₁ -> P₁ map-≈ᴾ P₂ -> ∃ (λ T₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂ × L ↦ T₂ ∈ᴾ P₂)
+memberᴾ-≈ x C.here (K-mapᴾ (e₁ ◅ e₂) (e₃ ◅ e₄)) = _ , ext-≈ᴾ (Kᴾ e₁ e₃) x , here
+memberᴾ-≈ x (C.there L∈P) (K-mapᴾ (x₁ ◅ x₂) (x₃ ◅ x₄)) = P.map id (P.map id there) (memberᴾ-≈ x L∈P (K-mapᴾ x₂ x₄))
+
+memberᵀ-≈ : ∀ {n L} {T₁ T₂ : Pool L} {t₁ : Thread L} -> (L⊑A : L ⊑ A) -> n ↦ t₁ ∈ᵀ T₁ -> T₁ ≈ᴾ⟨ yes L⊑A ⟩ T₂
+              -> ∃ (λ t₂ → (t₁ ≈ᵀˢ⟨ yes L⊑A ⟩ t₂) × n ↦ t₂ ∈ᵀ T₂)
+memberᵀ-≈ L⊑A C.here (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) = _ , (Kᵀˢ e e') , here
+memberᵀ-≈ L⊑A (C.there n∈T) (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) = P.map id (P.map id there) (memberᵀ-≈ L⊑A n∈T (Kᴾ (Mapᵀ e₁) (Mapᵀ e₁')))
+
+updateᵀ-≈ : ∀ {n L} {T₁ T₁' T₂ : Pool L} {t₁ t₂ : Thread L} -> (L⊑A : L ⊑ A) -> T₁' ≔ T₁ [ n ↦ t₁ ]ᵀ ->
+            T₁ ≈ᴾ⟨ yes L⊑A ⟩ T₂ -> t₁ ≈ᵀˢ⟨ yes L⊑A ⟩ t₂ -> ∃ (λ T₂' → T₁' ≈ᴾ⟨ yes L⊑A ⟩ T₂'  × T₂' ≔ T₂ [ n ↦ t₂ ]ᵀ)
+updateᵀ-≈ L⊑A C.here (Kᴾ (Mapᵀ (_ ◅ e₁)) (Mapᵀ (_ ◅ e₁'))) (Kᵀˢ e e') = _ , (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) , here
+updateᵀ-≈ L⊑A (C.there u) (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) eq₂
+  = P.map (_◅_ _) (P.map (cons≈ᴾ (Kᵀˢ e e')) there) (updateᵀ-≈ L⊑A u (Kᴾ (Mapᵀ e₁) (Mapᵀ e₁')) eq₂)
+
+updateᴾ-≈ : ∀ {l ls} {P₁ P₂ P₁' : Pools ls} {T₁ T₂ : Pool l}  (x : Dec (l ⊑ A)) -> P₁' ≔ P₁ [ l ↦ T₁ ]ᴾ ->
+             P₁ map-≈ᴾ P₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> ∃ (λ P₂' → P₁' map-≈ᴾ P₂' × P₂' ≔ P₂ [ l ↦ T₂ ]ᴾ)
+updateᴾ-≈ {l} x C.here (K-mapᴾ (_ ◅ e₁) (_ ◅ e₁')) (Kᴾ e e') = _ , K-mapᴾ (ext-εᴾ e (l ⊑? A) ◅ e₁) (ext-εᴾ e' (l ⊑? A) ◅ e₁') , here
+updateᴾ-≈ x (C.there u₁) (K-mapᴾ (e ◅ e₁) (e' ◅ e₁')) eq₂ = P.map (_◅_ _) (P.map (cons-map-≈ᵀ (Kᴾ e e')) there) (updateᴾ-≈ x u₁ (K-mapᴾ e₁ e₁') eq₂)
+
+lengthᵀ-≈ : ∀ {l} {T₁ T₂ : Pool l} -> (l⊑A : l ⊑ A) -> T₁ ≈ᴾ⟨ yes l⊑A ⟩ T₂ -> lengthᵀ T₁ ≡ lengthᵀ T₂
+lengthᵀ-≈ {_} {T₁} {T₂} l⊑A T₁≈T₂ rewrite lengthᵀ-ε-≡ l⊑A T₁ | lengthᵀ-ε-≡ l⊑A T₂ | ⌞ T₁≈T₂ ⌟ᴾ = refl
+
+newᵀ-≈ : ∀ {l} {T₁ T₂ : Pool l} {t₁ t₂ : Thread l} {x : Dec _} -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> t₁ ≈ᵀˢ⟨ x ⟩ t₂ -> (T₁ ▻ t₁) ≈ᴾ⟨ x ⟩ (T₂ ▻ t₂)
+newᵀ-≈ (Kᴾ (Mapᵀ []) (Mapᵀ [])) (Kᵀˢ e₁ e₂) = Kᴾ (Mapᵀ (e₁ ◅ [])) (Mapᵀ (e₂ ◅ []))
+newᵀ-≈ (Kᴾ (Mapᵀ (x₁ ◅ x)) (Mapᵀ (x₂ ◅ x₃))) t₁≈t₂ with newᵀ-≈ (Kᴾ (Mapᵀ x) (Mapᵀ x₃)) t₁≈t₂
+... | Kᴾ (Mapᵀ e₁) (Mapᵀ e₂) = Kᴾ (Mapᵀ (x₁ ◅ e₁)) (Mapᵀ (x₂ ◅ e₂))
+newᵀ-≈ (Kᴾ (Mapᵀ ∙) (Mapᵀ ∙)) t₁≈t₂ = Kᴾ (Mapᵀ ∙) (Mapᵀ ∙)
+newᵀ-≈ (Kᴾ ∙ ∙) t₁≈t₂ = Kᴾ ∙ ∙
