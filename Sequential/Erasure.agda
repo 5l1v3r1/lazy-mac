@@ -593,3 +593,13 @@ open import Data.Product using (proj₁ ; proj₂)
 
 εᴾ-sim : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} -> p₁ ⟼ p₂ -> εᴾ p₁ ⟼ εᴾ p₂
 εᴾ-sim {l} = ε₁ᴾ-sim (l ⊑? A)
+
+--------------------------------------------------------------------------------
+
+-- writeᴴ∙-≡ : ∀ {H π₁ π₂ ls} {Γ₁ Γ₂ : Heaps ls} {Δ₁ : Heap H π₁} {Δ₂ : Heap H π₂} -> H ⋤ A -> H ↦ Δ₁ ∈ᴱ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ Δ₂ ]ᴱ -> (map-εᴴ Γ₁) ≡ (map-εᴴ Γ₂)
+-- writeᴴ∙-≡ {H} H⋤A here here with H ⊑? A
+-- ... | yes H⊑A = {!!} -- No because of different π
+-- ... | no _ = {!refl!}
+-- writeᴴ∙-≡ H⋤A here (there uᴴ) = {!!}
+-- writeᴴ∙-≡ H⋤A (there H∈Γ) here = {!!}
+-- writeᴴ∙-≡ H⋤A (there H∈Γ) (there uᴴ) rewrite writeᴴ∙-≡ H⋤A H∈Γ uᴴ = refl

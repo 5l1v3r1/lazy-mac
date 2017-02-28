@@ -11,7 +11,7 @@ open import Sequential.Semantics 𝓛
 
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
 open import Sequential.LowEq 𝓛 A as LE using (_map-≅ᴴ_ ; map-⌞_⌟ᴴ ; _map-≈ᴴ_ ; map-⌜_⌝ᴴ ; _map-≅ᴹ_ ; map-⌞_⌟ᴹ ; _map-≈ᴹ_ ; map-⌜_⌝ᴹ )
-open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-Γ)
+open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-≅ᴹ)
 
 --------------------------------------------------------------------------------
 -- Temporarily side-step bug #2245

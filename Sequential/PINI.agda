@@ -35,15 +35,30 @@ stepᴸ : ∀ {ls π₁ π₂ τ l τ₁ τ₂ Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps
                 ⟨ map-εᴹ Ms₁ , map-εᴴ Γ₁ , εᵀ t₁ , εˢ S₁ ⟩ ⟼ ⟨ map-εᴹ Ms₂ , map-εᴴ Γ₂ , εᵀ t₂ , εˢ S₂ ⟩
 stepᴸ l⊑A step = ε₁ᴾ-sim (yes l⊑A) step
 
-stepᴴ-Γ : ∀ {H ls τ₁ τ₂ τ π₁ π₂ Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ _ τ } {S₂ : Stack _ _ _ _} ->
-          H ⋤ A -> ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩ -> map-εᴹ Ms₁ ≡ map-εᴹ Ms₂
-stepᴴ-Γ H⋤A (S₁.Pure l∈Γ step uᴴ) = refl
-stepᴴ-Γ H⋤A (S₁.New {l⊑h = l⊑H} H∈Γ uᴴ) = writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uᴴ
-stepᴴ-Γ H⋤A S₁.New∙ = refl
-stepᴴ-Γ H⋤A (S₁.Write₂ {l⊑H = l⊑H} H∈Γ uᴹ uˢ) = writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uˢ
-stepᴴ-Γ H⋤A (S₁.Writeᴰ₂ {l⊑H = l⊑H} H∈Γ uᴹ uˢ) = writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uˢ
-stepᴴ-Γ H⋤A S₁.Write∙₂ = refl
-stepᴴ-Γ H⋤A (S₁.Read₂ l∈Γ n∈M) = refl
-stepᴴ-Γ H⋤A (S₁.Readᴰ₂ L∈Γ n∈M) = refl
-stepᴴ-Γ H⋤A (S₁.DeepDup₁ ¬var l∈Γ uᴱ) = refl
-stepᴴ-Γ H⋤A (S₁.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = refl
+-- We need these lemmas separatedly from stepᴴ, because if we collapse
+-- the whole program we loose information about memories
+stepᴴ-≅ᴹ : ∀ {H ls τ₁ τ₂ τ π₁ π₂ Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ _ τ } {S₂ : Stack _ _ _ _} ->
+          H ⋤ A -> ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩ -> Ms₁ map-≅ᴹ  Ms₂
+stepᴴ-≅ᴹ H⋤A (S₁.Pure l∈Γ step uᴴ-≅ᴹ) = refl
+stepᴴ-≅ᴹ H⋤A (S₁.New {l⊑h = l⊑H} H∈Γ uᴴ-≅ᴹ) = writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uᴴ-≅ᴹ
+stepᴴ-≅ᴹ H⋤A S₁.New∙ = refl
+stepᴴ-≅ᴹ H⋤A (S₁.Write₂ {l⊑H = l⊑H} H∈Γ uᴹ uˢ) = writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uˢ
+stepᴴ-≅ᴹ H⋤A (S₁.Writeᴰ₂ {l⊑H = l⊑H} H∈Γ uᴹ uˢ) = writeᴹ∙-≡ (trans-⋤ l⊑H H⋤A) H∈Γ uˢ
+stepᴴ-≅ᴹ H⋤A S₁.Write∙₂ = refl
+stepᴴ-≅ᴹ H⋤A (S₁.Read₂ l∈Γ n∈M) = refl
+stepᴴ-≅ᴹ H⋤A (S₁.Readᴰ₂ L∈Γ n∈M) = refl
+stepᴴ-≅ᴹ H⋤A (S₁.DeepDup₁ ¬var l∈Γ uᴱ) = refl
+stepᴴ-≅ᴹ H⋤A (S₁.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = refl
+
+-- stepᴴ-≅ᴴ : ∀ {H ls τ₁ τ₂ τ π₁ π₂ Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ _ τ } {S₂ : Stack _ _ _ _} ->
+--           H ⋤ A -> ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩ ->  Γ₁ map-≅ᴴ  Γ₂
+-- stepᴴ-≅ᴴ H⋤A (S₁.Pure l∈Γ step uᴴ) = {!!}
+-- stepᴴ-≅ᴴ H⋤A (S₁.New H∈Γ uᴴ) = refl
+-- stepᴴ-≅ᴴ H⋤A S₁.New∙ = refl
+-- stepᴴ-≅ᴴ H⋤A (S₁.Write₂ H∈Γ uᴹ uˢ) = refl
+-- stepᴴ-≅ᴴ H⋤A (S₁.Writeᴰ₂ H∈Γ uᴹ uˢ) = refl
+-- stepᴴ-≅ᴴ H⋤A S₁.Write∙₂ = refl
+-- stepᴴ-≅ᴴ H⋤A (S₁.Read₂ l∈Γ n∈M) = refl
+-- stepᴴ-≅ᴴ H⋤A (S₁.Readᴰ₂ L∈Γ n∈M) = refl
+-- stepᴴ-≅ᴴ H⋤A (S₁.DeepDup₁ ¬var l∈Γ uᴱ) = {!!}
+-- stepᴴ-≅ᴴ H⋤A (S₁.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = {!!}
