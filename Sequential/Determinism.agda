@@ -93,13 +93,13 @@ determinism Hole₁ Hole₁ = refl
 determinism Hole₂ Hole₂ = refl
 
 memberᴱ-≅ : ∀ {l ls π₁ π₂} {Γ : Heaps ls} {Δ₁ : Heap l π₁} {Δ₂ : Heap l π₂} ->
-            l ↦ Δ₁ ∈ᴱ Γ -> l ↦ Δ₂ ∈ᴱ Γ -> Δ₁ ≅ Δ₂
+            l ↦ ⟨ Δ₁ ⟩ ∈ᴱ Γ -> l ↦ ⟨ Δ₂ ⟩ ∈ᴱ Γ -> Δ₁ ≅ Δ₂
 memberᴱ-≅ here here = refl
 memberᴱ-≅ here (there {u = u} b) = ⊥-elim (∈-not-unique (memberᴱ-∈ b) u)
 memberᴱ-≅ (there {u = u} a) here = ⊥-elim (∈-not-unique (memberᴱ-∈ a) u)
 memberᴱ-≅ (there a) (there b) = memberᴱ-≅ a b
 
-updateᴱ-≡ : ∀ {l ls π} {Γ Γ₁ Γ₂ : Heaps ls} {Δ : Heap l π} -> Γ₁ ≔ Γ [ l ↦ Δ ]ᴱ -> Γ₂ ≔ Γ [ l ↦ Δ ]ᴱ -> Γ₁ ≡ Γ₂
+updateᴱ-≡ : ∀ {l ls π} {Γ Γ₁ Γ₂ : Heaps ls} {Δ : Heap l π} -> Γ₁ ≔ Γ [ l ↦ ⟨ Δ ⟩ ]ᴱ -> Γ₂ ≔ Γ [ l ↦ ⟨ Δ ⟩ ]ᴱ -> Γ₁ ≡ Γ₂
 updateᴱ-≡ here here = refl
 updateᴱ-≡ here (there {u = u} b) = ⊥-elim (∈-not-unique (updateᴱ-∈ b) u)
 updateᴱ-≡ (there {u = u} a) here = ⊥-elim (∈-not-unique (updateᴱ-∈ a) u)

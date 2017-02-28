@@ -315,31 +315,35 @@ updateˢ-∈ (there x) = there (updateˢ-∈ x)
 
 --------------------------------------------------------------------------------
 
+data Heap∙ (l : Label) : Set where
+  ⟨_⟩ : ∀ {π} -> Heap l π -> Heap∙ l
+  ∙ : Heap∙ l
+
 data Heaps : List Label -> Set where
   [] : Heaps []
-  _∷_ : ∀ {l ls π} {{u : Unique l ls}} -> Heap l π -> Heaps ls -> Heaps (l ∷ ls)
+  _∷_ : ∀ {l ls} {{u : Unique l ls}} -> Heap∙ l -> Heaps ls -> Heaps (l ∷ ls)
 
 -- This is defined as a data type rather than as a function to avoid having to existentially quantify π
 -- and in order to simplify unification agains semantics rules.
-data Memberᴱ {l π} (x : Heap l π) : ∀ {ls} -> Heaps ls -> Set where
+data Memberᴱ {l} (x : Heap∙ l) : ∀ {ls} -> Heaps ls -> Set where
   here : ∀ {ls} {u : Unique l ls} {Γ : Heaps ls} -> Memberᴱ x (x ∷ Γ)
-  there : ∀ {ls π' l'} {u : Unique l' ls} {Γ : Heaps ls} {y : Heap l' π'} -> Memberᴱ x Γ -> Memberᴱ x (y ∷ Γ)
+  there : ∀ {ls l'} {u : Unique l' ls} {Γ : Heaps ls} {y : Heap∙ l'} -> Memberᴱ x Γ -> Memberᴱ x (y ∷ Γ)
 
-_↦_∈ᴱ_ : ∀ {ls π} -> (l : Label) -> Heap l π -> Heaps ls -> Set
+_↦_∈ᴱ_ : ∀ {ls} -> (l : Label) -> Heap∙ l -> Heaps ls -> Set
 l ↦ x ∈ᴱ Γ = Memberᴱ x Γ
 
-data Updateᴱ {l π} (x : Heap l π) : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
-  here : ∀ {ls π'} {u : Unique l ls} {Γ : Heaps ls} {x' : Heap l π'} -> Updateᴱ x (x' ∷ Γ) (x ∷ Γ)
-  there : ∀ {ls π' l'} {u : Unique l' ls} {Γ Γ' : Heaps ls} {y : Heap l' π'} -> Updateᴱ x Γ Γ' -> Updateᴱ x (y ∷ Γ) (y ∷ Γ')
+data Updateᴱ {l} (x : Heap∙ l) : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
+  here : ∀ {ls} {u : Unique l ls} {Γ : Heaps ls} {x' : Heap∙ l} -> Updateᴱ x (x' ∷ Γ) (x ∷ Γ)
+  there : ∀ {ls l'} {u : Unique l' ls} {Γ Γ' : Heaps ls} {y : Heap∙ l'} -> Updateᴱ x Γ Γ' -> Updateᴱ x (y ∷ Γ) (y ∷ Γ')
 
-_≔_[_↦_]ᴱ : ∀ {ls π} -> Heaps ls -> Heaps ls -> (l : Label) -> Heap l π -> Set
+_≔_[_↦_]ᴱ : ∀ {ls} -> Heaps ls -> Heaps ls -> (l : Label) -> Heap∙ l -> Set
 Γ' ≔ Γ [ l ↦ x ]ᴱ = Updateᴱ x Γ Γ'
 
-memberᴱ-∈ : ∀ {l π ls} {x : Heap l π} {Γ : Heaps ls} -> l ↦ x ∈ᴱ Γ -> l ∈ ls
+memberᴱ-∈ : ∀ {l ls} {x : Heap∙ l} {Γ : Heaps ls} -> l ↦ x ∈ᴱ Γ -> l ∈ ls
 memberᴱ-∈ here = here
 memberᴱ-∈ (there x) = there (memberᴱ-∈ x)
 
-updateᴱ-∈ : ∀ {l π ls} {x : Heap l π} {Γ Γ' : Heaps ls} -> Γ' ≔ Γ [ l ↦ x ]ᴱ -> l ∈ ls
+updateᴱ-∈ : ∀ {l ls} {x : Heap∙ l} {Γ Γ' : Heaps ls} -> Γ' ≔ Γ [ l ↦ x ]ᴱ -> l ∈ ls
 updateᴱ-∈ here = here
 updateᴱ-∈ (there x) = there (updateᴱ-∈ x)
 

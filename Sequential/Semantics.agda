@@ -104,9 +104,9 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
 
   Pure : ∀ {Ms Γ Γ' π₁ π₂ τ₁ τ₂ τ₃} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂}
            {S₁ : Stack l π₁ τ₁ τ₃} {S₂ : Stack l π₂ τ₂ τ₃} {Δ₁ : Heap l π₁} {Δ₂ : Heap l π₂}
-         -> (l∈Γ : l ↦ Δ₁ ∈ᴱ Γ)
+         -> (l∈Γ : l ↦ ⟨ Δ₁ ⟩ ∈ᴱ Γ)
          -> (step : ⟨ Δ₁ , t₁ , S₁ ⟩ ⇝ ⟨ Δ₂ , t₂ , S₂ ⟩)
-         -> (uᴴ : Γ' ≔ Γ [ l ↦  Δ₂ ]ᴱ)
+         -> (uᴴ : Γ' ≔ Γ [ l ↦  ⟨ Δ₂ ⟩ ]ᴱ)
          -> ⟨ Ms , Γ , t₁ , S₁ ⟩ ⟼ ⟨ Ms , Γ' , t₂ , S₂ ⟩
 
    -- We have to write the term in the memory segment labeled as the reference (H)
@@ -155,19 +155,20 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
   -- so that next rule DeepDup will apply.
   DeepDup₁ : ∀ {Ms Γ Γ' π τ τ'} {Δ : Heap l π} {t : Term π τ} {S : Stack l π τ τ'}
             -> (¬var : ¬ (IsVar t))
-            -> (l∈Γ : l ↦ Δ ∈ᴱ Γ)
-             -> (uᴱ : Γ' ≔ Γ [ l ↦  just t ∷ Δ ]ᴱ)
+            -> (l∈Γ : l ↦ ⟨ Δ ⟩ ∈ᴱ Γ)
+             -> (uᴱ : Γ' ≔ Γ [ l ↦  ⟨ just t ∷ Δ ⟩ ]ᴱ)
             -> ⟨ Ms , Γ , deepDup t , S ⟩ ⟼ ⟨ Ms , Γ' , deepDup (Var {l = l} ⟪ hereᴿ ⟫) , wkenˢ S (drop refl-⊆) ⟩
 
   -- deepDupᵀ t takes care of replacing unguarded free variables with deepDup.
   -- Note that deepDupᵀ (deepDup t) = deepDup t, so also in case of
   -- nested deepDup (e.g. deepDup (deepDup t)) we make progress.
   DeepDup₂ : ∀ {Ms Γ Γ' π L τ τ'} {Δᴸ : Heap L π} {Δˡ : Heap l π} {t : Term π τ}  {S : Stack l π τ τ'} {L⊑l : L ⊑ l}
+             -- TODO do we need the constraint L⊑l? it does not seem so!
              -> (τ∈π : τ ∈⟨ L ⟩ᴿ π)
-             -> (L∈Γ : L ↦ Δᴸ ∈ᴱ Γ)
+             -> (L∈Γ : L ↦ ⟨ Δᴸ ⟩ ∈ᴱ Γ)
              -> (t∈Δ : τ∈π ↦ t ∈ᴴ Δᴸ)
-             -> (l∈Γ : l ↦ Δˡ ∈ᴱ Γ)
-             -> (uᴱ : Γ' ≔ Γ [ l ↦  just (deepDupᵀ t) ∷ Δˡ ]ᴱ)
+             -> (l∈Γ : l ↦ ⟨ Δˡ ⟩ ∈ᴱ Γ)
+             -> (uᴱ : Γ' ≔ Γ [ l ↦  ⟨ just (deepDupᵀ t) ∷ Δˡ ⟩ ]ᴱ)
              -> ⟨ Ms , Γ , deepDup (Var {π = π} τ∈π) , S ⟩ ⟼ ⟨ Ms , Γ' , Var {π = τ ∷ π} {l} ⟪ hereᴿ ⟫ , wkenˢ S (drop refl-⊆) ⟩
 
   Hole : ∀ {τ} -> ∙ {τ = τ} ⟼ ∙

@@ -29,7 +29,7 @@ open CS 𝓛 𝓢
 -- open import Concurrent.Semantics 𝓛 𝓢 public
 
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
-open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-Γ ; stepᴴ)
+open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-≅ᴴ ; stepᴴ-≅ᴹ ; stepᴴ)
 
 
 --------------------------------------------------------------------------------

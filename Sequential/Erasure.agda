@@ -500,13 +500,21 @@ updateᴱ (there x) = there (updateᴱ x)
 
 --------------------------------------------------------------------------------
 
-εᴴ : ∀ {l π} -> Dec (l ⊑ A) -> Heap l π -> Heap l π
-εᴴ (yes p) Δ = map-εᵀ Δ
+εᴴ : ∀ {l} -> Dec (l ⊑ A) -> Heap∙ l -> Heap∙ l
+εᴴ (yes p) ⟨ Δ ⟩ = ⟨ map-εᵀ Δ ⟩
+εᴴ (yes p) ∙ = ∙
 εᴴ (no ¬p) Δ = ∙
+
+εᴴ-ext : ∀ {l} -> (x y : Dec (l ⊑ A)) (Δ : Heap∙ l) -> εᴴ x Δ ≡ εᴴ y Δ
+εᴴ-ext (yes p) (yes p₁) ⟨ x ⟩ = refl
+εᴴ-ext (yes p) (yes p₁) ∙ = refl
+εᴴ-ext (yes p) (no ¬p) Δ = ⊥-elim (¬p p)
+εᴴ-ext (no ¬p) (yes p) Δ = ⊥-elim (¬p p)
+εᴴ-ext (no ¬p) (no ¬p₁) Δ = refl
 
 map-εᴴ : ∀ {ls} -> Heaps ls -> Heaps ls
 map-εᴴ [] = []
-map-εᴴ {l ∷ ls} (_∷_ {π = π} Δ Γ) = εᴴ (_ ⊑? A) Δ ∷ map-εᴴ Γ
+map-εᴴ {l ∷ ls} (Δ ∷ Γ) = εᴴ (_ ⊑? A) Δ ∷ map-εᴴ Γ
 
 εᴹ : ∀ {l} -> Dec (l ⊑ A) -> Memory l -> Memory l
 εᴹ (yes p) M = M
@@ -542,15 +550,15 @@ updateᴹ {l} l⊑A here with l ⊑? A
 ... | no ¬p = ⊥-elim (¬p l⊑A)
 updateᴹ l⊑A (there x) = there (updateᴹ l⊑A x)
 
-memberᴴ : ∀ {l π ls} {Γ : Heaps ls} {Δ : Heap l π} -> (p : l ⊑ A) -> l ↦ Δ ∈ᴱ Γ -> l ↦ εᴴ (yes p) Δ ∈ᴱ (map-εᴴ Γ)
-memberᴴ {l} l⊑A here with l ⊑? A
-... | yes _ = here
+memberᴴ : ∀ {l ls} {Γ : Heaps ls} {Δ : Heap∙ l} -> (p : l ⊑ A) -> l ↦ Δ ∈ᴱ Γ -> l ↦ εᴴ (yes p) Δ ∈ᴱ map-εᴴ Γ
+memberᴴ {l} {Δ = Δ}  l⊑A here with l ⊑? A
+... | yes p rewrite εᴴ-ext (yes p) (yes l⊑A) Δ = here
 ... | no ¬p = ⊥-elim (¬p l⊑A)
 memberᴴ l⊑A (there x) = there (memberᴴ l⊑A x)
 
-updateᴴ : ∀ {l π ls} {Γ Γ' : Heaps ls} {Δ : Heap l π} -> (p : l ⊑ A) -> Γ' ≔ Γ [ l ↦ Δ ]ᴱ -> (map-εᴴ Γ') ≔ (map-εᴴ Γ) [ l ↦ εᴴ (yes p) Δ ]ᴱ
-updateᴴ {l} l⊑A here with l ⊑? A
-... | yes _ = here
+updateᴴ : ∀ {l ls} {Γ Γ' : Heaps ls} {Δ : Heap∙ l} -> (p : l ⊑ A) -> Γ' ≔ Γ [ l ↦ Δ ]ᴱ -> (map-εᴴ Γ') ≔ (map-εᴴ Γ) [ l ↦ εᴴ (yes p) Δ ]ᴱ
+updateᴴ {l} {Δ = Δ} l⊑A here with l ⊑? A
+... | yes p rewrite εᴴ-ext (yes p) (yes l⊑A) Δ = here
 ... | no ¬p = ⊥-elim (¬p l⊑A)
 updateᴴ l⊑A (there x) = there (updateᴴ l⊑A x)
 
@@ -596,10 +604,10 @@ open import Data.Product using (proj₁ ; proj₂)
 
 --------------------------------------------------------------------------------
 
--- writeᴴ∙-≡ : ∀ {H π₁ π₂ ls} {Γ₁ Γ₂ : Heaps ls} {Δ₁ : Heap H π₁} {Δ₂ : Heap H π₂} -> H ⋤ A -> H ↦ Δ₁ ∈ᴱ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ Δ₂ ]ᴱ -> (map-εᴴ Γ₁) ≡ (map-εᴴ Γ₂)
--- writeᴴ∙-≡ {H} H⋤A here here with H ⊑? A
--- ... | yes H⊑A = {!!} -- No because of different π
--- ... | no _ = {!refl!}
--- writeᴴ∙-≡ H⋤A here (there uᴴ) = {!!}
--- writeᴴ∙-≡ H⋤A (there H∈Γ) here = {!!}
--- writeᴴ∙-≡ H⋤A (there H∈Γ) (there uᴴ) rewrite writeᴴ∙-≡ H⋤A H∈Γ uᴴ = refl
+writeᴴ∙-≡ : ∀ {H ls} {Γ₁ Γ₂ : Heaps ls} {Δ₁ Δ₂ : Heap∙ H} -> H ⋤ A -> H ↦ Δ₁ ∈ᴱ Γ₁ -> Γ₂ ≔ Γ₁ [ H ↦ Δ₂ ]ᴱ -> (map-εᴴ Γ₁) ≡ (map-εᴴ Γ₂)
+writeᴴ∙-≡ {H} H⋤A here here with H ⊑? A
+... | yes H⊑A = ⊥-elim (H⋤A H⊑A)
+... | no _ = refl
+writeᴴ∙-≡ H⋤A here (there {u = u} uᴴ) = ⊥-elim (∈-not-unique (updateᴱ-∈ uᴴ) u)
+writeᴴ∙-≡ H⋤A (there {u = u} H∈Γ) here = ⊥-elim (∈-not-unique (memberᴱ-∈ H∈Γ) u)
+writeᴴ∙-≡ H⋤A (there H∈Γ) (there uᴴ) rewrite writeᴴ∙-≡ H⋤A H∈Γ uᴴ = refl

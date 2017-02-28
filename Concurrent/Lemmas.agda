@@ -26,7 +26,7 @@ open CS 𝓛 𝓢
 -- open import Concurrent.Semantics 𝓛 𝓢 public
 
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
-open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-≅ᴹ)
+open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-≅ᴹ ; stepᴴ-≅ᴴ)
 
 --------------------------------------------------------------------------------
 
@@ -38,6 +38,7 @@ open L₁ A 𝓝
 
 open import Data.Product renaming (_,_ to ⟨_,_⟩)
 
+-- Square
 εᴳ-simᴸ : ∀ {l n ls} {g₁ g₂ : Global ls} -> l ⊑ A ->  ⟨ l , n ⟩ ⊢ g₁ ↪ g₂ -> ⟨ l , n ⟩ ⊢ (εᴳ g₁) ↪ (εᴳ g₂)
 εᴳ-simᴸ l⊑A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ)
   = step-∅ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᵀ¬Fork ¬fork) (stepᴸ l⊑A step) (εˢ-simᴸ l⊑A sch) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A uᴾ)
@@ -52,8 +53,11 @@ open import Data.Product renaming (_,_ to ⟨_,_⟩)
 εᴳ-simᴸ l⊑A (CS.skip l∈P t∈T stuck sch) = skip (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (stuck-ε l⊑A stuck) (εˢ-simᴸ l⊑A sch)
 εᴳ-simᴸ l⊑A (CS.done l∈P t∈T don sch) = done (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (done-ε l⊑A don) (εˢ-simᴸ l⊑A sch)
 
+
+-- Triangle
 εᴳ-simᴴ : ∀ {H n ls} {g₁ g₂ : Global ls} -> H ⋤ A -> ⟨ H , n ⟩ ⊢ g₁ ↪ g₂ -> g₁ ≅ᴳ g₂
-εᴳ-simᴴ H⋤A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) = lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) (stepᴴ-≅ᴹ H⋤A step) {!!} (updateᴾ∙ H⋤A uᴾ)
+εᴳ-simᴴ H⋤A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ)
+  = lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) (stepᴴ-≅ᴹ H⋤A step) (stepᴴ-≅ᴴ H⋤A step) (updateᴾ∙ H⋤A uᴾ)
 εᴳ-simᴴ H⋤A (CS.fork {l⊑H = L⊑H} l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ)
   = lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) refl refl (trans (updateᴾ∙ H⋤A u₁ᴾ) (updateᴾ∙ (trans-⋤ L⊑H H⋤A) u₂ᴾ))
 εᴳ-simᴴ H⋤A (CS.fork∙ l∈P t∈T uᵀ u₁ᴾ sch) = lift-εᴳ (⌞ εˢ-simᴴ H⋤A sch ⌟) refl refl (updateᴾ∙ H⋤A u₁ᴾ)

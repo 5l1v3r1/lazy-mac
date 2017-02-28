@@ -50,15 +50,15 @@ stepᴴ-≅ᴹ H⋤A (S₁.Readᴰ₂ L∈Γ n∈M) = refl
 stepᴴ-≅ᴹ H⋤A (S₁.DeepDup₁ ¬var l∈Γ uᴱ) = refl
 stepᴴ-≅ᴹ H⋤A (S₁.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = refl
 
--- stepᴴ-≅ᴴ : ∀ {H ls τ₁ τ₂ τ π₁ π₂ Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ _ τ } {S₂ : Stack _ _ _ _} ->
---           H ⋤ A -> ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩ ->  Γ₁ map-≅ᴴ  Γ₂
--- stepᴴ-≅ᴴ H⋤A (S₁.Pure l∈Γ step uᴴ) = {!!}
--- stepᴴ-≅ᴴ H⋤A (S₁.New H∈Γ uᴴ) = refl
--- stepᴴ-≅ᴴ H⋤A S₁.New∙ = refl
--- stepᴴ-≅ᴴ H⋤A (S₁.Write₂ H∈Γ uᴹ uˢ) = refl
--- stepᴴ-≅ᴴ H⋤A (S₁.Writeᴰ₂ H∈Γ uᴹ uˢ) = refl
--- stepᴴ-≅ᴴ H⋤A S₁.Write∙₂ = refl
--- stepᴴ-≅ᴴ H⋤A (S₁.Read₂ l∈Γ n∈M) = refl
--- stepᴴ-≅ᴴ H⋤A (S₁.Readᴰ₂ L∈Γ n∈M) = refl
--- stepᴴ-≅ᴴ H⋤A (S₁.DeepDup₁ ¬var l∈Γ uᴱ) = {!!}
--- stepᴴ-≅ᴴ H⋤A (S₁.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = {!!}
+stepᴴ-≅ᴴ : ∀ {H ls τ₁ τ₂ τ π₁ π₂ Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {t₁ : Term π₁ τ₁} {t₂ : Term π₂ τ₂} {S₁ : Stack H _ _ τ } {S₂ : Stack _ _ _ _} ->
+          H ⋤ A -> ⟨ Ms₁ , Γ₁ , t₁ , S₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , t₂ , S₂ ⟩ ->  Γ₁ map-≅ᴴ  Γ₂
+stepᴴ-≅ᴴ H⋤A (S₁.Pure l∈Γ step uᴱ) = writeᴴ∙-≡ H⋤A l∈Γ uᴱ
+stepᴴ-≅ᴴ H⋤A (S₁.New H∈Γ uᴴ) = refl
+stepᴴ-≅ᴴ H⋤A S₁.New∙ = refl
+stepᴴ-≅ᴴ H⋤A (S₁.Write₂ H∈Γ uᴹ uˢ) = refl
+stepᴴ-≅ᴴ H⋤A (S₁.Writeᴰ₂ H∈Γ uᴹ uˢ) = refl
+stepᴴ-≅ᴴ H⋤A S₁.Write∙₂ = refl
+stepᴴ-≅ᴴ H⋤A (S₁.Read₂ l∈Γ n∈M) = refl
+stepᴴ-≅ᴴ H⋤A (S₁.Readᴰ₂ L∈Γ n∈M) = refl
+stepᴴ-≅ᴴ H⋤A (S₁.DeepDup₁ ¬var l∈Γ uᴱ) = writeᴴ∙-≡ H⋤A l∈Γ uᴱ
+stepᴴ-≅ᴴ H⋤A (S₁.DeepDup₂ τ∈π H∈Γ t∈Δ l∈Γ uᴱ) = writeᴴ∙-≡ H⋤A l∈Γ uᴱ

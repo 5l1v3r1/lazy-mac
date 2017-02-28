@@ -342,16 +342,19 @@ unlift-ε ∙ᴸ = refl
 
 --------------------------------------------------------------------------------
 
-data Eraseᴴ {l π} : (x : Dec (l ⊑ A)) (Δ₁ Δ₂ : Heap l π) -> Set where
-  Mapᵀ : ∀ {Δ Δ' : Heap l π} (l⊑A : l ⊑ A) -> EraseMapᵀ Δ Δ' -> Eraseᴴ (yes l⊑A) Δ Δ'
-  ∙ : ∀ {Δ : Heap l π} {l⋤A : l ⋤ A} -> Eraseᴴ (no l⋤A) Δ ∙
+data Eraseᴴ {l} : (x : Dec (l ⊑ A)) (Δ₁ Δ₂ : Heap∙ l) -> Set where
+  Mapᵀ : ∀ {π} {Δ Δ' : Heap l π} (l⊑A : l ⊑ A) -> EraseMapᵀ Δ Δ' -> Eraseᴴ (yes l⊑A) ⟨ Δ ⟩ ⟨ Δ' ⟩
+  ∙ᴸ : ∀ {l⊑A : l ⊑ A} -> Eraseᴴ (yes l⊑A) ∙ ∙
+  ∙ : ∀ {Δ : Heap∙ l} {l⋤A : l ⋤ A} -> Eraseᴴ (no l⋤A) Δ ∙
 
-lift-εᴴ : ∀ {l π} (x : Dec (l ⊑ A)) (Δ : Heap l π) -> Eraseᴴ x Δ (εᴴ x Δ)
-lift-εᴴ (yes p) Δ = Mapᵀ p (lift-map-εᵀ Δ)
+lift-εᴴ : ∀ {l} (x : Dec (l ⊑ A)) (Δ : Heap∙ l) -> Eraseᴴ x Δ (εᴴ x Δ)
+lift-εᴴ (yes p) ⟨ Δ ⟩ = Mapᵀ p (lift-map-εᵀ Δ)
+lift-εᴴ (yes p) ∙ = ∙ᴸ
 lift-εᴴ (no ¬p) Δ = ∙
 
-unlift-εᴴ : ∀ {l π} {Δ Δ' : Heap l π} {x : Dec (l ⊑ A)} -> Eraseᴴ x Δ Δ' -> Δ' ≡ εᴴ x Δ
+unlift-εᴴ : ∀ {l} {Δ Δ' : Heap∙ l} {x : Dec (l ⊑ A)} -> Eraseᴴ x Δ Δ' -> Δ' ≡ εᴴ x Δ
 unlift-εᴴ {x = yes .p} (Mapᵀ p x) rewrite unlift-map-εᵀ x = refl
+unlift-εᴴ {x = yes _} ∙ᴸ = refl
 unlift-εᴴ {x = no ¬p} ∙ = refl
 
 --------------------------------------------------------------------------------
@@ -372,7 +375,7 @@ unlift-εᴹ ∙ = refl
 
 data EraseMapᴴ : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
   [] : EraseMapᴴ [] []
-  _∷_ : ∀ {l π ls} {u : Unique l ls} {Δ₁ Δ₂ : Heap l π} {Γ₁ Γ₂ : Heaps ls}  ->
+  _∷_ : ∀ {l ls} {u : Unique l ls} {Δ₁ Δ₂ : Heap∙ l} {Γ₁ Γ₂ : Heaps ls}  ->
           Eraseᴴ (l ⊑? A) Δ₁ Δ₂ -> EraseMapᴴ Γ₁ Γ₂ -> EraseMapᴴ (Δ₁ ∷ Γ₁) (Δ₂ ∷ Γ₂)
 
 lift-map-εᴴ : ∀ {ls} (Γ : Heaps ls) -> EraseMapᴴ Γ (map-εᴴ Γ)
