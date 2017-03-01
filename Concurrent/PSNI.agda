@@ -14,7 +14,7 @@ open import Relation.Binary.PropositionalEquality
 --------------------------------------------------------------------------------
 -- Temporarily side-step bug #2245
 
-import Sequential.Calculus as SC
+import Sequential.Calculus as SC renaming (⟨_,_⟩ to mkᵀᴴ)
 open SC 𝓛
 
 open import Sequential.Semantics 𝓛
@@ -40,14 +40,18 @@ open import Concurrent.Erasure A 𝓝
 open import Concurrent.Lemmas A 𝓝
 
 import Concurrent.LowEq
-module L₁ = Concurrent.LowEq A 𝓝 -- as L₁
+module L₁ = Concurrent.LowEq A 𝓝
 open L₁
 
 import Sequential.LowEq  as L₂ renaming (_≈ᵀˢ⟨_⟩_ to _≈ᵀᴴ⟨_⟩_ ; ⌞_⌟ᵀˢ to ⌞_⌟ᵀᴴ ; ⌜_⌝ᵀˢ to ⌜_⌝ᵀᴴ ; ⟨_,_,_⟩ to mk≈ᴾ) hiding (_≈ˢ_)
 open L₂ 𝓛 A
 
-import Sequential.Graph  as G
-open G 𝓛 A
+import Concurrent.Graph
+module G₁ = Concurrent.Graph A 𝓝
+open G₁
+
+import Sequential.Graph
+module G₂ = Sequential.Graph 𝓛 A
 
 --------------------------------------------------------------------------------
 
@@ -81,7 +85,8 @@ secureStack ∙ = refl
 
 open import Sequential.Graph 𝓛 A
 
-
+aux-sch : ∀ {Σ₁ Σ₂ n₁ n₂ L n H} {l⊑H : L ⊑ H} -> n₁ ≡ n₂ -> Σ₁ ⟶ Σ₂ ↑ S.⟪ L , n ,  Fork H n₁ l⊑H ⟫ ->  Σ₁ ⟶ Σ₂ ↑ S.⟪ L , n ,  Fork H n₂ l⊑H ⟫
+aux-sch refl x = x
 
 εᴳ-simᴸ₀ : ∀ {L n ls T₂ Ts₂ Σ₂'} {g₁ g₁' g₂ : Global ls} -> (L⊑A : L ⊑ A) (step : (L , n)  ⊢ g₁ ↪ g₁') -> g₁ ≈ᴳ g₂ ->
            let C.⟨ Σ₁ , Ms₁ , Γ₁ , P₁ ⟩ = g₁
@@ -89,15 +94,53 @@ open import Sequential.Graph 𝓛 A
                C.⟨ Σ₂ , Ms₂ , Γ₂ , P₂ ⟩ = g₂ in
            Σ₂ ⟶ Σ₂' ↑ S.⟪ L , n , getEvent step ⟫ -> Σ₁' ≈ˢ Σ₂' -> L ↦ T₂ ∈ᴾ P₂ -> n ↦ Ts₂ ∈ᵀ T₂  ->
            (nextPool step) L₁.≈ᴾ⟨ yes L⊑A ⟩ T₂ -> (nextThread step) ≈ᵀᴴ⟨ yes L⊑A ⟩ Ts₂ -> g₂ ↪⋆-≈ᴳ g₁'
+
 εᴳ-simᴸ₀ L⊑A (CS.step-∅ {Ts₁ = Ts₁} l∈P t∈T ¬fork step sch u₁ᵀ u₁ᴾ) g₁≈g₂ sch' Σ₁'≈Σ₂' L∈P₂ t∈T₂ T₁≈T₂ Ts₁≈Ts₂
   with redex-≈ L⊑A (mk≈ᴾ (Ms₁≈Ms₂ g₁≈g₂) (Γ₁≈Γ₂ g₁≈g₂) Ts₁≈Ts₂) step
 ... | _ , L₂.mk≈ᴾ Ms₁'≈Ms₂' Γ₁'≈Γ₂' Ts₁'≈Ts₂' , step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ Ts₁'≈Ts₂'
 ... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ (P₁≈P₂ g₁≈g₂) T₁'≈T₂'
 ... | P₂' , P₁'≈P₂' , u₂ᴾ = Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , Ms₁'≈Ms₂' , Γ₁'≈Γ₂' , P₁'≈P₂' ⟩ (step-∅ L∈P₂ t∈T₂ (¬IsForkTS-≈ Ts₁≈Ts₂ ¬fork) step₂ sch' u₂ᵀ u₂ᴾ ∷ [])
 
-εᴳ-simᴸ₀ L⊑A (fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) g₁≈g₂ sch' L∈P₂ Ts∈T₂ T₁≈T₂ Ts₁≈Ts₂ = {!!}
+εᴳ-simᴸ₀ L⊑A (CS.fork l∈P t∈T u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ sch' Σ₁'≈Σ₂' L∈P₂ t∈T₂ T₁≈T₂
+  (L₂.Kᵀˢ G₂.⟨ G₂.fork l⊑H h⊑A x , x₁ ⟩ G₂.⟨ G₂.fork .l⊑H h⊑A₁ x₂ , x₃ ⟩) with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ (L₂.Kᵀˢ G₂.⟨ Return （） , x₁ ⟩ G₂.⟨ Return （） , x₃ ⟩)
+... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
+... | P₂' , P₁'≈P₂' , u₂ᴾ with memberᴾ-≈ (yes h⊑A) H∈P₁ P₁'≈P₂'
+... | Tᴴ₂ , Tᴴ₂≈T₁ᴴ , H∈P₂ with updateᴾ-≈ (yes h⊑A) u₁ᴾ' P₁'≈P₂' (newᵀ-≈ Tᴴ₂≈T₁ᴴ (L₂.Kᵀˢ G₂.⟨ x , [] ⟩ G₂.⟨ x₂ , [] ⟩))
+... | P₂'' , P₂''≈P₁'' , uᴾ₂′
+  = Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , Ms₁≈Ms₂  , Γ₁≈Γ₂ , P₂''≈P₁'' ⟩ (fork L∈P₂ t∈T₂ u₂ᵀ u₂ᴾ H∈P₂ (aux-sch (lengthᵀ-≈ h⊑A Tᴴ₂≈T₁ᴴ) sch') uᴾ₂′ ∷ [])
 
-εᴳ-simᴸ₀ L⊑A (fork∙ l∈P t∈T uᵀ uᴾ sch) g₁≈g₂ sch' L∈P₂ Ts∈T₂ T₁≈T₂ Ts₁≈Ts₂ = {!!}
+
+
+εᴳ-simᴸ₀ L⊑A (CS.fork l∈P t∈T u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ sch' Σ₁'≈Σ₂' L∈P₂ t∈T₂ T₁≈T₂ (L₂.Kᵀˢ G₂.⟨ G₂.fork' l⊑H h⋤A x , x₁ ⟩ G₂.⟨ G₂.fork' .l⊑H h⋤A₁ x₂ , x₃ ⟩) with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ (L₂.Kᵀˢ G₂.⟨ Return （） , x₁ ⟩ G₂.⟨ Return （） , x₃ ⟩)
+... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
+... | P₂' , P₁'≈P₂' , u₂ᴾ with memberᴾ-≈ (no h⋤A) H∈P₁ P₁'≈P₂'
+... | Tᴴ₂ , Tᴴ₂≈T₁ᴴ , H∈P₂ with id-≈ˢ (lengthᵀ Tᴴ₂) l⊑H L⊑A h⋤A sch'
+... | Σ₂'' , sch'' , Σ₂'≈Σ₂'' with updateᴾ-≈ (no h⋤A) u₁ᴾ' P₁'≈P₂' (newᵀ-≈ Tᴴ₂≈T₁ᴴ (L₂.Kᵀˢ ∙ ∙))
+... | P₂'' , P₂''≈P₁'' , uᴾ₂′ = Cᴳ _ L₁.⟨ trans-≈ˢ Σ₁'≈Σ₂' Σ₂'≈Σ₂'' , MS₁≈MS₂ , Γ₁≈Γ₂ , P₂''≈P₁'' ⟩ (fork L∈P₂ t∈T₂ u₂ᵀ u₂ᴾ H∈P₂ sch'' uᴾ₂′ ∷ [])
+
+εᴳ-simᴸ₀ L⊑A (CS.fork {Tᴴ = T₁ᴴ} l∈P t∈T u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ sch' Σ₁'≈Σ₂' L∈P₂ t∈T₂ T₁≈T₂ (L₂.Kᵀˢ G₂.⟨ G₂.fork' l⊑H h⋤A x , x₁ ⟩ G₂.⟨ G₂.fork∙ .l⊑H x₂ , x₃ ⟩) with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ (L₂.Kᵀˢ G₂.⟨ Return （） , x₁ ⟩ G₂.⟨ Return （） , x₃ ⟩)
+... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
+... | P₂' , P₁'≈P₂' , u₂ᴾ with memberᴾ-≈ (no h⋤A) H∈P₁ P₁'≈P₂'
+... | Tᴴ₂ , Tᴴ₂≈T₁ᴴ , H∈P₂ with step-≈ˢ l⊑H L⊑A h⋤A sch'
+... | Σ₂'' , sch'' , Σ₂'≈Σ₂'' with updateᴾ-≈ {T₂ = T₁ᴴ} (no h⋤A) u₁ᴾ' P₁'≈P₂' (Kᴾ ∙ ∙)
+... | P₂'' , P₁''≈P₂'' , uᴾ₂′
+  = Cᴳ _ L₁.⟨ (trans-≈ˢ Σ₁'≈Σ₂' Σ₂'≈Σ₂'') , MS₁≈MS₂ , Γ₁≈Γ₂ , trans-≈ᴾ P₁''≈P₂'' L₁.map-⌜ sym (updateᴾ∙ h⋤A uᴾ₂′) ⌝ᴾ ⟩ (fork∙ L∈P₂ t∈T₂  u₂ᵀ u₂ᴾ sch'' ∷ [])
+
+εᴳ-simᴸ₀ {ls = ls} L⊑A (CS.fork∙ {H} {tᴴ = t₁ᴴ} {P₂ = P₁'} l∈P t∈T u₁ᵀ u₁ᴾ sch) L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ sch' Σ₁'≈Σ₂' L∈P₂ t∈T₂ T₁≈T₂ (L₂.Kᵀˢ G₂.⟨ G₂.fork∙ l⊑H x , x₁ ⟩ G₂.⟨ G₂.fork' .l⊑H h⋤A x₂ , x₃ ⟩) with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ (L₂.Kᵀˢ G₂.⟨  Return （） , x₁ ⟩ G₂.⟨ Return （） , x₃ ⟩)
+... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
+... | P₂' , P₁'≈P₂' , u₂ᴾ with lookupᴾ (H ∈ᴸ ls) P₁'
+... | T₁ᴴ , H∈P₁ with memberᴾ-≈ (no h⋤A) H∈P₁ P₁'≈P₂'  -- TODO Won't need this if we add H∈P₁ to fork∙
+... | T₂ᴴ , T₂ᴴ≈T₁ᴴ , H∈P₂ with fork-≈ˢ (lengthᵀ T₂ᴴ) l⊑H L⊑A h⋤A sch'
+... | Σ₂'' , sch'' , Σ₂'≈Σ₂'' with updateᴾ H∈P₁ (T₁ᴴ ▻ mkᵀᴴ t₁ᴴ [])
+... | P₁'' , u₁ᴾ′ with updateᴾ-≈ {T₂ = T₂ᴴ ▻ mkᵀᴴ _ []} (no h⋤A) u₁ᴾ′ P₁'≈P₂' (Kᴾ ∙ ∙)
+... | P₂'' , P₁''≈P₂'' , u₂ᴾ′
+  = Cᴳ _ L₁.⟨ trans-≈ˢ Σ₁'≈Σ₂' Σ₂'≈Σ₂'' , MS₁≈MS₂ , Γ₁≈Γ₂ , trans-≈ᴾ P₁'≈P₂' L₁.map-⌜ updateᴾ∙ h⋤A u₂ᴾ′ ⌝ᴾ ⟩ (fork L∈P₂ t∈T₂ u₂ᵀ u₂ᴾ H∈P₂ sch'' u₂ᴾ′ ∷ [])
+
+
+εᴳ-simᴸ₀ L⊑A (CS.fork∙ l∈P t∈T u₁ᵀ u₁ᴾ sch) L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ sch' Σ₁'≈Σ₂' L∈P₂ t∈T₂ T₁≈T₂ (L₂.Kᵀˢ G₂.⟨ G₂.fork∙ l⊑H x , x₁ ⟩ G₂.⟨ G₂.fork∙ .l⊑H x₂ , x₃ ⟩) with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ (L₂.Kᵀˢ G₂.⟨ (Return （）) , x₁ ⟩ G₂.⟨ (Return （）) , x₃ ⟩)
+... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
+... | P₂' , P₁'≈P₂' , u₂ᴾ
+  = Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁'≈P₂' ⟩ (fork∙ L∈P₂ t∈T₂ u₂ᵀ u₂ᴾ sch' ∷ [])
 
 εᴳ-simᴸ₀ L⊑A (skip l∈P t∈T stuck sch) L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ sch' Σ₁'≈Σ₂' L∈P₂ t∈T₂ T₁≈T₂ Ts₁≈Ts₂
   =  Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ (skip L∈P₂ t∈T₂ (stuck-≈ L⊑A (L₂.mk≈ᴾ MS₁≈MS₂ Γ₁≈Γ₂ Ts₁≈Ts₂) stuck) sch' ∷ [])
@@ -111,74 +154,6 @@ open import Sequential.Graph 𝓛 A
 εᴳ-simᴸ⋆ N.zero L⊑A step L₁.⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ | Σ₂' , sch' , Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) (next-∈ᵀ step) P₁≈P₂
 ... | T₂ , T₁≈T₂ , l∈P₂ with memberᵀ-≈ L⊑A (next-∈ᴾ step) T₁≈T₂
 ... | _ , Ts₁≈Ts₂ , t∈T₂ = εᴳ-simᴸ₀ L⊑A step (forgetᴳ L₁.⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩) sch' Σ₁'≈Σ₂' l∈P₂ t∈T₂ T₁≈T₂ Ts₁≈Ts₂
-
-
--- εᴳ-simᴸ⋆ zero L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = ?
--- --     | Σ₂' , sch' , Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) l∈P₁ P₁≈P₂
--- -- ... | T₂ , T₁≈T₂ , l∈P₂ with memberᵀ-≈ L⊑A t∈T₁ T₁≈T₂
--- -- εᴳ-simᴸ⋆ zero _ L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
-
--- --     -- Fork
--- --     | Σ₂' , sch' , Σ₁'≈Σ₂' | T₂ , T₁≈T₂ , l∈P₂
--- --     | ._ , L₁.⟨ ⟨ G.fork l⊑H h⊑A e₁ , G.fork .l⊑H h⊑A₁ e₂ ⟩ , S₁≈S₂ ⟩ , t∈T₂
--- --          with redex-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , ⟨ ( G.fork l⊑H h⊑A e₁) , (G.fork l⊑H h⊑A₁ e₂) ⟩ , S₁≈S₂ ⟩ step₁
--- -- ... | _ , L₂.⟨ Γ₁'≈Γ₂' , t₁'≈t₂' , S₁'≈S₂' ⟩  , step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ L₁.⟨ t₁'≈t₂' , S₁'≈S₂' ⟩
--- -- ... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
--- -- ... | P₂' , P₁'≈P₂' , u₂ᴾ with memberᴾ-≈ (yes h⊑A) H∈P₁ P₁'≈P₂'
--- -- ... | Tᴴ₂ , Tᴴ₂≈T₁ᴴ , H∈P₂
--- --   rewrite lengthᵀ-≈ h⊑A Tᴴ₂≈T₁ᴴ with updateᴾ-≈ (yes h⊑A) u₁ᴾ' P₁'≈P₂' (newᵀ-≈ Tᴴ₂≈T₁ᴴ L₁.⟨ ⟨ e₁ , e₂ ⟩ , [] ⟩)
--- -- ... | P₂'' , P₂''≈P₁'' , uᴾ₂′ = Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , P₂''≈P₁'' , Γ₁'≈Γ₂' ⟩ (fork l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ H∈P₂ sch' uᴾ₂′ ∷ [])
-
--- -- εᴳ-simᴸ⋆ zero  L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
--- --   -- Fork∙
--- --   | Σ₂' , sch' , Σ₁'≈Σ₂' | T₂ , T₁≈T₂ , l∈P₂
--- --   | ._ , L₁.⟨ ⟨ G.fork' l⊑H h⋤A e₁ , G.fork' .l⊑H h⋤A₁ e₂ ⟩ , S₁≈S₂ ⟩ , t∈T₂
--- --     with redex-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , ⟨ ( G.fork' l⊑H h⋤A e₁) , G.fork' l⊑H h⋤A₁ e₂ ⟩ , S₁≈S₂ ⟩ step₁
--- -- ... | _ , L₂.⟨ Γ₁'≈Γ₂' , t₁'≈t₂' , S₁'≈S₂' ⟩  , step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ L₁.⟨ t₁'≈t₂' , S₁'≈S₂' ⟩
--- -- ... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
--- -- ... | P₂' , P₁'≈P₂' , u₂ᴾ with memberᴾ-≈ (no h⋤A) H∈P₁ P₁'≈P₂'
--- -- ... | Tᴴ₂ , Tᴴ₂≈T₁ᴴ , H∈P₂ with id-≈ˢ (lengthᵀ Tᴴ₂) l⊑H L⊑A h⋤A sch'
--- -- ... | Σ₂'' , sch'' , Σ₂'≈Σ₂'' with updateᴾ-≈ (no h⋤A) u₁ᴾ' P₁'≈P₂' (newᵀ-≈ Tᴴ₂≈T₁ᴴ L₁.⟨ ⟨ e₁ , e₂ ⟩ , [] ⟩)
--- -- ... | P₂'' , P₂''≈P₁'' , uᴾ₂′ = Cᴳ _ L₁.⟨ trans-≈ˢ Σ₁'≈Σ₂' Σ₂'≈Σ₂'' , P₂''≈P₁'' , Γ₁'≈Γ₂' ⟩ (fork l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ H∈P₂ sch'' uᴾ₂′ ∷ [])
-
--- εᴳ-simᴸ⋆ zero L⊑A (CS.fork {Tᴴ = T₁ᴴ} l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₃ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = ?
--- --   -- Fork∙
--- --   | Σ₂' , sch' , Σ₁'≈Σ₂' | T₂ , T₁≈T₂ , l∈P₂
--- --   | ._ , L₁.⟨ ⟨ G.fork' l⊑H h⋤A e₁ , G.fork∙ .l⊑H e₂ ⟩ , S₁≈S₂ ⟩ , t∈T₂
--- --        with redex-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , ⟨ ( G.fork' l⊑H h⋤A e₁) , G.fork∙ l⊑H e₂ ⟩ , S₁≈S₂ ⟩ step₁
--- -- ... | _ , L₂.⟨ Γ₁'≈Γ₂' , t₁'≈t₂' , S₁'≈S₂' ⟩  , step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ L₁.⟨ t₁'≈t₂' , S₁'≈S₂' ⟩
--- -- ... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
--- -- ... | P₂' , P₁'≈P₂' , u₂ᴾ with step-≈ˢ l⊑H L⊑A h⋤A sch'
--- -- ... | Σ₂'' , sch'' , Σ₂'≈Σ₂'' with updateᴾ-≈ {T₂ = T₁ᴴ} (no h⋤A) u₁ᴾ' P₁'≈P₂' L₁.∙
--- -- ... | P₂'' , P₁''≈P₂'' , uᴾ₂′
--- --   = Cᴳ _ L₁.⟨ (trans-≈ˢ Σ₁'≈Σ₂' Σ₂'≈Σ₂'') , trans-≈ᴾ P₁''≈P₂'' L₁.⌜ sym (updateᴾ∙ h⋤A uᴾ₂′) ⌝ᴾ , Γ₁'≈Γ₂' ⟩ (fork∙ l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ sch'' ∷ [])
-
--- εᴳ-simᴸ⋆ zero L⊑A (CS.fork∙ {P₂ = P₁'} l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ sch) L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
---     | Σ₂' , sch' , Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) l∈P₁ P₁≈P₂
--- ... | T₂ , T₁≈T₂ , l∈P₂ with memberᵀ-≈ L⊑A t∈T₁ T₁≈T₂
-
--- εᴳ-simᴸ⋆ {ls = ls} zero L⊑A (CS.fork∙ {H} {tᴴ = t₁ᴴ} {P₂ = P₁'} l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ sch) ⟨ _ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
---   | Σ₂' , sch' , Σ₁'≈Σ₂' | T₂ , T₁≈T₂ , l∈P₂
---   | ._ , ⟨ ⟨ G.fork∙ l⊑H e₁ , G.fork' .l⊑H h⋤A e₂ ⟩ , S₁≈S₂ ⟩ , t∈T₂
---     with redex-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , ⟨ ( G.fork∙ l⊑H e₁) , G.fork' l⊑H h⋤A e₂ ⟩ , S₁≈S₂ ⟩ step₁
--- ... | _ , L₂.⟨ Γ₁'≈Γ₂' , Ts₁'≈Ts₂' ⟩  , step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ Ts₁'≈Ts₂'
--- ... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
--- ... | P₂' , P₁'≈P₂' , u₂ᴾ with lookupᴾ (H ∈ᴸ ls) P₁'
--- ... | T₁ᴴ , H∈P₁ with memberᴾ-≈ (no h⋤A) H∈P₁ P₁'≈P₂'  -- TODO Won't need this if we add H∈P₁ to fork∙
--- ... | T₂ᴴ , T₂ᴴ≈T₁ᴴ , H∈P₂ with fork-≈ˢ (lengthᵀ T₂ᴴ) l⊑H L⊑A h⋤A sch'
--- ... | Σ₂'' , sch'' , Σ₂'≈Σ₂'' with updateᴾ H∈P₁ (T₁ᴴ ▻ ⟨ t₁ᴴ , [] ⟩)
--- ... | P₁'' , u₁ᴾ′ with updateᴾ-≈ {T₂ = T₂ᴴ ▻ ⟨ _ , [] ⟩} (no h⋤A) u₁ᴾ′ P₁'≈P₂' ?  -- P₁''≈P₂''
--- ... | P₂'' , P₁''≈P₂'' , u₂ᴾ′
---   = Cᴳ _ ⟨ trans-≈ˢ Σ₁'≈Σ₂' Σ₂'≈Σ₂'' , trans-≈ᴾ P₁'≈P₂' L₁.⌜ updateᴾ∙ h⋤A u₂ᴾ′ ⌝ᴾ , Γ₁'≈Γ₂' ⟩ (fork l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ H∈P₂ sch'' u₂ᴾ′ ∷ [])
-
--- εᴳ-simᴸ⋆ zero L⊑A (CS.fork∙ l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ sch) ⟨ Σ₁≈Σ₂ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
---   | Σ₂' , sch' , Σ₁'≈Σ₂' | T₂ , T₁≈T₂ , l∈P₂
---   | ._ , ⟨ ⟨ G.fork∙ l⊑H e₁ , G.fork∙ .l⊑H e₂ ⟩ , S₁≈S₂ ⟩ , t∈T₂
---     with redex-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , ⟨ ( G.fork∙ l⊑H e₁) , G.fork∙ l⊑H e₂ ⟩ , S₁≈S₂ ⟩ step₁
--- ... | _ , L₂.⟨ Γ₁'≈Γ₂' , Ts₁'≈Ts₂' ⟩  , step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ Ts₁'≈Ts₂'
--- ... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
--- ... | P₂' , P₁'≈P₂' , u₂ᴾ
---   = Cᴳ _ ⟨ Σ₁'≈Σ₂' , P₁'≈P₂' , Γ₁'≈Γ₂' ⟩ (fork∙ l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ sch' ∷ [])
 
 εᴳ-simᴸ⋆ {ls = ls} (SC.suc n₂) L⊑A step L₁.⟨ _ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = {!!}
 -- with triangleˢ L⊑A Σ₁≈Σ₂ (getSchStep step)
