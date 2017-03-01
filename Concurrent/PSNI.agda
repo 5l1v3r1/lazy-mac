@@ -78,10 +78,10 @@ secureStack (# τ∈π ∷ S) = secureStack S
 secureStack (Bind x ∷ S) = refl
 secureStack ∙ = refl
 
--- data Square {ls} (g₂ : Global ls} : Set where
---   mkS : ∀ {Σ₂' Ms₂' Γ₂' P₂'} ->  Square
 
 open import Sequential.Graph 𝓛 A
+
+
 
 εᴳ-simᴸ₀ : ∀ {L n ls T₂ Ts₂ Σ₂'} {g₁ g₁' g₂ : Global ls} -> (L⊑A : L ⊑ A) (step : (L , n)  ⊢ g₁ ↪ g₁') -> g₁ ≈ᴳ g₂ ->
            let C.⟨ Σ₁ , Ms₁ , Γ₁ , P₁ ⟩ = g₁
@@ -95,13 +95,15 @@ open import Sequential.Graph 𝓛 A
 ... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ (P₁≈P₂ g₁≈g₂) T₁'≈T₂'
 ... | P₂' , P₁'≈P₂' , u₂ᴾ = Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , Ms₁'≈Ms₂' , Γ₁'≈Γ₂' , P₁'≈P₂' ⟩ (step-∅ L∈P₂ t∈T₂ (¬IsForkTS-≈ Ts₁≈Ts₂ ¬fork) step₂ sch' u₂ᵀ u₂ᴾ ∷ [])
 
-εᴳ-simᴸ₀ L⊑A (fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) g₁≈g₂ sch' L∈P₂ Ts∈T₂ T₁≈T₂  Ts₁≈Ts₂ = {!!}
+εᴳ-simᴸ₀ L⊑A (fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) g₁≈g₂ sch' L∈P₂ Ts∈T₂ T₁≈T₂ Ts₁≈Ts₂ = {!!}
 
 εᴳ-simᴸ₀ L⊑A (fork∙ l∈P t∈T uᵀ uᴾ sch) g₁≈g₂ sch' L∈P₂ Ts∈T₂ T₁≈T₂ Ts₁≈Ts₂ = {!!}
 
-εᴳ-simᴸ₀ L⊑A (skip l∈P t∈T stuck sch) g₁≈g₂ sch' L∈P₂ Ts∈T₂ T₁≈T₂ Ts₁≈Ts₂ = {!!}
+εᴳ-simᴸ₀ L⊑A (skip l∈P t∈T stuck sch) L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ sch' Σ₁'≈Σ₂' L∈P₂ t∈T₂ T₁≈T₂ Ts₁≈Ts₂
+  =  Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ (skip L∈P₂ t∈T₂ (stuck-≈ L⊑A (L₂.mk≈ᴾ MS₁≈MS₂ Γ₁≈Γ₂ Ts₁≈Ts₂) stuck) sch' ∷ [])
 
-εᴳ-simᴸ₀ L⊑A (done l∈P t∈T don sch) g₁≈g₂ sch' L∈P₂ Ts∈T₂ T₁≈T₂ Ts₁≈Ts₂ = {!!}
+εᴳ-simᴸ₀ L⊑A (CS.done l∈P t∈T don sch) L₁.⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ sch' Σ₁'≈Σ₂' L∈P₂ t∈T₂ T₁≈T₂ Ts₁≈Ts₂
+  = Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ (done L∈P₂ t∈T₂ (done-≈ L⊑A Ts₁≈Ts₂ don) sch' ∷ [])
 
 εᴳ-simᴸ⋆ : ∀ {L n n₁ ls} {g₁ g₁' g₂ : Global ls} (n₂ : SC.ℕ) -> L ⊑ A -> (L , n)  ⊢ g₁ ↪ g₁' -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> g₂ ↪⋆-≈ᴳ g₁'
 
@@ -110,14 +112,6 @@ open import Sequential.Graph 𝓛 A
 ... | T₂ , T₁≈T₂ , l∈P₂ with memberᵀ-≈ L⊑A (next-∈ᴾ step) T₁≈T₂
 ... | _ , Ts₁≈Ts₂ , t∈T₂ = εᴳ-simᴸ₀ L⊑A step (forgetᴳ L₁.⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩) sch' Σ₁'≈Σ₂' l∈P₂ t∈T₂ T₁≈T₂ Ts₁≈Ts₂
 
--- εᴳ-simᴸ⋆ zero L⊑A (CS.step-∅ l∈P₁ t∈T₁ ¬fork₁ step₁ sch₁ u₁ᵀ u₁ᴾ) L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
---     | Σ₂' , sch' , Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) l∈P₁ P₁≈P₂
--- ... | T₂ , T₁≈T₂ , l∈P₂ with memberᵀ-≈ L⊑A t∈T₁ T₁≈T₂
--- ... | _ , Ts₁≈Ts₂ , t∈T₂ with redex-≈ L⊑A ? step₁ -- ⟨ Ms₁≈Ms₂ , Γ₁≈Γ₂ , Ts₁≈Ts₂ ⟩
--- ... | _ , L₂.⟨ Ms₁'≈Ms₂' , Γ₁'≈Γ₂' , Ts₁'≈Ts₂' ⟩  , step₂ with updateᵀ-≈ L⊑A u₁ᵀ T₁≈T₂ Ts₁'≈Ts₂'
--- ... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
--- ... | P₂' , P₁'≈P₂' , u₂ᴾ
---   = Cᴳ _ L₁.⟨ Σ₁'≈Σ₂' , ? , Γ₁'≈Γ₂' , P₁'≈P₂' ⟩ (step-∅ l∈P₂ t∈T₂ (¬IsForkTS-≈ Ts₁≈Ts₂ ¬fork₁) step₂ sch' u₂ᵀ u₂ᴾ ∷ [])
 
 -- εᴳ-simᴸ⋆ zero L⊑A (CS.fork l∈P₁ t∈T₁ step₁ u₁ᵀ u₁ᴾ H∈P₁ sch u₁ᴾ') L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = ?
 -- --     | Σ₂' , sch' , Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) l∈P₁ P₁≈P₂
@@ -185,15 +179,6 @@ open import Sequential.Graph 𝓛 A
 -- ... | T₂' , T₁'≈T₂' , u₂ᵀ with updateᴾ-≈ (yes L⊑A) u₁ᴾ P₁≈P₂ T₁'≈T₂'
 -- ... | P₂' , P₁'≈P₂' , u₂ᴾ
 --   = Cᴳ _ ⟨ Σ₁'≈Σ₂' , P₁'≈P₂' , Γ₁'≈Γ₂' ⟩ (fork∙ l∈P₂ t∈T₂ step₂ u₂ᵀ u₂ᴾ sch' ∷ [])
-
--- εᴳ-simᴸ⋆ zero L⊑A (CS.skip l∈P₁ t∈T₁ stuck₁ sch) L₁.⟨ Σ₁≈Σ₂' , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ | Σ₂' , sch' , Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) l∈P₁ P₁≈P₂
--- ... | T₂ , T₁≈T₂ , l∈P₂ with memberᵀ-≈ L⊑A t∈T₁ T₁≈T₂
--- ... | ._ , ⟨ t₁≈t₂ , S₁≈S₂ ⟩ , t∈T₂
---   = Cᴳ C.⟨ Σ₂' , _ , _ , _ ⟩ L₁.⟨ Σ₁'≈Σ₂' , Ms₁≈Ms₂ , P₁≈P₂ , Γ₁≈Γ₂ ⟩ (skip l∈P₂ t∈T₂ (stuck-≈ L⊑A L₂.⟨ Γ₁≈Γ₂ , t₁≈t₂ , S₁≈S₂ ⟩ stuck₁) sch' ∷ [])
-
--- εᴳ-simᴸ⋆ zero L⊑A (CS.done l∈P₁ t∈T₁ (Done isVal) sch) L₁.⟨ Σ₁≈Σ₂' , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ | Σ₂' , sch' , Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) l∈P₁ P₁≈P₂
--- ... | T₂ , T₁≈T₂ , l∈P₂ with memberᵀ-≈ L⊑A t∈T₁ T₁≈T₂
--- ... | ._ , ⟨ t₁≈t₂ , S₁≈S₂ ⟩ , t∈T₂ = Cᴳ ⟨ Σ₂' , _ , _ , _ ⟩ L₁.⟨ Σ₁'≈Σ₂' , Ms₁≈Ms₂ , P₁≈P₂ , Γ₁≈Γ₂ ⟩ (done l∈P₂ t∈T₂ (Done (val-≈ t₁≈t₂ isVal)) sch' ∷ [])
 
 εᴳ-simᴸ⋆ {ls = ls} (SC.suc n₂) L⊑A step L₁.⟨ _ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = {!!}
 -- with triangleˢ L⊑A Σ₁≈Σ₂ (getSchStep step)
