@@ -205,3 +205,8 @@ aux-sch refl x = x
 εᴳ-sim⋆ : ∀ {l n ls} {g₁ g₁' g₂ : Global ls} -> Dec (l ⊑ A) -> ( l , n ) ⊢ g₁ ↪ g₁' -> g₁ ≈ᴳ g₂ -> g₂ ↪⋆-≈ᴳ g₁'
 εᴳ-sim⋆ (yes L⊑A) step x = εᴳ-simᴸ⋆ _ L⊑A step (alignᴳ x)
 εᴳ-sim⋆ {g₁ = g₁} {g₁' = g₁'} {g₂ = g₂} (no H⋤A) stepᴴ g₁≈g₂ = Cᴳ g₂ ( trans-≈ᴳ (sym-≈ᴳ (⌜ εᴳ-simᴴ H⋤A stepᴴ ⌝ᴳ)) g₁≈g₂) []
+
+
+psni : ∀ {l n ls} {g₁ g₁' g₂ : Global ls} -> g₁ ≅ᴳ g₂ -> (l , n)  ⊢ g₁ ↪ g₁' -> ∃ (λ g₂' → g₂ ↪⋆ g₂' × g₁' ≅ᴳ g₂')
+psni {l} eq s with εᴳ-sim⋆ (l ⊑? A) s ⌜ eq ⌝ᴳ
+psni eq s | Cᴳ g₂' g₁'≈ᴳg₂'  g₂↪⋆g₂' = g₂' , (g₂↪⋆g₂' , ⌞ g₁'≈ᴳg₂' ⌟ᴳ)
