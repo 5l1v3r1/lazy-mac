@@ -29,7 +29,7 @@ open CS 𝓛 𝓢
 -- open import Concurrent.Semantics 𝓛 𝓢 public
 
 open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
-open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-≅ᴴ ; stepᴴ-≅ᴹ ; stepᴴ)
+open import Sequential.PINI 𝓛 A as P₂ using (stepᴸ ; stepᴴ-≅ᴴ ; stepᴴ-≅ᴹ ; stepᴴ)
 
 open import Data.Nat as N
 --------------------------------------------------------------------------------
@@ -44,8 +44,9 @@ import Concurrent.LowEq
 module L₁ = Concurrent.LowEq A 𝓝
 open L₁
 
-import Sequential.LowEq  as L₂ renaming (_≈ᵀˢ⟨_⟩_ to _≈ᵀᴴ⟨_⟩_ ; ⌞_⌟ᵀˢ to ⌞_⌟ᵀᴴ ; ⌜_⌝ᵀˢ to ⌜_⌝ᵀᴴ ; ⟨_,_,_⟩ to mk≈ᴾ) hiding (_≈ˢ_)
-open L₂ 𝓛 A
+import Sequential.LowEq renaming (_≈ᵀˢ⟨_⟩_ to _≈ᵀᴴ⟨_⟩_ ; ⌞_⌟ᵀˢ to ⌞_⌟ᵀᴴ ; ⌜_⌝ᵀˢ to ⌜_⌝ᵀᴴ ; ⟨_,_,_⟩ to mk≈ᴾ) hiding (_≈ˢ_)
+module L₂  = Sequential.LowEq  𝓛 A
+open L₂
 
 import Concurrent.Graph
 module G₁ = Concurrent.Graph A 𝓝
@@ -159,15 +160,15 @@ aux-sch refl x = x
 εᴳ-simᴸ▵ {n₂ = n₂} L⊑A step L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ H⋤A H∈P₂ Ts∈T₂ (isD don) nextˢ with nextˢ Done
 ... | Σ₂' , Σ₂≈Σ₂' , sch' with εᴳ-simᴸ⋆ n₂ L⊑A step L₁.⟨ Σ₂≈Σ₂' , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
 ... | Cᴳ g₂' L₁.⟨ Σ₂'≈Σ₂'' , Ms₁'≈Ms₂'' , Γ₂'≈Γ₂'' , P₂'≈P₂'' ⟩ ss
-  = Cᴳ _ L₁.⟨ Σ₂'≈Σ₂'' , Ms₁'≈Ms₂'' , Γ₂'≈Γ₂'' , P₂'≈P₂'' ⟩ ((done H∈P₂ Ts∈T₂ don sch') ∷ ss) -- (done H∈P₂ Ts∈T₂ don ? ∷ ss)
-εᴳ-simᴸ▵ L⊑A step g₁≈g₂ H⋤A H∈P₂ Ts∈T₂ (isR x) nextˢ = {!!}
-εᴳ-simᴸ▵ L⊑A step g₁≈g₂ H⋤A H∈P₂ Ts∈T₂ (isS x) nextˢ = {!!}
+  = Cᴳ _ L₁.⟨ Σ₂'≈Σ₂'' , Ms₁'≈Ms₂'' , Γ₂'≈Γ₂'' , P₂'≈P₂'' ⟩ ((done H∈P₂ Ts∈T₂ don sch') ∷ ss)
+εᴳ-simᴸ▵ {n₂ = n₂} L⊑A step L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ H⋤A H∈P₂ Ts∈T₂ (SS.isR (SS.Step {p' = p'} step₂)) nextˢ
+  with updateᵀ Ts∈T₂ (TS p')
+... | T₂' , uᵀ with updateᴾ H∈P₂ T₂'
+... | P₂' , uᴾ with nextˢ Step
+... | Σ₂' , Σ₂≈Σ₂' , sch'  with εᴳ-simᴸ⋆ n₂ L⊑A step L₁.⟨ Σ₂≈Σ₂' , trans-≈ᴹ MS₁≈MS₂ L₂.map-⌜ stepᴴ-≅ᴹ H⋤A step₂ ⌝ᴹ , trans-≈ᴴ Γ₁≈Γ₂ L₂.map-⌜ stepᴴ-≅ᴴ H⋤A step₂ ⌝ᴴ , trans-≈ᴾ P₁≈P₂ L₁.map-⌜ updateᴾ∙ H⋤A uᴾ ⌝ᴾ ⟩
+... | Cᴳ g₂'' g₂'≈g₂'' ss  = Cᴳ _ g₂'≈g₂'' (step-∅ H∈P₂ Ts∈T₂ (Redex-¬IsForkTS (SS.Step step₂)) step₂ sch' uᵀ uᴾ ∷ ss)
 
--- εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
---   -- Done
---   |  Σ₂' , H , m , H⋤A , Σ₂≈Σ₂' , nextˢ | T₂ , T∈P₂
---   | C.⟨ t₂ , S₂ ⟩ , t∈T₂ | isD don with εᴳ-simᴸ⋆ n₂ Σ₂≈Σ₂' L⊑A step ⟨ forget Σ₂≈Σ₂' , P₁≈P₂ , Γ₁≈Γ₂ ⟩
--- ... | Cᴳ g₂' ⟨ Σ₂'≈Σ₂'' , t₂'≈t₂'' , Γ₂'≈Γ₂'' ⟩ ss = Cᴳ _ ⟨ Σ₂'≈Σ₂'' , ? , t₂'≈t₂'' , Γ₂'≈Γ₂'' ⟩ (done T∈P₂ t∈T₂ don (nextˢ Done) ∷ ss)
+εᴳ-simᴸ▵ L⊑A step g₁≈g₂ H⋤A H∈P₂ Ts∈T₂ (isS x) nextˢ = {!!}
 
 --   -- Redex
 -- εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩

@@ -199,6 +199,10 @@ Stuckᴾ p = (¬ Doneᴾ p) × (¬ (Redexᴾ p)) × ¬ IsForkTS (TS p)
 -- ¬Done⇒¬Val :  ∀ {l π ls τ Ms} {Γ : Heaps ls} {t : Term π τ} -> ¬ (Doneᴾ {l} ⟨ Ms , Γ , t , [] ⟩) -> ¬ Value t
 -- ¬Done⇒¬Val x v = ⊥-elim (x (Done v))
 
+Redex-¬IsForkTS : ∀ {l ls τ} {p : Program l ls τ} -> Redexᴾ p -> ¬ IsForkTS (TS p)
+Redex-¬IsForkTS (Step (Pure _ (Var₂ a () c) _)) (isForkTS (Fork p t))
+Redex-¬IsForkTS (Step (Pure _ (Var₂ a () c) _)) (isForkTS (Fork∙ p t))
+
 data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
   isD :  Doneᴾ p -> Stateᴾ p
   isR : Redexᴾ p -> Stateᴾ p

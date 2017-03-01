@@ -127,6 +127,10 @@ map-⌜_⌝ᴹ : ∀ {ls} {Ms₁ Ms₂ : Memories ls} -> Ms₁ map-≅ᴹ Ms₂ 
 map-⌜_⌝ᴹ {Ms₁ = Ms₁} {Ms₂} eq with lift-map-εᴹ Ms₁ | lift-map-εᴹ Ms₂
 ... | e₁ | e₂ rewrite eq = K-mapᴹ e₁ e₂
 
+trans-≈ᴹ : ∀ {ls} {Γ₁ Γ₂ Γ₃ : Memories ls} -> Γ₁ map-≈ᴹ Γ₂ -> Γ₂ map-≈ᴹ Γ₃ -> Γ₁ map-≈ᴹ Γ₃
+trans-≈ᴹ a b = map-⌜ trans map-⌞ a ⌟ᴹ map-⌞ b ⌟ᴹ ⌝ᴹ
+
+
 --------------------------------------------------------------------------------
 
 _≅ᵀˢ⟨_⟩_ : ∀ {l τ} -> TS∙ l τ -> Dec (l ⊑ A) -> TS∙ l τ -> Set
