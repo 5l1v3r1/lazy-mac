@@ -293,6 +293,10 @@ unlift-εˢ [] = refl
 unlift-εˢ (x ∷ x₁) rewrite unlift-εᶜ x | unlift-εˢ x₁ = refl
 unlift-εˢ ∙ = refl
 
+wkenᴱˢ : ∀ {π₁ π₂ τ₁ τ₂ l} {S₁ S₂ : Stack l π₁ τ₁ τ₂} -> (π₁⊆π₂ : π₁ ⊆ π₂) -> Eraseˢ S₁ S₂ -> Eraseˢ (wkenˢ S₁ π₁⊆π₂) (wkenˢ S₂ π₁⊆π₂)
+wkenᴱˢ {S₁ = S₁} p e with lift-εˢ (wkenˢ S₁ p)
+... | x rewrite unlift-εˢ e = x
+
 --------------------------------------------------------------------------------
 
 open import Data.Maybe as M
