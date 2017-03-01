@@ -168,37 +168,19 @@ aux-sch refl x = x
 ... | Σ₂' , Σ₂≈Σ₂' , sch'  with εᴳ-simᴸ⋆ n₂ L⊑A step L₁.⟨ Σ₂≈Σ₂' , trans-≈ᴹ MS₁≈MS₂ L₂.map-⌜ stepᴴ-≅ᴹ H⋤A step₂ ⌝ᴹ , trans-≈ᴴ Γ₁≈Γ₂ L₂.map-⌜ stepᴴ-≅ᴴ H⋤A step₂ ⌝ᴴ , trans-≈ᴾ P₁≈P₂ L₁.map-⌜ updateᴾ∙ H⋤A uᴾ ⌝ᴾ ⟩
 ... | Cᴳ g₂'' g₂'≈g₂'' ss  = Cᴳ _ g₂'≈g₂'' (step-∅ H∈P₂ Ts∈T₂ (Redex-¬IsForkTS (SS.Step step₂)) step₂ sch' uᵀ uᴾ ∷ ss)
 
-εᴳ-simᴸ▵ L⊑A step g₁≈g₂ H⋤A H∈P₂ Ts∈T₂ (isS x) nextˢ = {!!}
+εᴳ-simᴸ▵ {n₂ = n₂} L⊑A step L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ H⋤A H∈P₂ Ts∈T₂ (SS.isS isStuck) nextˢ with nextˢ Skip
+... | Σ₂' , Σ₂≈Σ₂' , sch' with εᴳ-simᴸ⋆ n₂ L⊑A step L₁.⟨ Σ₂≈Σ₂' , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
+... | Cᴳ g₂' g₂'≈g₂'' ss = Cᴳ _ g₂'≈g₂'' (skip H∈P₂ Ts∈T₂ isStuck sch' ∷ ss)
 
---   -- Redex
--- εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
---   | Σ₂' , H , m , H⋤A , Σ₂≈Σ₂' , nextˢ | T₂ , T∈P₂
---   | C.⟨ t₂ , S₂ ⟩ , t∈T₂ | isR (Step {p' = ∙} ())
+εᴳ-simᴸ▵ {n₂ = n₂} {ls = ls} {Ts₂ = mkᵀᴴ (fork {h = h} .p .t₂ᴴ) S₂} L⊑A step L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ H⋤A H∈P₂ Ts∈T₂ (SS.isF (SS.isForkTS (SC.Fork p t₂ᴴ))) nextˢ  rewrite secureStack S₂ with updateᵀ Ts∈T₂ (mkᵀᴴ (Return _ SC.（）) S₂)
+... | T₂' , uᵀ with updateᴾ H∈P₂ T₂'
+... | P₂' , uᴾ with lookupᴾ (h ∈ᴸ ls) P₂'
+... | T₂ᴴ , H∈P₂' with updateᴾ H∈P₂' (T₂ᴴ ▻ (mkᵀᴴ t₂ᴴ []))
+... | P₂'' , u₂ᴾ with nextˢ (Fork h (lengthᵀ T₂ᴴ) p)
+... | Σ₂' , Σ₂'≈Σ₂'' , sch' with εᴳ-simᴸ⋆ n₂ L⊑A step L₁.⟨ Σ₂'≈Σ₂'' ,  MS₁≈MS₂ , Γ₁≈Γ₂ , trans-≈ᴾ (trans-≈ᴾ P₁≈P₂ L₁.map-⌜ updateᴾ∙ H⋤A uᴾ ⌝ᴾ) L₁.map-⌜ updateᴾ∙ (trans-⋤ p H⋤A) u₂ᴾ ⌝ᴾ  ⟩
+... | Cᴳ g₂'' g₂≈g₂'' ss = Cᴳ _ g₂≈g₂'' (fork H∈P₂ Ts∈T₂ uᵀ uᴾ H∈P₂' sch' u₂ᴾ ∷ ss)
 
--- εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
---   | Σ₂' , H , m , H⋤A , Σ₂≈Σ₂' , nextˢ | T₂ , T∈P₂
---   | C.⟨ t₂ , S₂ ⟩ , t∈T₂ | isR (Step {p' = ⟨ a , b , c ⟩} step') with isFork? t₂
-
---   -- step-∅
--- εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
---   | Σ₂' , H , m , H⋤A , Σ₂≈Σ₂' , nextˢ | T₂ , T∈P₂
---   | C.⟨ t₂ , S₂ ⟩ , t∈T₂ | isR (Step {p' = ⟨ Γ₂' , t₂' , S₂' ⟩} step₂) | no ¬fork with updateᵀ t∈T₂ ⟨ t₂' , S₂' ⟩
--- ... | T₂' , uᵀ with updateᴾ T∈P₂ T₂'
--- ... | P₂' , uᴾ with ⟨ forget Σ₂≈Σ₂' , trans-≈ᴾ P₁≈P₂ L₁.⌜ updateᴾ∙ H⋤A uᴾ ⌝ᴾ , trans-≈ᴴ Γ₁≈Γ₂ ⌜ stepᴴ-Γ H⋤A step₂ ⌝ᴴ ⟩
--- ... | g₂≈g₂' with εᴳ-simᴸ⋆ n₂ Σ₂≈Σ₂' L⊑A step g₂≈g₂'
--- ... | Cᴳ g₂'' g₂'≈g₂'' ss  = Cᴳ _ g₂'≈g₂'' (step-∅ T∈P₂ t∈T₂ ¬fork step₂ (nextˢ Step) uᵀ uᴾ ∷ ss)
-
---   -- fork
--- εᴳ-simᴸ⋆ {ls = ls} (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
---   | Σ₂' , H , m , H⋤A , Σ₂≈Σ₂' , nextˢ | T₂ , T∈P₂
---   | C.⟨ _ , S₂ ⟩ , t∈T₂ | isR (Step {p' = ⟨ Γ₂' , t₂' , S₂' ⟩} step₂) | yes (Fork {h = H₂} H⊑H₂ t₂ᴴ)
---     rewrite secureStack S₂ with updateᵀ t∈T₂ ⟨ t₂' , S₂' ⟩
--- ... | T₂' , uᵀ with updateᴾ T∈P₂ T₂'
--- ... | P₂' , uᴾ with lookupᴾ (H₂ ∈ᴸ ls) P₂'
--- ... | T₂ᴴ , H∈P₂' with updateᴾ H∈P₂' (T₂ᴴ ▻ ⟨ t₂ᴴ , [] ⟩)
--- ... | P₂'' , u₂ᴾ with trans-≈ᴾ (trans-≈ᴾ P₁≈P₂ L₁.⌜ updateᴾ∙ H⋤A uᴾ ⌝ᴾ) L₁.⌜ updateᴾ∙ (trans-⋢ H⊑H₂ H⋤A) u₂ᴾ ⌝ᴾ | trans-≈ᴴ Γ₁≈Γ₂ ⌜ stepᴴ-Γ H⋤A step₂ ⌝ᴴ
--- ... | P₂≈P₂' | Γ₂≈Γ₂' with εᴳ-simᴸ⋆ n₂ Σ₂≈Σ₂' L⊑A step ⟨ forget Σ₂≈Σ₂' , P₂≈P₂'  , Γ₂≈Γ₂' ⟩
--- ... | Cᴳ g₂'' g₂≈g₂'' ss = Cᴳ _ g₂≈g₂'' (fork T∈P₂ t∈T₂ step₂ uᵀ uᴾ H∈P₂' (nextˢ (Fork H₂ (lengthᵀ T₂ᴴ) H⊑H₂)) u₂ᴾ ∷ ss)
+εᴳ-simᴸ▵ L⊑A step g₁≈g₂ H⋤A H∈P₂ Ts∈T₂ (SS.isF (SS.isForkTS (SC.Fork∙ p t))) nextˢ = {!!}
 
 --   -- fork∙
 -- εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
@@ -209,13 +191,6 @@ aux-sch refl x = x
 -- ... | P₂' , uᴾ with ⟨ forget Σ₂≈Σ₂' , trans-≈ᴾ P₁≈P₂ L₁.⌜ updateᴾ∙ H⋤A uᴾ ⌝ᴾ , trans-≈ᴴ Γ₁≈Γ₂ ⌜ stepᴴ-Γ H⋤A step₂ ⌝ᴴ ⟩
 -- ... | g₂≈g₂' with εᴳ-simᴸ⋆ n₂ Σ₂≈Σ₂' L⊑A step g₂≈g₂'
 -- ... | Cᴳ g₂'' g₂'≈g₂'' ss = Cᴳ _ g₂'≈g₂'' (fork∙ T∈P₂ t∈T₂ step₂ uᵀ uᴾ (nextˢ Step) ∷ ss)
-
---   -- Stuck
--- εᴳ-simᴸ⋆ (suc n₂) Σ₁≈Σ₂ L⊑A step ⟨ Σ₁≈Σ₃ , P₁≈P₂ , Γ₁≈Γ₂ ⟩
---   | Σ₂' , H , m , H⋤A , Σ₂≈Σ₂' , nextˢ | T₂ , T∈P₂
---   | C.⟨ t₂ , S₂ ⟩ , t∈T₂ | isS stuck with εᴳ-simᴸ⋆ n₂ Σ₂≈Σ₂' L⊑A step ⟨ forget Σ₂≈Σ₂' , P₁≈P₂ , Γ₁≈Γ₂ ⟩
--- ... | Cᴳ g₂' ⟨ Σ₂'≈Σ₂'' , t₂'≈t₂'' , Γ₂'≈Γ₂'' ⟩ ss = Cᴳ _ ⟨ Σ₂'≈Σ₂'' , t₂'≈t₂'' , Γ₂'≈Γ₂'' ⟩ (skip T∈P₂ t∈T₂ stuck (nextˢ Skip) ∷ ss)
-
 
 
 -- εᴳ-simᴸ⋆ N.zero L⊑A step L₁.⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ with squareˢ L⊑A Σ₁≈Σ₂ (getSchStep step)

@@ -203,10 +203,14 @@ Redex-¬IsForkTS : ∀ {l ls τ} {p : Program l ls τ} -> Redexᴾ p -> ¬ IsFor
 Redex-¬IsForkTS (Step (Pure _ (Var₂ a () c) _)) (isForkTS (Fork p t))
 Redex-¬IsForkTS (Step (Pure _ (Var₂ a () c) _)) (isForkTS (Fork∙ p t))
 
+Forkᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
+Forkᴾ p = IsForkTS (TS p)
+
 data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
   isD :  Doneᴾ p -> Stateᴾ p
   isR : Redexᴾ p -> Stateᴾ p
   isS : Stuckᴾ p -> Stateᴾ p
+  isF : Forkᴾ p -> Stateᴾ p
 
 --------------------------------------------------------------------------------
 -- Lemmas

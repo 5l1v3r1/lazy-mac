@@ -210,7 +210,7 @@ postulate stuck-≈ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (l⊑A : l ⊑
 ¬fork-≈ ⟨ fork∙ p e₁ , fork∙ .p e₂ ⟩ ¬fork₁ (SC.Fork∙ .p t₁) = ¬fork₁ (SC.Fork∙ p _)
 
 ¬IsForkTS-≈ : ∀ {τ l} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> ¬ (IsForkTS Ts₁) -> ¬ (IsForkTS Ts₂)
-¬IsForkTS-≈ (Kᵀˢ G.⟨ e₁ , e₂ ⟩ G.⟨ e₁' , e₂' ⟩) ¬fork (isForkTS isF) = ¬fork-≈ ⟨ e₁ , e₁' ⟩ (¬IsForkTs¬IsFork ¬fork) isF
+¬IsForkTS-≈ (Kᵀˢ G.⟨ e₁ , e₂ ⟩ G.⟨ e₁' , e₂' ⟩) ¬fork (isForkTS isFo) = ¬fork-≈ ⟨ e₁ , e₁' ⟩ (¬IsForkTs¬IsFork ¬fork) isFo
 
 done-≈ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} -> (l⊑A : l ⊑ A) -> Ts₁ ≈ᵀˢ⟨ (yes l⊑A) ⟩ Ts₂ -> IsDoneTS Ts₁ -> IsDoneTS Ts₂
 done-≈ l⊑A (Kᵀˢ G.⟨ x₃ , G.[] ⟩ G.⟨ x₁ , G.[] ⟩) (SS.isDoneTS isVal) = isDoneTS (val-≈ ⟨ x₃ , x₁ ⟩ isVal)
