@@ -14,10 +14,10 @@ State : Set
 State = List (Label × ℕ)
 
 data _⟶_↑_ : ∀ {l} -> State -> State -> Message l -> Set where
-  step : ∀ {s} -> (l : Label) (n : ℕ) -> ((l , n) ∷ s) ⟶ s ++ [ (l , n) ] ↑ ⟪ l , n , Step ⟫
-  fork : ∀ {s h m} -> (l : Label) (n : ℕ) (p : l ⊑ h) -> ((l , n) ∷ s) ⟶ s ++ ((h , m) ∷ (l , n) ∷ []) ↑ ⟪ l , n , Fork h m p ⟫
-  done : ∀ {s} -> (l : Label) (n : ℕ) -> ((l , n) ∷ s) ⟶ s ↑ ⟪ l , n , Done ⟫
-  skip : ∀ {s} -> (l : Label) (n : ℕ) -> ((l , n) ∷ s) ⟶ s ++ [ (l , n) ] ↑ ⟪ l , n , Skip ⟫
+  step : ∀ {Σ} -> (l : Label) (n : ℕ) -> ((l , n) ∷ Σ) ⟶ Σ ++ [ (l , n) ] ↑ ⟪ l , n , Step ⟫
+  fork : ∀ {Σ h m} -> (l : Label) (n : ℕ) (p : l ⊑ h) -> ((l , n) ∷ Σ) ⟶ Σ ++ ((h , m) ∷ (l , n) ∷ []) ↑ ⟪ l , n , Fork h m p ⟫
+  done : ∀ {Σ} -> (l : Label) (n : ℕ) -> ((l , n) ∷ Σ) ⟶ Σ ↑ ⟪ l , n , Done ⟫
+  skip : ∀ {Σ} -> (l : Label) (n : ℕ) -> ((l , n) ∷ Σ) ⟶ Σ ++ [ (l , n) ] ↑ ⟪ l , n , Skip ⟫
 
 open import Relation.Binary.PropositionalEquality hiding ([_])
 

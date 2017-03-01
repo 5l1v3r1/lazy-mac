@@ -187,6 +187,8 @@ consᴸ L⊑A eq₁ ++-≈ eq₂ = consᴸ L⊑A (eq₁ ++-≈ eq₂)
 cons₁ᴴ H⋤A eq₁ ++-≈ eq₂ = cons₁ᴴ H⋤A (eq₁ ++-≈ eq₂)
 cons₂ᴴ H⋤A eq₁ ++-≈ eq₂ = cons₂ᴴ H⋤A (eq₁ ++-≈ eq₂)
 
+infixl 8 _++-≈_
+
 squareˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , 0 ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
             ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e ⟫ × Σ₁' ≈ˢ Σ₂')
 squareˢ {_ ∷ Σ₁} L⊑A (consᴸ L⊑A₁ x) (R.step L n) = _ , (step L n , append-≈ x (L⊑A₁ ∷ []) )
@@ -223,6 +225,19 @@ triangleˢ {Σ₁} {n₁ = n₁} {n₂} L⊑A (cons₂ᴴ {H} {n} {Σ₂ = Σ₂
         aux Done = _ , (eq , (done H n))
         aux (Fork h n₃ x) = _ , (append-≈ˢ′ L⊑A s eq (trans-⋤ x H⋤A ∷ H⋤A ∷ []) , fork H n x )
 
+idˢ : ∀ {Σ₁ Σ₂ L m₁ n H} -> (m₂ : ℕ) (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ ⟪ L , n , (Fork H m₁ L⊑H) ⟫
+              -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ ⟪ L , n , (Fork H m₂ L⊑H) ⟫ × Σ₂ ≈ˢ Σ₂')
+idˢ m₂ L⊑H L⊑A H⋤A (R.fork {Σ = Σ} L n .L⊑H) = _ , ((R.fork L n L⊑H) , refl-≈ˢ {Σ} ++-≈ (cons₁ᴴ H⋤A (cons₂ᴴ H⋤A (consᴸ L⊑A nil))) )
+
+
+step-≈ˢ : ∀ {Σ₁ Σ₂ L H n m} -> (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ ⟪ L , n , Fork H m L⊑H ⟫
+              -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ ⟪ L , n , Step ⟫ × Σ₂ ≈ˢ Σ₂')
+step-≈ˢ L⊑H L⊑A H⋤A (R.fork {Σ = Σ} L n .L⊑H) = _ , ((R.step L n) , (refl-≈ˢ {Σ} ++-≈ cons₁ᴴ H⋤A (consᴸ L⊑A nil)))
+
+fork-≈ˢ : ∀ {Σ₁ Σ₂ L H n} -> (m : ℕ) (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ ⟪ L , n , Step ⟫
+                -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ ⟪ L , n , Fork H m L⊑H ⟫ × Σ₂ ≈ˢ Σ₂')
+fork-≈ˢ m L⊑H l⊑A H⋤A (R.step {Σ = Σ} l n) = _ , (R.fork l n L⊑H , refl-≈ˢ {Σ} ++-≈ cons₂ᴴ H⋤A (consᴸ l⊑A nil) )
+
 RR-is-NI : NIˢ RR
 RR-is-NI = record
              { εˢ = εˢ
@@ -236,9 +251,9 @@ RR-is-NI = record
              ; offset₂ = offset₂
              ; align = align
              ; forget = forget
-             ; id-≈ˢ = {!!}
-             ; step-≈ˢ = {!!}
-             ; fork-≈ˢ = {!!}
+             ; id-≈ˢ = idˢ
+             ; step-≈ˢ = step-≈ˢ
+             ; fork-≈ˢ = fork-≈ˢ
              ; squareˢ = squareˢ
              ; triangleˢ = triangleˢ
              }
