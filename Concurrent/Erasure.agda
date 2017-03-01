@@ -76,17 +76,16 @@ memberᵀ : ∀ {l n} {T : Pool l} {Ts : Thread _} -> (l⊑A : l ⊑ A)
 memberᵀ l⊑A C.here = C.here
 memberᵀ l⊑A (C.there x) = C.there (memberᵀ l⊑A x)
 
-updateᵀ : ∀ {l n} {Ts : Thread _}  {T₁ T₂ : Pool l} -> (l⊑A : l ⊑ A) -> T₂ ≔ T₁ [ n ↦ Ts ]ᵀ ->
+updateᵀᴸ : ∀ {l n} {Ts : Thread _}  {T₁ T₂ : Pool l} -> (l⊑A : l ⊑ A) -> T₂ ≔ T₁ [ n ↦ Ts ]ᵀ ->
           (εᴾ (yes l⊑A) T₂) ≔ (εᴾ (yes l⊑A) T₁) [ n ↦ εᵀˢ (yes l⊑A) Ts ]ᵀ
-updateᵀ l⊑A C.here = C.here
-updateᵀ l⊑A (C.there x) = C.there (updateᵀ l⊑A x)
+updateᵀᴸ l⊑A C.here = C.here
+updateᵀᴸ l⊑A (C.there x) = C.there (updateᵀᴸ l⊑A x)
 
-updateᴾ : ∀ {l ls} {T : Pool l} {P₁ P₂ : Pools ls} -> (l⊑A : l ⊑ A) -> P₂ ≔ P₁ [ l ↦ T ]ᴾ -> (map-εᴾ P₂) ≔ (map-εᴾ P₁) [ l ↦ (εᴾ (yes l⊑A) T) ]ᴾ
-updateᴾ {l} l⊑A C.here with l ⊑? A
-updateᴾ {T = T} l⊑A C.here | yes p rewrite εᴾ-ext-≡ (yes l⊑A) (yes p) T = here
-updateᴾ l⊑A C.here | no ¬p = ⊥-elim (¬p l⊑A)
-updateᴾ l⊑A (C.there x) = C.there (updateᴾ l⊑A x)
-
+updateᴾᴸ : ∀ {l ls} {T : Pool l} {P₁ P₂ : Pools ls} -> (l⊑A : l ⊑ A) -> P₂ ≔ P₁ [ l ↦ T ]ᴾ -> (map-εᴾ P₂) ≔ (map-εᴾ P₁) [ l ↦ (εᴾ (yes l⊑A) T) ]ᴾ
+updateᴾᴸ {l} l⊑A C.here with l ⊑? A
+updateᴾᴸ {T = T} l⊑A C.here | yes p rewrite εᴾ-ext-≡ (yes l⊑A) (yes p) T = here
+updateᴾᴸ l⊑A C.here | no ¬p = ⊥-elim (¬p l⊑A)
+updateᴾᴸ l⊑A (C.there x) = C.there (updateᴾᴸ l⊑A x)
 
 done-ε : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> IsDoneTS Ts -> IsDoneTS (εᵀˢ (yes l⊑A) Ts)
 done-ε l⊑A (isDoneTS isVal) = isDoneTS (εᵀ-Val isVal)
@@ -118,7 +117,7 @@ updateᴾ-▻ : ∀ {l ls} {P₁ P₂ : Pools ls} (T : Pool l) (t : Thread l) ->
                  P₁ ≔ P₂ [ l ↦ T ▻ t ]ᴾ ->
                  (map-εᴾ P₁) ≔ (map-εᴾ P₂) [ l ↦ (εᴾ (yes l⊑A) T) ▻ (εᵀˢ (yes l⊑A) t) ]ᴾ
 updateᴾ-▻ {l} T t l⊑A x with εᴾ-▻-≡ l⊑A T t
-... | eq rewrite eq = updateᴾ l⊑A x
+... | eq rewrite eq = updateᴾᴸ l⊑A x
 
 newᴾ∙ : ∀ {H ls} {P₁ P₂ : Pools ls} (T : Pool H) (t : Thread H) -> (H⋤A : H ⋤ A) -> P₂ ≔ P₁ [ H ↦ T ▻ t ]ᴾ -> map-εᴾ P₂ ≡ map-εᴾ P₁
 newᴾ∙ {H} T t H⋤A C.here with H ⊑? A

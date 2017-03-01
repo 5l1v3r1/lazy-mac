@@ -15,6 +15,9 @@ open import Concurrent.Calculus 𝓛 𝓢
 open import Relation.Nullary
 
 -- Concurrent semantics
+
+-- TODO I think that we can remove l n from the plain step and define
+-- a wrapper data-type that extracts it.
 data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
   step-∅ : ∀ {Σ₁ Σ₂ Ms₁ Ms₂} {Ts₁ Ts₂ : Thread l} {Γ₁ Γ₂ : Heaps ls} {P₁ P₂ : Pools ls} {T₁ T₂ : Pool l}
            (l∈P : l ↦ T₁ ∈ᴾ P₁)
@@ -62,8 +65,39 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
 
 open import Data.Product hiding (Σ ; _,_)
 
+data NextThread {ls} (l : Label) (n : ℕ) (g : Global ls) : Set where
+  next : {T : Pool l} (Ts : Thread _) -> (l∈P : l ↦ T ∈ᴾ (P g)) (t∈T : n ↦ Ts ∈ᵀ T) -> NextThread l n g
+
 _⊢_↪_ : ∀ {ls} -> Label × ℕ -> Global ls -> Global ls -> Set
 x ⊢ g₁ ↪ g₂ = Stepᶜ (proj₁ x) (proj₂ x) g₁ g₂
+
+nextThread : ∀ {ls} {x : Label × ℕ} {g₁ g₂ : Global ls} -> x ⊢ g₁ ↪ g₂ -> Thread (proj₁ x)
+nextThread (step-∅ {Ts₁ = Ts₁} l∈P t∈T ¬fork step sch uᵀ uᴾ) = Ts₁
+nextThread (fork {S = S} {tᴴ = tᴴ} {l⊑H = l⊑H} l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) = ⟨ fork l⊑H tᴴ , S ⟩
+nextThread (fork∙ {S = S} {tᴴ = tᴴ} {l⊑H = l⊑H} l∈P t∈T uᵀ uᴾ sch) =  ⟨ fork∙ l⊑H tᴴ , S ⟩
+nextThread (skip {Ts = Ts} l∈P t∈T stuck sch) = Ts
+nextThread (done {Ts = Ts} l∈P t∈T don sch) = Ts
+
+nextPool : ∀ {ls} {x : Label × ℕ} {g₁ g₂ : Global ls} -> x ⊢ g₁ ↪ g₂ -> Pool (proj₁ x)
+nextPool (step-∅ {T₁ = T₁} l∈T t∈T ¬fork step sch uᵀ uᴾ) = T₁
+nextPool (fork {T₁ = T₁} l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) = T₁
+nextPool (fork∙ {T₁ = T₁} l∈P t∈T uᵀ uᴾ sch) = T₁
+nextPool (skip {T = T} l∈P t∈T stuck sch) = T
+nextPool (done {T = T} l∈P t∈T don sch) = T
+
+next-∈ᴾ  : ∀ {ls} {x : Label × ℕ} {g₁ g₂ : Global ls} -> (step : x ⊢ g₁ ↪ g₂) -> (proj₂ x) ↦ (nextThread step) ∈ᵀ (nextPool step)
+next-∈ᴾ (step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) = t∈T
+next-∈ᴾ (fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) = t∈T
+next-∈ᴾ (fork∙ l∈P t∈T uᵀ uᴾ sch) = t∈T
+next-∈ᴾ (skip l∈P t∈T stuck sch) = t∈T
+next-∈ᴾ (done l∈P t∈T don sch) = t∈T
+
+next-∈ᵀ :  ∀ {ls} {x : Label × ℕ} {g₁ g₂ : Global ls} -> (step : x ⊢ g₁ ↪ g₂) -> (proj₁ x) ↦ (nextPool step) ∈ᴾ (P g₁)
+next-∈ᵀ (step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) = l∈P
+next-∈ᵀ (fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) = l∈P
+next-∈ᵀ (fork∙ l∈P t∈T uᵀ uᴾ sch) = l∈P
+next-∈ᵀ (skip l∈P t∈T stuck sch) = l∈P
+next-∈ᵀ (done l∈P t∈T don sch) = l∈P
 
 open import Scheduler 𝓛 using (Event)
 
@@ -80,6 +114,8 @@ getSchStep (fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) = sch
 getSchStep (fork∙ l∈P t∈T uᵀ uᴾ sch) = sch
 getSchStep (skip l∈P t∈T stuck sch) = sch
 getSchStep (done l∈P t∈T don sch) = sch
+
+
 
 -- -- An auxiliary data type that externalizes a global-step event.
 -- data _⊢ᴹ_↪_ {ls} : ∀ {l} -> Message l -> Global ls -> Global ls -> Set where

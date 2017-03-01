@@ -40,15 +40,15 @@ open import Data.Product renaming (_,_ to ⟨_,_⟩)
 -- Square
 εᴳ-simᴸ : ∀ {l n ls} {g₁ g₂ : Global ls} -> l ⊑ A ->  ⟨ l , n ⟩ ⊢ g₁ ↪ g₂ -> ⟨ l , n ⟩ ⊢ (εᴳ g₁) ↪ (εᴳ g₂)
 εᴳ-simᴸ l⊑A (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ)
-  = step-∅ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᵀˢ¬IsForkTS l⊑A ¬fork) (stepᴸ l⊑A step) (εˢ-simᴸ l⊑A sch) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A uᴾ)
+  = step-∅ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (εᵀˢ¬IsForkTS l⊑A ¬fork) (stepᴸ l⊑A step) (εˢ-simᴸ l⊑A sch) (updateᵀᴸ l⊑A uᵀ) (updateᴾᴸ l⊑A uᴾ)
 εᴳ-simᴸ l⊑A (CS.fork {H = H} {tᴴ = tᴴ} {Tᴴ = Tᴴ} l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) with memberᵀ l⊑A t∈T | εˢ-simᴸ l⊑A sch
 ... | t∈T' | sch' with H ⊑? A
 ... | yes H⊑A rewrite lengthᵀ-ε-≡ H⊑A Tᴴ
-    = fork (memberᴾ l⊑A l∈P) t∈T' (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (memberᴾ H⊑A H∈P₂) sch' (updateᴾ-▻ Tᴴ (⟨ tᴴ , [] ⟩) H⊑A u₂ᴾ)
+    = fork (memberᴾ l⊑A l∈P) t∈T' (updateᵀᴸ l⊑A uᵀ) (updateᴾᴸ l⊑A u₁ᴾ) (memberᴾ H⊑A H∈P₂) sch' (updateᴾ-▻ Tᴴ (⟨ tᴴ , [] ⟩) H⊑A u₂ᴾ)
 εᴳ-simᴸ l⊑A (CS.fork {tᴴ = tᴴ} {P₂ = P₂} {Tᴴ = Tᴴ} l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) | t∈T' | sch' | no H⋤A
-  rewrite newᴾ∙ Tᴴ ⟨ tᴴ , [] ⟩ H⋤A u₂ᴾ = fork∙ {P₂ = map-εᴾ P₂} (memberᴾ l⊑A l∈P) t∈T' (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) sch'
+  rewrite newᴾ∙ Tᴴ ⟨ tᴴ , [] ⟩ H⋤A u₂ᴾ = fork∙ {P₂ = map-εᴾ P₂} (memberᴾ l⊑A l∈P) t∈T' (updateᵀᴸ l⊑A uᵀ) (updateᴾᴸ l⊑A u₁ᴾ) sch'
 εᴳ-simᴸ l⊑A (CS.fork∙ l∈P t∈T uᵀ u₁ᴾ sch)
-  = fork∙ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (updateᵀ l⊑A uᵀ) (updateᴾ l⊑A u₁ᴾ) (εˢ-simᴸ l⊑A sch)
+  = fork∙ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (updateᵀᴸ l⊑A uᵀ) (updateᴾᴸ l⊑A u₁ᴾ) (εˢ-simᴸ l⊑A sch)
 εᴳ-simᴸ l⊑A (CS.skip l∈P t∈T stuck sch) = skip (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (stuck-ε l⊑A stuck) (εˢ-simᴸ l⊑A sch)
 εᴳ-simᴸ l⊑A (CS.done l∈P t∈T don sch) = done (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (done-ε l⊑A don) (εˢ-simᴸ l⊑A sch)
 

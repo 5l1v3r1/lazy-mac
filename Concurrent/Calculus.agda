@@ -108,3 +108,13 @@ memberᴾ-∈ (there x) = there (memberᴾ-∈ x)
 updateᴾ-∈ : ∀ {l ls} {P₁ P₂ : Pools ls} {T : Pool l} -> P₂ ≔ P₁ [ l ↦ T ]ᴾ -> l ∈ ls
 updateᴾ-∈ here = here
 updateᴾ-∈ (there x) = there (updateᴾ-∈ x)
+
+open import Data.Product as P
+
+updateᵀ : ∀ {l n} {t : Thread l} {T : Pool l} -> n ↦ t ∈ᵀ T -> (t' : Thread l) -> ∃ (λ T' → T' ≔ T [ n ↦ t' ]ᵀ)
+updateᵀ here t' = _ , here
+updateᵀ (there x) t' = P.map (_◅_ _) there (updateᵀ x t')
+
+updateᴾ : ∀ {l ls} {T : Pool l} {P : Pools ls} -> l ↦ T ∈ᴾ P -> (T' : Pool l) -> ∃ (λ P' → P' ≔ P [ l ↦ T' ]ᴾ)
+updateᴾ here T' = _ , here
+updateᴾ (there T∈P) T' = P.map (_◅_ _) there (updateᴾ T∈P T')
