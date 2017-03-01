@@ -4,7 +4,7 @@ module Scheduler.RoundRobin.Base (𝓛 : L.Lattice) where
 
 open L.Lattice 𝓛
 
-open import Scheduler.Base 𝓛 renaming (_,_,_ to ⟪_,_,_⟫)
+open import Scheduler.Base 𝓛
 
 open import Data.Product
 open import Data.List

@@ -8,7 +8,7 @@ open import Relation.Nullary
 open L.Lattice 𝓛
 import Scheduler.RoundRobin.Base as R
 open R 𝓛
-open import Scheduler.Base 𝓛 renaming (_,_,_ to ⟪_,_,_⟫)
+open import Scheduler.Base 𝓛
 open import Scheduler.Security 𝓛 A
 
 open import Data.List
@@ -140,11 +140,9 @@ append-≈ˢ xs (cons₂ᴴ H⋤A eq) = cons₂ᴴ H⋤A (append-≈ˢ xs eq)
 
 εˢ-simᴴ : ∀ {Σ₁ Σ₂ H} {m : Message H} -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ m -> Σ₁ ≈ˢ Σ₂
 εˢ-simᴴ H⋤A (R.step l n) = cons₁ᴴ H⋤A (append-≈ˢ (H⋤A ∷ []) refl-≈ˢ)
-εˢ-simᴴ H⋤A (R.fork H n L⊑A) = cons₁ᴴ H⋤A (append-≈ˢ ((trans-⋢ L⊑A H⋤A) ∷ (H⋤A ∷ [])) refl-≈ˢ)
+εˢ-simᴴ H⋤A (R.fork H n L⊑A) = cons₁ᴴ H⋤A (append-≈ˢ ((trans-⋤ L⊑A H⋤A) ∷ (H⋤A ∷ [])) refl-≈ˢ)
 εˢ-simᴴ H⋤A (R.done l n) = cons₁ᴴ H⋤A refl-≈ˢ
 εˢ-simᴴ H⋤A (R.skip l n) = cons₁ᴴ H⋤A (append-≈ˢ (H⋤A ∷ []) refl-≈ˢ)
-
--- open import Function
 
 offset₁ : ∀ {s₁ s₂} -> s₁ ≈ˢ s₂ -> ℕ
 offset₁ nil = 0
@@ -160,9 +158,9 @@ offset₂ (cons₂ᴴ H⋤A x) = suc (offset₂ x)
 
 data _≈ˢ-⟨_,_⟩_ : State -> ℕ -> ℕ -> State -> Set where
   nil : [] ≈ˢ-⟨ 0 , 0 ⟩ []
-  consᴸ : ∀ {L n s₁ s₂} -> (L⊑A : L ⊑ A) ->  s₁ ≈ˢ s₂ -> ((L , n) ∷ s₁) ≈ˢ-⟨ 0 , 0 ⟩ ((L , n) ∷ s₂)
-  cons₁ᴴ : ∀ {H n s₁ s₂ i j} -> (H⋤A  : H ⋤ A) -> s₁ ≈ˢ-⟨ i , j ⟩ s₂ -> ((H , n) ∷ s₁) ≈ˢ-⟨ suc i , j ⟩ s₂
-  cons₂ᴴ : ∀ {H n s₁ s₂ i j} -> (H⋤A  : H ⋤ A) -> s₁ ≈ˢ-⟨ i , j ⟩ s₂ -> s₁ ≈ˢ-⟨ i , suc j ⟩ ((H , n) ∷ s₂)
+  consᴸ : ∀ {L n Σ₁ Σ₂} -> (L⊑A : L ⊑ A) ->  Σ₁ ≈ˢ Σ₂ -> ((L , n) ∷ Σ₁) ≈ˢ-⟨ 0 , 0 ⟩ ((L , n) ∷ Σ₂)
+  cons₁ᴴ : ∀ {H n Σ₁ Σ₂ i j} -> (H⋤A  : H ⋤ A) -> Σ₁ ≈ˢ-⟨ i , j ⟩ Σ₂ -> ((H , n) ∷ Σ₁) ≈ˢ-⟨ suc i , j ⟩ Σ₂
+  cons₂ᴴ : ∀ {H n Σ₁ Σ₂ i j} -> (H⋤A  : H ⋤ A) -> Σ₁ ≈ˢ-⟨ i , j ⟩ Σ₂ -> Σ₁ ≈ˢ-⟨ i , suc j ⟩ ((H , n) ∷ Σ₂)
 
 align : ∀ {s₁ s₂} -> (eq : s₁ ≈ˢ s₂) -> s₁ ≈ˢ-⟨ offset₁ eq , offset₂ eq ⟩ s₂
 align nil = nil
@@ -175,6 +173,55 @@ forget nil = nil
 forget (consᴸ L⊑A x) = consᴸ L⊑A x
 forget (cons₁ᴴ H⋤A x) = cons₁ᴴ H⋤A (forget x)
 forget (cons₂ᴴ H⋤A x) = cons₂ᴴ H⋤A (forget x)
+
+append-≈ : ∀ {Σ₁ Σ₂ Σ₃} ->  Σ₁ ≈ˢ Σ₂ -> All (λ x → proj₁ x ⊑ A) Σ₃ -> (Σ₁ ++ Σ₃) ≈ˢ (Σ₂ ++ Σ₃)
+append-≈ eq [] = eq
+append-≈ nil (px ∷ px₁) = consᴸ px (append-≈ nil px₁)
+append-≈ (consᴸ L⊑A eq) px = consᴸ L⊑A (append-≈ eq px)
+append-≈ (cons₁ᴴ H⋤A eq) px = cons₁ᴴ H⋤A (append-≈ eq px)
+append-≈ (cons₂ᴴ H⋤A eq) px = cons₂ᴴ H⋤A (append-≈ eq px)
+
+_++-≈_ : ∀ {Σ₁ Σ₂ Σ₃ Σ₄} ->  Σ₁ ≈ˢ Σ₂ -> Σ₃ ≈ˢ Σ₄ -> (Σ₁ ++ Σ₃) ≈ˢ (Σ₂ ++ Σ₄)
+nil ++-≈ eq₂ = eq₂
+consᴸ L⊑A eq₁ ++-≈ eq₂ = consᴸ L⊑A (eq₁ ++-≈ eq₂)
+cons₁ᴴ H⋤A eq₁ ++-≈ eq₂ = cons₁ᴴ H⋤A (eq₁ ++-≈ eq₂)
+cons₂ᴴ H⋤A eq₁ ++-≈ eq₂ = cons₂ᴴ H⋤A (eq₁ ++-≈ eq₂)
+
+squareˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , 0 ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
+            ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e ⟫ × Σ₁' ≈ˢ Σ₂')
+squareˢ {_ ∷ Σ₁} L⊑A (consᴸ L⊑A₁ x) (R.step L n) = _ , (step L n , append-≈ x (L⊑A₁ ∷ []) )
+squareˢ L⊑A (cons₁ᴴ H⋤A eq) (R.step H n) = ⊥-elim (H⋤A L⊑A)
+squareˢ L⊑A (consᴸ L⊑A₁ x) (R.fork {h = h} L n p) with h ⊑? A
+squareˢ L⊑A (consᴸ L⊑A₁ x) (R.fork L n p₁) | yes p =  _ , ( fork L n p₁ , append-≈ x (p ∷ (L⊑A₁ ∷ [])))
+squareˢ L⊑A (consᴸ L⊑A₁ x) (R.fork L n p) | no ¬p = _ , (fork L n p) , x ++-≈ (refl-≈ˢ { (_ , _) ∷ (L , n) ∷ [] })
+squareˢ L⊑A (cons₁ᴴ H⋤A eq) (R.fork H n p) = ⊥-elim (H⋤A L⊑A)
+squareˢ L⊑A (consᴸ L⊑A₁ x) (R.done L n) = _ , ((done L n) , x )
+squareˢ L⊑A (cons₁ᴴ H⋤A eq) (R.done H n) = ⊥-elim (H⋤A L⊑A)
+squareˢ L⊑A (consᴸ L⊑A₁ x) (R.skip L n) = _ , (skip L n , append-≈ x (L⊑A₁ ∷ []) )
+squareˢ L⊑A (cons₁ᴴ H⋤A eq) (R.skip H n) = ⊥-elim (H⋤A L⊑A)
+
+append-≈ˢ′ : ∀ {Σ₁ Σ₁' Σ₂ Σ₃ n₁ n₂ L} {m : Message L} -> (L⊑A : L ⊑ A) -> Σ₁ ⟶ Σ₁' ↑ m ->
+             Σ₁ ≈ˢ-⟨ n₁ , n₂ ⟩ Σ₂ -> All (λ x → proj₁ x ⋤ A) Σ₃ -> Σ₁ ≈ˢ-⟨ n₁ , n₂ ⟩ (Σ₂ ++ Σ₃)
+append-≈ˢ′ L⊑A () nil ps
+append-≈ˢ′ L⊑A s (consᴸ L⊑A₁ x) ps = consᴸ L⊑A₁ (append-≈ˢ ps x)
+append-≈ˢ′ L⊑A (R.step l n) (cons₁ᴴ H⋤A eq) ps = ⊥-elim (H⋤A L⊑A)
+append-≈ˢ′ L⊑A (R.fork L n p) (cons₁ᴴ H⋤A eq) ps = ⊥-elim (H⋤A L⊑A)
+append-≈ˢ′ L⊑A (R.done l n) (cons₁ᴴ H⋤A eq) ps = ⊥-elim (H⋤A L⊑A)
+append-≈ˢ′ L⊑A (R.skip l n) (cons₁ᴴ H⋤A eq) ps = ⊥-elim (H⋤A L⊑A)
+append-≈ˢ′ L⊑A s (cons₂ᴴ H⋤A eq) ps = cons₂ᴴ H⋤A (append-≈ˢ′ L⊑A s eq ps)
+
+triangleˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁ n₂} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , suc n₂ ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
+                 ∃ (λ H → ∃ (λ m → H ⋤ A × ∀ (e : Event H) → ∃ (λ Σ₂' → Σ₁ ≈ˢ-⟨ n₁ , n₂ ⟩ Σ₂' ×  Σ₂ ⟶ Σ₂' ↑ ⟪ H , m , e ⟫ )))
+triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.step l n) = ⊥-elim (H⋤A L⊑A)
+triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.fork L n p) = ⊥-elim (H⋤A L⊑A)
+triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.done l n) = ⊥-elim (H⋤A L⊑A)
+triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.skip l n) = ⊥-elim (H⋤A L⊑A)
+triangleˢ {Σ₁} {n₁ = n₁} {n₂} L⊑A (cons₂ᴴ {H} {n} {Σ₂ = Σ₂} H⋤A eq) s = H , (n , (H⋤A , aux))
+  where aux : (e : Event H) ->  ∃ (λ Σ₂' → Σ₁ ≈ˢ-⟨ n₁ , n₂ ⟩ Σ₂' × ((H , n) ∷ Σ₂) ⟶ Σ₂' ↑ ⟪ H , n , e ⟫)
+        aux Skip = _ , (append-≈ˢ′ L⊑A s eq (H⋤A ∷ []) , (skip H n))
+        aux Step = _ , (append-≈ˢ′ L⊑A s eq (H⋤A ∷ []) , (step H n))
+        aux Done = _ , (eq , (done H n))
+        aux (Fork h n₃ x) = _ , (append-≈ˢ′ L⊑A s eq (trans-⋤ x H⋤A ∷ H⋤A ∷ []) , fork H n x )
 
 RR-is-NI : NIˢ RR
 RR-is-NI = record
@@ -189,96 +236,9 @@ RR-is-NI = record
              ; offset₂ = offset₂
              ; align = align
              ; forget = forget
+             ; id-≈ˢ = {!!}
+             ; step-≈ˢ = {!!}
+             ; fork-≈ˢ = {!!}
+             ; squareˢ = squareˢ
+             ; triangleˢ = triangleˢ
              }
-
-squareˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , 0 ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
-            ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e ⟫ )
-squareˢ L⊑A (consᴸ L⊑A' x) (R.step l n) = , R.step l n
-squareˢ L⊑A (cons₁ᴴ H⋤A eq) (R.step h n) = ⊥-elim (H⋤A L⊑A)
-squareˢ L⊑A (consᴸ L⊑A' x) (R.fork l n p₁) = , (R.fork l n p₁)
-squareˢ L⊑A (cons₁ᴴ H⋤A eq) (R.fork h n p) = ⊥-elim (H⋤A L⊑A)
-squareˢ L⊑A (consᴸ L⊑A' x) (R.done l n) = , R.done l n
-squareˢ L⊑A (cons₁ᴴ H⋤A eq) (R.done h n) = ⊥-elim (H⋤A L⊑A)
-squareˢ L⊑A (consᴸ L⊑A₁ x) (R.skip L n) = , R.skip L n
-squareˢ L⊑A (cons₁ᴴ H⋤A eq) (R.skip H n) = ⊥-elim (H⋤A L⊑A)
-
--- triangleˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , 0 ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
---             ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e ⟫ )
-
--- open import Concurrent.Security.Scheduler State _⟶_↑_ εˢ _≈ˢ-⟨_⟩_ _≈ˢ-⟨_~_~_⟩_
-
--- ++-≈ˢ : ∀ {s₁ s₂ x} -> s₁ ≈ˢ s₂ -> (s₁ ++ x) ≈ˢ (s₂ ++ x)
--- ++-≈ˢ {x = x} nil = ≡-≈ˢ refl
--- ++-≈ˢ (consᴸ p x₁) = consᴸ p (++-≈ˢ x₁)
--- ++-≈ˢ (cons₁ᴴ ¬p x₁) = cons₁ᴴ ¬p (++-≈ˢ x₁)
--- ++-≈ˢ (cons₂ᴴ ¬p x₁) = cons₂ᴴ ¬p (++-≈ˢ x₁)
-
--- ++₁-≈ˢ : ∀ {s₁ s₂ h} {{n}} -> ¬ (h ⊑ A) -> s₁ ≈ˢ-⟨ ⟩ s₂ -> s₁ ≈ˢ-⟨ ⟩ (s₂ ++ [ h , n ])
--- ++₁-≈ˢ ¬p nil = cons₂ᴴ ¬p nil
--- ++₁-≈ˢ ¬p (consᴸ p x) = consᴸ p (++₁-≈ˢ ¬p x)
--- ++₁-≈ˢ ¬p (cons₁ᴴ ¬p₁ x) = cons₁ᴴ ¬p₁ (++₁-≈ˢ ¬p x)
--- ++₁-≈ˢ ¬p (cons₂ᴴ ¬p₁ x) = cons₂ᴴ ¬p₁ (++₁-≈ˢ ¬p x)
-
--- ++₂-≈ˢ : ∀ {s₁ s₂ h₁ h₂ n₁ n₂} -> ¬ (h₁ ⊑ A) -> ¬ (h₂ ⊑ A) -> s₁ ≈ˢ-⟨ ⟩ s₂ -> s₁ ≈ˢ-⟨ ⟩ (s₂ ++  (h₁ , n₁) ∷ ((h₂ , n₂) ∷ []))
--- ++₂-≈ˢ ¬p₁ ¬p₂ nil = cons₂ᴴ ¬p₁ (cons₂ᴴ ¬p₂ nil)
--- ++₂-≈ˢ ¬p₁ ¬p₂ (consᴸ p x) = consᴸ p (++₂-≈ˢ ¬p₁ ¬p₂ x)
--- ++₂-≈ˢ ¬p₁ ¬p₂ (cons₁ᴴ ¬p x) = cons₁ᴴ ¬p (++₂-≈ˢ ¬p₁ ¬p₂ x)
--- ++₂-≈ˢ ¬p₁ ¬p₂ (cons₂ᴴ ¬p x) = cons₂ᴴ ¬p (++₂-≈ˢ ¬p₁ ¬p₂ x)
-
--- --fork-≈ˢ : ∀ {s₁ s₂}
-
--- aligned : ∀ {l i e n s₁ s₂ s₁'}  -> l ⊑ -> s₁ ⟶ s₂ ↑ ⟪ l , n , e ⟫ -> e ≢ ∙ -> s₁ ≈ˢ-⟨ i ~ ~ 0 ⟩ s₁' -> Aligned s₁ s₂ s₁' ⟪ l , n , e ⟫ A
--- aligned p hole e≠∙ nil = ⊥-elim (e≠∙ refl)
--- aligned p step e≠∙ (consᴸ p₁ x) = low step (++-≈ˢ x)
--- aligned p (fork p₁) e≠∙ (consᴸ p₂ x) = low (fork p₁) (++-≈ˢ x)
--- aligned p done e≠∙ (consᴸ p₁ x) = low done x
--- aligned p skip e≠∙ (consᴸ p₁ x) = low skip (++-≈ˢ x)
--- aligned p hole e≠∙ (consᴸ p₁ x) = ⊥-elim (e≠∙ refl)
--- aligned p step e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- aligned p (fork p₁) e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- aligned p done e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- aligned p skip e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- aligned p hole e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (e≠∙ refl)
-
--- open import Data.Sum using (_⊎_ ; inj₁ ; inj₂)
-
--- lemma : ∀ {s₁ s₁' s₂ i j h n n' l e} -> ¬ h ⊑ -> l ⊑ -> s₁ ⟶ s₂ ↑ ⟪ l , n' , e ⟫ -> e ≢ ∙ -> s₁ ≈ˢ-⟨ i ~ ~ j ⟩ s₁'
---               -> s₁ ≈ˢ-⟨ i ~ ~ j ⟩ (s₁' ++ [ h , n ])
--- lemma ¬p p hole e≠∙ nil = ⊥-elim (e≠∙ refl)
--- lemma ¬p p s e≠∙  (consᴸ p' x) = consᴸ p' (++₁-≈ˢ ¬p x)
--- lemma ¬p p step e≠∙  (cons₁ᴴ ¬p₁ x) = ⊥-elim (¬p₁ p)
--- lemma ¬p p (fork p') e≠∙  (cons₁ᴴ ¬p₁ x) = ⊥-elim (¬p₁ p)
--- lemma ¬p p done e≠∙ (cons₁ᴴ ¬p₁ x) = ⊥-elim (¬p₁ p)
--- lemma ¬p p skip e≠∙  (cons₁ᴴ ¬p₁ x) = ⊥-elim (¬p₁ p)
--- lemma ¬p p hole e≠∙ (cons₁ᴴ ¬p₁ x) = ⊥-elim (e≠∙ refl)
--- lemma {n = n} ¬p p s e≠∙  (cons₂ᴴ ¬p₁ x) = cons₂ᴴ ¬p₁ (lemma {n = n} ¬p p s e≠∙ x)
-
--- lemma₂ : ∀ {s₁ s₁' s₂ i j h₁ h₂ n₁ n₂ n' l e} -> ¬ h₁ ⊑ -> ¬ h₂ ⊑ -> l ⊑ -> s₁ ⟶ s₂ ↑ ⟪ l , n' , e ⟫ -> e ≢ ∙ -> s₁ ≈ˢ-⟨ i ~ ~ j ⟩ s₁'
---               -> s₁ ≈ˢ-⟨ i ~ ~ j ⟩ (s₁' ++ ((h₁ , n₁) ∷ (h₂ , n₂) ∷ []))
--- lemma₂ ¬p₁ ¬p₂ p hole e≠∙ nil = ⊥-elim (e≠∙ refl)
--- lemma₂ {n₁ = n₁} {n₂ = n₂} ¬p₁ ¬p₂ p s e≠∙ (consᴸ p₁ x) = consᴸ p₁ (++₂-≈ˢ ¬p₁ ¬p₂ x)
--- lemma₂ ¬p₁ ¬p₂ p step e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- lemma₂ ¬p₁ ¬p₂ p (fork p₁) e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- lemma₂ ¬p₁ ¬p₂ p done e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- lemma₂ ¬p₁ ¬p₂ p skip e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- lemma₂ ¬p₁ ¬p₂ p hole e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (e≠∙ refl)
--- lemma₂ ¬p₁ ¬p₂ p s e≠∙ (cons₂ᴴ ¬p x) = cons₂ᴴ ¬p (lemma₂ ¬p₁ ¬p₂ p s e≠∙ x)
-
--- highˢ : ∀ {s₁ s₁' s₂ l e n n₁ n₂} -> l ⊑ -> s₁ ⟶ s₂ ↑ ⟪ l , n , e ⟫ -> e ≢ ∙ -> s₁ ≈ˢ-⟨ n₁ ~ ~ suc n₂ ⟩ s₁' ->
---           ∃ λ h -> ∃ λ n -> (e : Event h) -> e ≢ ∙ -> HighStep h n e s₁ s₂ s₁' n₁ n₂
--- highˢ p step e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- highˢ p (fork p₁) e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- highˢ p done e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- highˢ p skip e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (¬p p)
--- highˢ p hole e≠∙ (cons₁ᴴ ¬p x) = ⊥-elim (e≠∙ refl)
--- highˢ {s₁} {(h , n) ∷ s₁'} {s₂} {l} {e} {n'} {n₁} {n₂} p s e≠∙ (cons₂ᴴ  ¬p x) with lemma {n = n} ¬p p s e≠∙ x
--- ... | eq' = h , (n , aux)
---   where aux : (e : Event h) -> e ≢ ∙ -> HighStep h n e s₁ s₂ ((h , n) ∷ s₁') n₁ n₂
---         aux NoStep e≠∙₁ = high ¬p skip eq'
---         aux Step e≠∙₁ = high ¬p step eq'
---         aux Done e≠∙₁ = high ¬p done x
---         aux (Fork h₁ n₃ h⊑h₁) e≠∙₁ = high ¬p (fork h⊑h₁) (lemma₂ (trans-⋢ h⊑h₁ ¬p) ¬p p s e≠∙ x)
---         aux ∙ e≠∙₁ = ⊥-elim (e≠∙₁ refl)
-
--- open import Concurrent.Determinism (State) (_⟶_↑_) (determinism)
--- -- open import Concurrent.Security.NonInterference State _⟶_↑_ εˢ ε-sch-dist ε-sch-≡

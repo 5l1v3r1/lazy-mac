@@ -92,8 +92,8 @@ open import Sequential.Graph 𝓛 A
 
 εᴳ-simᴸ⋆ : ∀ {L n n₁ ls} {g₁ g₁' g₂ : Global ls} (n₂ : SC.ℕ) -> L ⊑ A -> (L P., n)  ⊢ g₁ ↪ g₁' -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> g₂ ↪⋆-≈ᴳ g₁'
 
-εᴳ-simᴸ⋆ SC.zero L⊑A step g₁'≈g₂' = {!!}
--- with squareˢ L⊑A ? (getSchStep step)
+εᴳ-simᴸ⋆ SC.zero L⊑A step g₁≈g₂ with squareˢ L⊑A (get≈ˢ g₁≈g₂) (getSchStep step)
+εᴳ-simᴸ⋆ {L} {n} {n₁} {ls} {C.⟨ Σ , Ms , Γ , P ⟩} {C.⟨ Σ₁ , Ms₁ , Γ₁ , P₁ ⟩} {C.⟨ Σ₂ , Ms₂ , Γ₂ , P₂ ⟩} zero L⊑A step g₁≈g₂ | proj₁ P., a = ?
 
 -- εᴳ-simᴸ⋆ zero L⊑A (CS.step-∅ l∈P₁ t∈T₁ ¬fork₁ step₁ sch₁ u₁ᵀ u₁ᴾ) L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
 --     | Σ₂' P., sch' P., Σ₁'≈Σ₂' with memberᴾ-≈ (yes L⊑A) l∈P₁ P₁≈P₂
