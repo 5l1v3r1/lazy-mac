@@ -5,7 +5,7 @@ module Sequential.Lemmas (𝓛 : L.Lattice) (A : L.Label 𝓛) where
 import Types as T
 open T 𝓛
 
-import Sequential.Calculus as S hiding (wkenᴱ)
+import Sequential.Calculus as S
 open S 𝓛
 open import Sequential.Erasure 𝓛 A as SE hiding (memberᴴ ; updateᴴ ; memberᴱ ; updateᴱ)
 
@@ -24,25 +24,26 @@ open import Data.Product using (∃ ; Σ ; _×_ ; proj₁ ; proj₂)
 import Data.Product as P
 open import Function
 
-memberᴱ : ∀ {l π π' τ} {Δ Δ' : Env l π} {t' : Term π' τ} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) ->  Eraseᴱ Δ Δ' -> τ∈π ↦ t' ∈ᴱ Δ' -> ∃ (λ t -> Erase t t' × τ∈π ↦ t ∈ᴱ Δ)
+memberᴱ : ∀ {l π π' τ} {Δ Δ' : Heap l π} {t' : Term π' τ} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) ->  EraseMapᵀ Δ Δ' -> τ∈π ↦ t' ∈ᴴ Δ' -> ∃ (λ t -> Eraseᵀ t t' × τ∈π ↦ t ∈ᴴ Δ)
 memberᴱ ⟪ τ∈π ⟫ = aux ⟪ ∈ᴿ-∈ τ∈π ⟫
-  where aux : ∀ {l π π' τ} {Δ Δ' : Env l π} {t' : Term π' τ} -> (τ∈π : τ ∈⟨ l ⟩ π) ->  Eraseᴱ Δ Δ' -> Memberᴱ (just t') τ∈π Δ' ->
-                ∃ (λ t -> Erase t t' × Memberᴱ (just t) τ∈π  Δ)
+  where aux : ∀ {l π π' τ} {Δ Δ' : Heap l π} {t' : Term π' τ} -> (τ∈π : τ ∈⟨ l ⟩ π) ->  EraseMapᵀ Δ Δ' -> Memberᴴ (just t') τ∈π Δ' ->
+                ∃ (λ t -> Eraseᵀ t t' × Memberᴴ (just t) τ∈π  Δ)
         aux T.⟪ T.here ⟫ (just x ∷ eᴱ) S.here = _ P., (x P., here)
         aux T.⟪ T.there τ∈π₁ ⟫ (x ∷ eᴱ) (S.there t∈Δ') = P.map id (P.map id there) (aux ⟪ τ∈π₁ ⟫ eᴱ t∈Δ')
         aux T.⟪ T.there τ∈π₁ ⟫ ∙ ()
 
-updateᴱ : ∀ {l π π' τ} {Δ₁ Δ₁' Δ₂' : Env l π} {mt mt' : Maybe (Term π' τ)} -> (τ∈π : τ ∈⟨ l ⟩ π)
-          -> Eraseᴹ mt mt' -> Eraseᴱ Δ₁ Δ₁' -> Updateᴱ mt' τ∈π Δ₁' Δ₂' -> ∃ (λ Δ₂ → Eraseᴱ Δ₂ Δ₂' × Updateᴱ mt τ∈π Δ₁ Δ₂)
-updateᴱ .(T.⟪ T.here ⟫) eᴹ (x G.∷ eᴱ) S.here = _ P., ((eᴹ G.∷ eᴱ) P., here)
-updateᴱ ._ eᴹ (eˣ ∷ eᴱ) (S.there u) = P.map (_∷_ _) (P.map (_∷_ eˣ) there) (updateᴱ _ eᴹ eᴱ u)
+-- TODO define Eraseᴹᵀ for maybe term
+-- updateᴱ : ∀ {l π π' τ} {Δ₁ Δ₁' Δ₂' : Heap l π} {mt mt' : Maybe (Term π' τ)} -> (τ∈π : τ ∈⟨ l ⟩ π)
+--           -> Eraseᴹ mt mt' -> EraseMapᵀ Δ₁ Δ₁' -> Updateᴴ mt' τ∈π Δ₁' Δ₂' -> ∃ (λ Δ₂ → EraseMapᵀ Δ₂ Δ₂' × Updateᴴ mt τ∈π Δ₁ Δ₂)
+-- updateᴱ .(T.⟪ T.here ⟫) eᴹ (x G.∷ eᴱ) S.here = _ P., ((eᴹ G.∷ eᴱ) P., here)
+-- updateᴱ ._ eᴹ (eˣ ∷ eᴱ) (S.there u) = P.map (_∷_ _) (P.map (_∷_ eˣ) there) (updateᴱ _ eᴹ eᴱ u)
 
 open import Relation.Binary.PropositionalEquality hiding (subst)
 
 data Redexᴱ {l τ} (x : Dec (l ⊑ A)) (p p'ᴱ : State l τ) : Set where
-  Step : ∀ {p'} -> p ⇝ p' -> Eraseˢ′ x p' p'ᴱ -> Redexᴱ x p p'ᴱ
+  -- Step : ∀ {p'} -> p ⇝ p' -> Eraseˢ′ x p' p'ᴱ -> Redexᴱ x p p'ᴱ
 
-postulate sim⇝ : ∀ {l π₁ π₂ τ τ₁ τ₂} {Δ₁ Δ₁' : Env l π₁} {Δ₂'  : Env l π₂} {t₁ t₁' : Term π₁ τ₁} {t₂' : Term π₂ τ₂} {S₁ S₁' : Stack l _ τ} {S₂' : Stack l _ τ} -> (l⊑A : l ⊑ A) -> Eraseᴱ Δ₁ Δ₁' -> Erase t₁ t₁' -> Eraseˢ S₁ S₁' -> ⟨ Δ₁' , t₁' , S₁' ⟩ ⇝ ⟨ Δ₂' , t₂' , S₂' ⟩ -> Redexᴱ (yes l⊑A) ⟨ Δ₁ , t₁ , S₁ ⟩ ⟨ Δ₂' , t₂' , S₂' ⟩
+postulate sim⇝ : ∀ {l π₁ π₂ τ τ₁ τ₂} {Δ₁ Δ₁' : Heap l π₁} {Δ₂'  : Heap l π₂} {t₁ t₁' : Term π₁ τ₁} {t₂' : Term π₂ τ₂} {S₁ S₁' : Stack l _ _ τ} {S₂' : Stack l _ _ τ} -> (l⊑A : l ⊑ A) -> EraseMapᵀ Δ₁ Δ₁' -> Eraseᵀ t₁ t₁' -> Eraseˢ S₁ S₁' -> ⟨ Δ₁' , t₁' , S₁' ⟩ ⇝ ⟨ Δ₂' , t₂' , S₂' ⟩ -> Redexᴱ (yes l⊑A) ⟨ Δ₁ , t₁ , S₁ ⟩ ⟨ Δ₂' , t₂' , S₂' ⟩
 -- sim⇝ l⊑A eᴱ (G.App eᵀ eᵀ₁) eˢ (S₁.App₁ {τ₁ = τ₁} {π = π})
 --   = Step App₁ G.⟨ (just eᵀ₁) ∷ eᴱ , wkenᴱ eᵀ (drop refl-⊆) , ((Var {{π = τ₁ ∷ π}} _) ∷ eˢ) ⟩
 -- sim⇝ l⊑A eᴱ (G.Abs eᵀ) (G.Var α∈π G.∷ eˢ) (S₁.App₂ .α∈π) = Step (S₁.App₂ α∈π) G.⟨ eᴱ , substᴱ (lift-ε (Var α∈π)) eᵀ  , eˢ ⟩
@@ -82,84 +83,87 @@ postulate sim⇝ : ∀ {l π₁ π₂ τ τ₁ τ₂} {Δ₁ Δ₁' : Env l π�
 -- sim⇝ l⊑A eᴱ (G.write∙ l⊑H eᵀ eᵀ₁) eˢ S₁.Write∙₁ = Step Write∙₁ G.⟨ (G.just eᵀ₁ G.∷ eᴱ) , (wkenᴱ eᵀ (drop refl-⊆)) , ((write∙ l⊑H ⟪ _ ⟫) G.∷ eˢ) ⟩
 -- sim⇝ l⊑A eᴱ (G.read L⊑l eᵀ) eˢ S₁.Read₁ = Step S₁.Read₁ G.⟨ eᴱ , eᵀ , G.read L⊑l G.∷ eˢ ⟩
 
-memberᴴ : ∀ {h π ls} {M : Memory h} {Δ' : Env h π} {Γ Γ' : Heaps ls} (h⊑A : h ⊑ A) ->
-          Eraseᴴ Γ Γ' -> h ↦ ⟨ M , Δ' ⟩ ∈ᴴ Γ' -> Σ (Env h π) (λ Δ -> Eraseˣ (yes h⊑A) ⟨ M , Δ ⟩ ⟨ M , Δ' ⟩ × h ↦ ⟨ M , Δ ⟩ ∈ᴴ Γ)
-memberᴴ {H} h⊑A (x ∷ e) S.here with H ⊑? A
-memberᴴ h⊑A (⟨ p , x ⟩ ∷ e) S.here | yes .p = _ P., ⟨ h⊑A , x ⟩ P., here
-memberᴴ h⊑A (() ∷ e) S.here | no ¬p
-memberᴴ h⊑A (x ∷ e) (S.there x₁) = P.map id (P.map id there) (memberᴴ h⊑A e x₁)
+memberᴴ : ∀ {h π ls} {M : Memory h} {Δ' : Heap h π} {Γ Γ' : Heaps ls} (h⊑A : h ⊑ A) ->
+          EraseMapᴴ Γ Γ' -> h ↦ ⟨ Δ' ⟩ ∈ᴱ Γ' -> Σ (Heap h π) (λ Δ -> Eraseᴴ (yes h⊑A) (⟨ Δ ⟩) (⟨ Δ' ⟩) × h ↦ ⟨ Δ ⟩ ∈ᴱ Γ)
+memberᴴ {H} h⊑A eq = ?
+-- (x ∷ e) = ?
+-- S.here with H ⊑? A
+-- memberᴴ h⊑A (⟨ p , x ⟩ ∷ e) S.here | yes .p = _ P., ⟨ h⊑A , x ⟩ P., here
+-- memberᴴ h⊑A (() ∷ e) S.here | no ¬p
+-- memberᴴ h⊑A (x ∷ e) (S.there x₁) = P.map id (P.map id there) (memberᴴ h⊑A e x₁)
 
-updateᴴ : ∀ {h π ls} {M : Memory h} {Δ Δ' : Env h π} {Γ₁ Γ₁' Γ₂' : Heaps ls} (h⊑A : h ⊑ A) ->
-          Eraseᴴ Γ₁ Γ₁' -> Eraseˣ (yes h⊑A) ⟨ M , Δ ⟩ ⟨ M , Δ' ⟩ -> Γ₂' ≔ Γ₁' [ h ↦ ⟨ M , Δ' ⟩  ]ᴴ -> ∃ (λ Γ₂ -> Γ₂ ≔ Γ₁ [ h ↦ ⟨ M , Δ ⟩ ]ᴴ)
-updateᴴ {H} h⊑A (x ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here with H ⊑? A
-updateᴴ h⊑A (⟨ p , x ⟩ ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here | yes .p = _ P., here
-updateᴴ h⊑A (∙ᴸ ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here | yes p = _ P., here
-updateᴴ h⊑A (∙ ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here | no ¬p = ⊥-elim (¬p h⊑A)
-updateᴴ h⊑A (x ∷ eᴴ) eˣ (S.there u₁) = P.map (_∷_ _) there (updateᴴ h⊑A eᴴ eˣ u₁)
+-- ?
+-- updateᴴ : ∀ {h π ls} {M : Memory h} {Ms₁ Ms₁' Ms₂' : Memories ls} (h⊑A : h ⊑ A) ->
+--           Eraseᴹ Ms₁ Ms₁' -> Eraseᴴ (yes h⊑A) (⟨  ⟩) (⟨ Δ' ⟩) -> Ms₂' ≔ Ms₁' [ h ↦ ⟨ Ms' ⟩  ]ᴴ ->  ∃ (λ Ms₂ -> Ms₂ ≔ Ms₁ [ h ↦ ⟨ M , Δ ⟩ ]ᴴ)
+-- updateᴴ {H} h⊑A (x ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here with H ⊑? A
+-- updateᴴ h⊑A (⟨ p , x ⟩ ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here | yes .p = _ P., here
+-- updateᴴ h⊑A (∙ᴸ ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here | yes p = _ P., here
+-- updateᴴ h⊑A (∙ ∷ eᴴ) ⟨ .h⊑A , x₁ ⟩ S.here | no ¬p = ⊥-elim (¬p h⊑A)
+-- updateᴴ h⊑A (x ∷ eᴴ) eˣ (S.there u₁) = P.map (_∷_ _) there (updateᴴ h⊑A eᴴ eˣ u₁)
 
-newˣ : ∀ {L τ π M} {L⊑A : L ⊑ A} {Δ Δ' : Env L π} -> (c : Cell L τ) ->
-         Eraseˣ (yes L⊑A) ⟨ M , Δ  ⟩ ⟨ M , Δ' ⟩ -> Eraseˣ (yes L⊑A) ⟨ (newᴹ c M) , Δ ⟩ ⟨ (newᴹ c M) , Δ' ⟩
-newˣ c ⟨ L⊑A , x ⟩ = ⟨ L⊑A , x ⟩
+-- newˣ : ∀ {L τ π M} {L⊑A : L ⊑ A} {Δ Δ' : Heap L π} -> (c : Cell L τ) ->
+--          Eraseᴴ (yes L⊑A) (⟨ Δ  ⟩) (⟨ Δ' ⟩) -> Eraseᴴ (yes L⊑A) ⟨ (newᴹ c M) , Δ ⟩ ⟨ (newᴹ c M) , Δ' ⟩
+-- newˣ c ⟨ L⊑A , x ⟩ = ⟨ L⊑A , x ⟩
 
-writeᴴ : ∀ {h π ls} {M' : Memory h} {Δ Δ' : Env h π} {Γ₁ Γ₁' Γ₂' : Heaps ls} (h⊑A : h ⊑ A) ->
-           Eraseᴴ Γ₁ Γ₁' -> Γ₂' ≔ Γ₁' [ h ↦ ⟨ M' , Δ' ⟩ ]ᴴ -> ∃ (λ Γ₂ -> Γ₂ ≔ Γ₁ [ h ↦ ⟨ M' , Δ ⟩ ]ᴴ)
-writeᴴ {L} H⊑A (x ∷ eᴴ) S.here with L ⊑? A
-writeᴴ H⊑A (x ∷ eᴴ) S.here | yes p = _ P., here
-writeᴴ H⊑A (x ∷ eᴴ) S.here | no ¬p = ⊥-elim (¬p H⊑A)
-writeᴴ H⊑A (x ∷ eᴴ) (S.there u) = P.map (_∷_ _) there (writeᴴ H⊑A eᴴ u)
+-- writeᴴ : ∀ {h π ls} {M' : Memory h} {Δ Δ' : Heap h π} {Γ₁ Γ₁' Γ₂' : Heaps ls} (h⊑A : h ⊑ A) ->
+--            Eraseᴴ Γ₁ Γ₁' -> Γ₂' ≔ Γ₁' [ h ↦ ⟨ M' , Δ' ⟩ ]ᴴ -> ∃ (λ Γ₂ -> Γ₂ ≔ Γ₁ [ h ↦ ⟨ M' , Δ ⟩ ]ᴴ)
+-- writeᴴ {L} H⊑A (x ∷ eᴴ) S.here with L ⊑? A
+-- writeᴴ H⊑A (x ∷ eᴴ) S.here | yes p = _ P., here
+-- writeᴴ H⊑A (x ∷ eᴴ) S.here | no ¬p = ⊥-elim (¬p H⊑A)
+-- writeᴴ H⊑A (x ∷ eᴴ) (S.there u) = P.map (_∷_ _) there (writeᴴ H⊑A eᴴ u)
 
-import Sequential.Valid as V
-open V 𝓛
+-- import Sequential.Valid as V
+-- open V 𝓛
 
-mk-∈ : ∀ {l ls} -> l ∈ ls -> {Γ : Heaps ls} -> validᴴ Γ -> ∃ (λ H → l ↦ H ∈ᴴ Γ × validᴴ₂ Γ H)
-mk-∈ T.here {H S.∷ Γ} (proj₁ P., proj₂) = H P., here P., proj₁
-mk-∈ (T.there l∈ls) {x S.∷ Γ} (proj₁ P., proj₂) with mk-∈ l∈ls {Γ} proj₂
-mk-∈ (T.there l∈ls) {x S.∷ Γ} (proj₂ P., proj₃) | H' P., H∈Γ P., H'ⱽ = H' P., ((there H∈Γ) P., (wkenᴴ₂ (drop refl-⊆ᴴ) H'ⱽ))
+-- mk-∈ : ∀ {l ls} -> l ∈ ls -> {Γ : Heaps ls} -> validᴴ Γ -> ∃ (λ H → l ↦ H ∈ᴴ Γ × validᴴ₂ Γ H)
+-- mk-∈ T.here {H S.∷ Γ} (proj₁ P., proj₂) = H P., here P., proj₁
+-- mk-∈ (T.there l∈ls) {x S.∷ Γ} (proj₁ P., proj₂) with mk-∈ l∈ls {Γ} proj₂
+-- mk-∈ (T.there l∈ls) {x S.∷ Γ} (proj₂ P., proj₃) | H' P., H∈Γ P., H'ⱽ = H' P., ((there H∈Γ) P., (wkenᴴ₂ (drop refl-⊆ᴴ) H'ⱽ))
 
-simᴾ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} {{pⱽ : validᴾ p}} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
+-- simᴾ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} {{pⱽ : validᴾ p}} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
 
-simᴾ {l⊑A = l⊑A} ⟨ e₁ᴴ  , eᵀ₁ , e₁ˢ  ⟩ ¬redex (S₁.Step (S₁.Pure l∈Γ' step' uᴴ')) with memberᴴ l⊑A e₁ᴴ l∈Γ'
-... | Δ P., ⟨ ._ , e₁ᴱ ⟩ P., l∈Γ with sim⇝ l⊑A  e₁ᴱ eᵀ₁ e₁ˢ step'
-... | Step step ⟨ e₂ᴱ , e₂ᵀ , e₂ˢ ⟩ with updateᴴ l⊑A e₁ᴴ ⟨ l⊑A , e₂ᴱ ⟩ uᴴ'
-... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Pure l∈Γ step uᴴ)))
+-- simᴾ {l⊑A = l⊑A} ⟨ e₁ᴴ  , eᵀ₁ , e₁ˢ  ⟩ ¬redex (S₁.Step (S₁.Pure l∈Γ' step' uᴴ')) with memberᴴ l⊑A e₁ᴴ l∈Γ'
+-- ... | Δ P., ⟨ ._ , e₁ᴱ ⟩ P., l∈Γ with sim⇝ l⊑A  e₁ᴱ eᵀ₁ e₁ˢ step'
+-- ... | Step step ⟨ e₂ᴱ , e₂ᵀ , e₂ˢ ⟩ with updateᴴ l⊑A e₁ᴴ ⟨ l⊑A , e₂ᴱ ⟩ uᴴ'
+-- ... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Pure l∈Γ step uᴴ)))
 
-simᴾ ⟨ x , new l⊑h h⊑A (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.New H∈Γ' uᴴ')) with memberᴴ h⊑A x H∈Γ'
-... | Δ P., eˣ P., H∈Γ with updateᴴ h⊑A x (newˣ ∥ l⊑h , τ∈π ∥ eˣ) uᴴ'
-... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (New H∈Γ uᴴ)))
+-- simᴾ ⟨ x , new l⊑h h⊑A (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.New H∈Γ' uᴴ')) with memberᴴ h⊑A x H∈Γ'
+-- ... | Δ P., eˣ P., H∈Γ with updateᴴ h⊑A x (newˣ ∥ l⊑h , τ∈π ∥ eˣ) uᴴ'
+-- ... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (New H∈Γ uᴴ)))
 
--- In the original program a high reference was created, however in the erased
--- world I have lost all information about it, hence I cannot recreate the original step.
--- I believe that this could be fixed by keeping H∈Γ and uᴴ around in New∙ (without actually making the change)
--- in order to replicate the step as I did for New.
-simᴾ {{pⱽ = Γⱽ P., (H∈ls P., tt) P., Sⱽ}} G.⟨ Γ , G.new' l⊑h h⋤A (G.Var τ∈π) , S ⟩ ¬redex (S₁.Step S₁.New∙) with mk-∈ H∈ls Γⱽ
-simᴾ {{Γⱽ P., (H∈ls P., T.tt) P., Sⱽ}} G.⟨ Γ₁ , G.new' l⊑h h⋤A (G.Var τ∈π) , S₁ ⟩ ¬redex (S₁.Step S₁.New∙)
-  | S.⟨ M , Δ ⟩ P., H∈Γ P., (Mⱽ  P., Δⱽ) =  ⊥-elim (¬redex (Step (New {!H∈Γ!} {!!})))  -- new x is a redex
-simᴾ {l} {ls} {τ} {._} {._} {l⊑A} {{Γⱽ P., (H∈ls P., T.tt) P., Sⱽ}} G.⟨ Γ₁ , G.new' l⊑h h⋤A (G.Var τ∈π) , S₁ ⟩ ¬redex (S₁.Step S₁.New∙)
-  | S.∙ P., H∈Γ P., ()
+-- -- In the original program a high reference was created, however in the erased
+-- -- world I have lost all information about it, hence I cannot recreate the original step.
+-- -- I believe that this could be fixed by keeping H∈Γ and uᴴ around in New∙ (without actually making the change)
+-- -- in order to replicate the step as I did for New.
+-- simᴾ {{pⱽ = Γⱽ P., (H∈ls P., tt) P., Sⱽ}} G.⟨ Γ , G.new' l⊑h h⋤A (G.Var τ∈π) , S ⟩ ¬redex (S₁.Step S₁.New∙) with mk-∈ H∈ls Γⱽ
+-- simᴾ {{Γⱽ P., (H∈ls P., T.tt) P., Sⱽ}} G.⟨ Γ₁ , G.new' l⊑h h⋤A (G.Var τ∈π) , S₁ ⟩ ¬redex (S₁.Step S₁.New∙)
+--   | S.⟨ M , Δ ⟩ P., H∈Γ P., (Mⱽ  P., Δⱽ) =  ⊥-elim (¬redex (Step (New {!H∈Γ!} {!!})))  -- new x is a redex
+-- simᴾ {l} {ls} {τ} {._} {._} {l⊑A} {{Γⱽ P., (H∈ls P., T.tt) P., Sⱽ}} G.⟨ Γ₁ , G.new' l⊑h h⋤A (G.Var τ∈π) , S₁ ⟩ ¬redex (S₁.Step S₁.New∙)
+--   | S.∙ P., H∈Γ P., ()
 
-simᴾ ⟨ x , new∙ l⊑h (Var ._) , x₂ ⟩ ¬redex (Step New∙) = ⊥-elim (¬redex (Step New∙))
+-- simᴾ ⟨ x , new∙ l⊑h (Var ._) , x₂ ⟩ ¬redex (Step New∙) = ⊥-elim (¬redex (Step New∙))
 
-simᴾ ⟨ x , Res x₁ #[ n ] , write l⊑H H⊑A τ∈π ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Write₂ H∈Γ' u'ᴹ u'ᴴ)) with memberᴴ H⊑A x H∈Γ'
-... | Δ P., _ P., H∈Γ with writeᴴ {Δ = Δ} H⊑A x u'ᴴ
-... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Write₂ H∈Γ u'ᴹ uᴴ)))
+-- simᴾ ⟨ x , Res x₁ #[ n ] , write l⊑H H⊑A τ∈π ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Write₂ H∈Γ' u'ᴹ u'ᴴ)) with memberᴴ H⊑A x H∈Γ'
+-- ... | Δ P., _ P., H∈Γ with writeᴴ {Δ = Δ} H⊑A x u'ᴴ
+-- ... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Write₂ H∈Γ u'ᴹ uᴴ)))
 
-simᴾ ⟨ x , Res x₁ #[ n ]ᴰ , write l⊑H H⊑A ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Writeᴰ₂ H∈Γ' u'ᴹ u'ᴴ)) with memberᴴ H⊑A x H∈Γ'
-... | Δ P., _ P., H∈Γ with writeᴴ {Δ = Δ} H⊑A x u'ᴴ
-... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Writeᴰ₂ H∈Γ u'ᴹ uᴴ)))
+-- simᴾ ⟨ x , Res x₁ #[ n ]ᴰ , write l⊑H H⊑A ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Writeᴰ₂ H∈Γ' u'ᴹ u'ᴴ)) with memberᴴ H⊑A x H∈Γ'
+-- ... | Δ P., _ P., H∈Γ with writeᴴ {Δ = Δ} H⊑A x u'ᴴ
+-- ... | Γ₂ P., uᴴ = ⊥-elim (¬redex (S₁.Step (Writeᴰ₂ H∈Γ u'ᴹ uᴴ)))
 
-simᴾ ⟨ x , Res x₁ x₂ , write' l⊑H H⋤A ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
-simᴾ ⟨ x , Res x₁ x₂ , write∙ l⊑H ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (Step Write∙₂))
+-- simᴾ ⟨ x , Res x₁ x₂ , write' l⊑H H⋤A ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
+-- simᴾ ⟨ x , Res x₁ x₂ , write∙ l⊑H ._ ∷ x₃ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (Step Write∙₂))
 
-simᴾ ⟨ x , Res∙ x₁ , write' l⊑H H⋤A ._ ∷ x₂ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
-simᴾ ⟨ x , Res∙ x₁ , write∙ l⊑H ._ ∷ x₂ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step Write∙₂))
+-- simᴾ ⟨ x , Res∙ x₁ , write' l⊑H H⋤A ._ ∷ x₂ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step {!Write₂ ? ? ?!}))
+-- simᴾ ⟨ x , Res∙ x₁ , write∙ l⊑H ._ ∷ x₂ ⟩ ¬redex (S₁.Step S₁.Write∙₂) = ⊥-elim (¬redex (S₁.Step Write∙₂))
 
-simᴾ {l⊑A = l⊑A} ⟨ x , Res x₁ #[ n ] , read ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Read₂ l∈Γ' n∈M)) with memberᴴ l⊑A x l∈Γ'
-... | Δ P., ⟨ ._ , eᴱ ⟩ P., l∈Γ = ⊥-elim (¬redex (S₁.Step (Read₂ l∈Γ n∈M)))
-simᴾ {l⊑A = l⊑A} ⟨ x , Res x₁ #[ n ]ᴰ , read L⊑l ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Readᴰ₂ L∈Γ' n∈M)) with memberᴴ (trans-⊑ L⊑l l⊑A) x L∈Γ'
-... | Δ P., ⟨ ._ , eᴱ ⟩ P., l∈Γ = ⊥-elim (¬redex (S₁.Step (Readᴰ₂ l∈Γ n∈M)))
+-- simᴾ {l⊑A = l⊑A} ⟨ x , Res x₁ #[ n ] , read ._ ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Read₂ l∈Γ' n∈M)) with memberᴴ l⊑A x l∈Γ'
+-- ... | Δ P., ⟨ ._ , eᴱ ⟩ P., l∈Γ = ⊥-elim (¬redex (S₁.Step (Read₂ l∈Γ n∈M)))
+-- simᴾ {l⊑A = l⊑A} ⟨ x , Res x₁ #[ n ]ᴰ , read L⊑l ∷ x₃ ⟩ ¬redex (S₁.Step (S₁.Readᴰ₂ L∈Γ' n∈M)) with memberᴴ (trans-⊑ L⊑l l⊑A) x L∈Γ'
+-- ... | Δ P., ⟨ ._ , eᴱ ⟩ P., l∈Γ = ⊥-elim (¬redex (S₁.Step (Readᴰ₂ l∈Γ n∈M)))
 
-simᴾ {l⊑A = l⊑A}⟨ x , deepDup (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.DeepDupˢ {Δ = Δ'} L⊏l L∈Γ' t∈Δ')) with memberᴴ (trans-⊑ (proj₁ L⊏l) l⊑A) x L∈Γ'
-... | Δ P., ⟨ ._ , eᴱ ⟩ P., L∈Γ with memberᴱ τ∈π eᴱ t∈Δ'
-... | t P., eᵀ P., t∈Δ = ⊥-elim (¬redex (S₁.Step (DeepDupˢ L⊏l L∈Γ t∈Δ)))
+-- simᴾ {l⊑A = l⊑A}⟨ x , deepDup (Var τ∈π) , x₂ ⟩ ¬redex (S₁.Step (S₁.DeepDupˢ {Δ = Δ'} L⊏l L∈Γ' t∈Δ')) with memberᴴ (trans-⊑ (proj₁ L⊏l) l⊑A) x L∈Γ'
+-- ... | Δ P., ⟨ ._ , eᴱ ⟩ P., L∈Γ with memberᴱ τ∈π eᴱ t∈Δ'
+-- ... | t P., eᵀ P., t∈Δ = ⊥-elim (¬redex (S₁.Step (DeepDupˢ L⊏l L∈Γ t∈Δ)))
 
-simᴾ ∙ᴸ ¬redex (S₁.Step x₃) = ¬redex (S₁.Step x₃)
+-- simᴾ ∙ᴸ ¬redex (S₁.Step x₃) = ¬redex (S₁.Step x₃)

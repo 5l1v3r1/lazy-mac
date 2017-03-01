@@ -304,14 +304,17 @@ data Updateˢ {l} (x : Memory l) : ∀ {ls} -> Memories ls -> Memories ls -> Set
 _≔_[_↦_]ˢ : ∀ {ls} -> Memories ls -> Memories ls -> (l : Label) -> Memory l -> Set
 Γ' ≔ Γ [ l ↦ x ]ˢ = Updateˢ x Γ Γ'
 
-memberˢ-∈ : ∀ {l ls} {x : Memory l} {Γ : Memories ls} -> l ↦ x ∈ˢ Γ -> l ∈ ls
+memberˢ-∈ : ∀ {l ls} {x : Memory l} {Ms : Memories ls} -> l ↦ x ∈ˢ Ms -> l ∈ ls
 memberˢ-∈ here = here
 memberˢ-∈ (there x) = there (memberˢ-∈ x)
 
-updateˢ-∈ : ∀ {l ls} {x : Memory l} {Γ Γ' : Memories ls} -> Γ' ≔ Γ [ l ↦ x ]ˢ -> l ∈ ls
+updateˢ-∈ : ∀ {l ls} {x : Memory l} {Ms Ms' : Memories ls} -> Ms' ≔ Ms [ l ↦ x ]ˢ -> l ∈ ls
 updateˢ-∈ here = here
 updateˢ-∈ (there x) = there (updateˢ-∈ x)
 
+lookupˢ : ∀ {l ls} -> l ∈ ls -> Memories ls -> Memory l
+lookupˢ here (M ∷ Ms) = M
+lookupˢ (there l∈ls) (M ∷ Ms) = lookupˢ l∈ls Ms
 
 --------------------------------------------------------------------------------
 

@@ -5,7 +5,7 @@ module Sequential.Valid (𝓛 : L.Lattice) where
 import Types as T hiding (wken-∈)
 open T 𝓛
 
-import Sequential.Calculus as S renaming (⟨_,_,_⟩ to mkP) hiding (wkenᴱ)
+import Sequential.Calculus as S renaming (⟨_,_,_⟩ to mkP) -- hiding (wkenᴱ)
 open S 𝓛
 
 open import Data.Nat using (_≤_ ; _<_ ; s≤s ; z≤n ; decTotalOrder)
@@ -23,99 +23,99 @@ open import Data.Maybe
 validAddr : ∀ {l} -> Memory l -> ℕ -> Set
 validAddr M n = n < lengthᴹ M
 
-validᵀ : ∀ {ls τ π} -> Heaps ls -> Term π τ -> Set
-validᵀ Γ S.（） = ⊤
-validᵀ Γ S.True = ⊤
-validᵀ Γ S.False = ⊤
-validᵀ Γ (S.Id t) = validᵀ Γ t
-validᵀ Γ (S.unId t) = validᵀ Γ t
-validᵀ Γ (S.Var τ∈π) = ⊤
-validᵀ Γ (S.Abs t) = validᵀ Γ t
-validᵀ Γ (S.App t t₁) = validᵀ Γ t × validᵀ Γ t₁
-validᵀ Γ (S.If t Then t₁ Else t₂) = (validᵀ Γ t) × (validᵀ Γ t₁) × validᵀ Γ t₂
-validᵀ Γ (S.Return l t) = validᵀ Γ t
-validᵀ Γ (t S.>>= t₁) = (validᵀ Γ t) × (validᵀ Γ t₁)
-validᵀ Γ (S.Mac l t) = validᵀ Γ t
-validᵀ {ls} {τ = Res .l Addr} Γ (S.Res l S.#[ t ]) = Σ (l ∈ ls) (λ l∈ls -> validAddr (lookupᴹ l∈ls Γ) t )
-validᵀ {ls} {τ = Res .l Addr} Γ (S.Res l S.#[ t ]ᴰ) = Σ (l ∈ ls) (λ l∈ls -> validAddr (lookupᴹ l∈ls Γ) t )
-validᵀ {ls} Γ (S.Res l t) = validᵀ Γ t
-validᵀ Γ (S.label l⊑h t) = validᵀ Γ t
-validᵀ Γ (S.label∙ l⊑h t) = ⊥
-validᵀ Γ (S.unlabel l⊑h t) = validᵀ Γ t
-validᵀ Γ (S.read x t) = validᵀ Γ t
-validᵀ Γ (S.write x t t₁) = (validᵀ Γ t) × (validᵀ Γ t₁)
-validᵀ Γ (S.write∙ x t t₁) = ⊥
+validᵀ : ∀ {ls τ π} -> Memories ls -> Term π τ -> Set
+validᵀ Ms S.（） = ⊤
+validᵀ Ms S.True = ⊤
+validᵀ Ms S.False = ⊤
+validᵀ Ms (S.Id t) = validᵀ Ms t
+validᵀ Ms (S.unId t) = validᵀ Ms t
+validᵀ Ms (S.Var τ∈π) = ⊤
+validᵀ Ms (S.Abs t) = validᵀ Ms t
+validᵀ Ms (S.App t t₁) = validᵀ Ms t × validᵀ Ms t₁
+validᵀ Ms (S.If t Then t₁ Else t₂) = (validᵀ Ms t) × (validᵀ Ms t₁) × validᵀ Ms t₂
+validᵀ Ms (S.Return l t) = validᵀ Ms t
+validᵀ Ms (t S.>>= t₁) = (validᵀ Ms t) × (validᵀ Ms t₁)
+validᵀ Ms (S.Mac l t) = validᵀ Ms t
+validᵀ {ls} {τ = Res .l Addr} Ms (S.Res l S.#[ t ]) = Σ (l ∈ ls) (λ l∈ls -> validAddr (lookupˢ l∈ls Ms) t )
+validᵀ {ls} {τ = Res .l Addr} Ms (S.Res l S.#[ t ]ᴰ) = Σ (l ∈ ls) (λ l∈ls -> validAddr (lookupˢ l∈ls Ms) t )
+validᵀ {ls} Ms (S.Res l t) = validᵀ Ms t
+validᵀ Ms (S.label l⊑h t) = validᵀ Ms t
+validᵀ Ms (S.label∙ l⊑h t) = ⊥
+validᵀ Ms (S.unlabel l⊑h t) = validᵀ Ms t
+validᵀ Ms (S.read x t) = validᵀ Ms t
+validᵀ Ms (S.write x t t₁) = (validᵀ Ms t) × (validᵀ Ms t₁)
+validᵀ Ms (S.write∙ x t t₁) = ⊥
 -- TODO the problem with this definition is that we use π in Env H π.
--- In our definition of Γ₁ ⊆ᴴ Γ₂ the environment may change (Δ₁ ⊆ Δ₂),
+-- In our definition of Ms₁ ⊆ᴴ Ms₂ the environment may change (Δ₁ ⊆ Δ₂),
 -- which means that Δ₂ : Env l π' such that π ⊆ π'.
 -- Possible fixes:
--- 1) We could change the definition of Γ₁ ⊆ Γ₂ not to allow (Δ₁ ⊆ Δ₂), but keeping the same Δ
+-- 1) We could change the definition of Ms₁ ⊆ Ms₂ not to allow (Δ₁ ⊆ Δ₂), but keeping the same Δ
 --    I think that this would not work out with the context rules that extends Δ, such as those in Pure
 -- 2) Split memories and heap in two different mappings (like in the paper):
 -- this would probably simplify the valid-preservation proof for pure (the memories remain all visible since
 -- they are in a different mapping), the definition of validity for new (and write and read)
 -- as they would not mention contexs π.
-Validᵀ {π = π} Γ (S.new {h = H} x t) = Σ (Memory H × Env H π) (λ x -> H ↦ ⟨ proj₁ x , proj₂ x ⟩ ∈ᴴ Γ × validᵀ Γ t)
-validᵀ Γ (S.new∙ x t) = ⊥
-validᵀ Γ S.#[ x ] = ⊤
-validᵀ Γ S.#[ x ]ᴰ = ⊤
-validᵀ Γ (S.fork l⊑h t) = validᵀ Γ t
-validᵀ Γ (S.fork∙ l⊑h t) = ⊥
-validᵀ Γ (S.deepDup t) = validᵀ Γ t
-validᵀ Γ S.∙ = ⊥
+validᵀ {π = π} Ms (S.new {h = H} x t) = Σ (Memory H × Env H π) (λ x -> H ↦ ⟨ proj₁ x , proj₂ x ⟩ ∈ᴴ Ms × validᵀ Ms t)
+validᵀ Ms (S.new∙ x t) = ⊥
+validᵀ Ms S.#[ x ] = ⊤
+validᵀ Ms S.#[ x ]ᴰ = ⊤
+validᵀ Ms (S.fork l⊑h t) = validᵀ Ms t
+validᵀ Ms (S.fork∙ l⊑h t) = ⊥
+validᵀ Ms (S.deepDup t) = validᵀ Ms t
+validᵀ Ms S.∙ = ⊥
 
 -- Should I impose validity of variables as well?
 -- It does not seem necessary at the moment
 validᶜ : ∀ {l ls τ₁ τ₂} -> Heaps ls -> Cont l τ₁ τ₂ -> Set
-validᶜ Γ (S.Var τ∈π) = ⊤
-validᶜ Γ (S.# τ∈π) = ⊤
-validᶜ Γ (S.Then x Else x₁) = (validᵀ Γ x) × validᵀ Γ x₁
-validᶜ Γ (S.Bind x) = validᵀ Γ x
-validᶜ Γ (S.unlabel p) = ⊤
-validᶜ Γ S.unId = ⊤
-validᶜ Γ (S.write x τ∈π) = ⊤
-validᶜ Γ (S.write∙ x τ∈π) = ⊥
-validᶜ Γ (S.read x) = ⊤
+validᶜ Ms (S.Var τ∈π) = ⊤
+validᶜ Ms (S.# τ∈π) = ⊤
+validᶜ Ms (S.Then x Else x₁) = (validᵀ Ms x) × validᵀ Ms x₁
+validᶜ Ms (S.Bind x) = validᵀ Ms x
+validᶜ Ms (S.unlabel p) = ⊤
+validᶜ Ms S.unId = ⊤
+validᶜ Ms (S.write x τ∈π) = ⊤
+validᶜ Ms (S.write∙ x τ∈π) = ⊥
+validᶜ Ms (S.read x) = ⊤
 
 validˢ : ∀ {l ls τ₁ τ₂} -> Heaps ls -> Stack l τ₁ τ₂ -> Set
-validˢ Γ S.[] = ⊤
-validˢ Γ (C S.∷ S) = validᶜ Γ C × validˢ Γ S
-validˢ Γ S.∙ = ⊥
+validˢ Ms S.[] = ⊤
+validˢ Ms (C S.∷ S) = validᶜ Ms C × validˢ Ms S
+validˢ Ms S.∙ = ⊥
 
 validᴱ : ∀ {l π ls} -> Heaps ls -> Env l π -> Set
-validᴱ Γ S.[] = ⊤
-validᴱ Γ (just t S.∷ Δ) = validᵀ Γ t × validᴱ Γ Δ
-validᴱ Γ (nothing S.∷ Δ) = validᴱ Γ Δ
-validᴱ Γ S.∙ = ⊥
+validᴱ Ms S.[] = ⊤
+validᴱ Ms (just t S.∷ Δ) = validᵀ Ms t × validᴱ Ms Δ
+validᴱ Ms (nothing S.∷ Δ) = validᴱ Ms Δ
+validᴱ Ms S.∙ = ⊥
 
 validᴹ : ∀ {l} -> (M : Memory l) -> Set
 validᴹ S.[] = ⊤
 validᴹ (cᴸ S.∷ M) = validᴹ M
 validᴹ S.∙ = ⊥
 
-validᴴ₂ : ∀ {l ls} (Γ : Heaps ls) (H : Heap l) -> Set
-validᴴ₂ Γ S.⟨ M , Δ ⟩ = validᴹ M × validᴱ Γ Δ
-validᴴ₂ Γ S.∙ = ⊥
+validᴴ₂ : ∀ {l ls} (Ms : Heaps ls) (H : Heap l) -> Set
+validᴴ₂ Ms S.⟨ M , Δ ⟩ = validᴹ M × validᴱ Ms Δ
+validᴴ₂ Ms S.∙ = ⊥
 
 validᴴ : ∀ {ls} -> Heaps ls -> Set
 validᴴ S.[] = ⊤
-validᴴ (x S.∷ Γ) = validᴴ₂ (x ∷ Γ) x × validᴴ Γ
+validᴴ (x S.∷ Ms) = validᴴ₂ (x ∷ Ms) x × validᴴ Ms
 
 valid-state : ∀ {l ls τ} -> Heaps ls -> State l τ -> Set
-valid-state Γ (S.mkP Δ t S) = validᴱ Γ Δ × validᵀ Γ t × validˢ Γ S
+valid-state Ms (S.mkP Δ t S) = validᴱ Ms Δ × validᵀ Ms t × validˢ Ms S
 valid-state _ S.∙ = ⊥
 
 validᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
-validᴾ (S.mkP Γ t S ) = validᴴ Γ × (validᵀ Γ t) × (validˢ Γ S)
+validᴾ (S.mkP Ms t S ) = validᴴ Ms × (validᵀ Ms t) × (validˢ Ms S)
 validᴾ S.∙ = ⊥
 
 valid-𝓛 : (ls : List Label) -> Set
 valid-𝓛 [] = ⊤
 valid-𝓛 (l ∷ ls) = Unique l ls × valid-𝓛 ls
 
-Γ₀ : {ls : List Label} {{us : valid-𝓛 ls}} -> Heaps ls
-Γ₀ {[]} {{_}} = []
-Γ₀ {l ∷ ls} {{u , us}} = ⟨ [] , [] ⟩ ∷ Γ₀
+Ms₀ : {ls : List Label} {{us : valid-𝓛 ls}} -> Memories ls
+Ms₀ {[]} {{_}} = []
+Ms₀ {l ∷ ls} {{u , us}} = [] ∷ Ms₀
 
 --------------------------------------------------------------------------------
 
