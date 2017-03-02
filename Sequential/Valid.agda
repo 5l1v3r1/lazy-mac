@@ -439,25 +439,78 @@ open import Relation.Binary.PropositionalEquality hiding (subst)
 -- -- update-valid'ᴴ {Ms = S.⟨ x , x₁ ⟩ S.∷ Ms} (S.there l∈Ms) (S.there u₁) (proj₁ , proj₂) Ms⊆ˢMs'' Δ₂ⱽ = {!!} , (update-valid'ᴴ l∈Ms u₁ proj₂ {!drop ?!}  Δ₂ⱽ)
 -- -- update-valid'ᴴ {Ms = S.∙ S.∷ Ms} (S.there l∈Ms) (S.there u₁) (() , proj₂) Δ₂ⱽ
 
-
-valid-wkenˢ : ∀ {τ₁ τ₂ l π₁ π₂ ls} {Ms : Memories ls} {S : Stack l π₁ τ₁ τ₂} -> validˢ Ms S -> (π₁⊆π₂ : π₁ ⊆ π₂) -> validˢ Ms (wkenˢ S π₁⊆π₂)
-valid-wkenˢ = {!!}
-
-valid-wkenᵀ : ∀ {τ π₁ π₂ ls} {Ms : Memories ls} {t : Term π₁ τ} -> validᵀ Ms t -> (π₁⊆π₂ : π₁ ⊆ π₂) -> validᵀ Ms (wken t π₁⊆π₂)
-valid-wkenᵀ = {!!}
-
 valid-subst : ∀ {τ τ' π ls} {Ms : Memories ls} {t₁ : Term π τ} {t₂ : Term (τ ∷ π) τ'} -> validᵀ Ms t₁ -> validᵀ Ms t₂ -> validᵀ Ms (subst t₁ t₂)
 valid-subst = {!!}
 
-memberᴴ : ∀ {l ls τ π} {Ms : Memories ls} {Δ : Heap l π} {t : Term π τ} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) -> validᴴ Ms Δ -> τ∈π ↦ t ∈ᴴ Δ -> validᵀ Ms t
-memberᴴ = {!!}
+valid-wkenᵀ : ∀ {τ π₁ π₂ ls} {Ms : Memories ls} {{t : Term π₁ τ}} -> validᵀ Ms t -> (π₁⊆π₂ : π₁ ⊆ π₂) -> validᵀ Ms (wken t π₁⊆π₂)
+valid-wkenᵀ {{t = S.（）}} v π₁⊆π₂ = T.tt
+valid-wkenᵀ {{t = S.True}} v π₁⊆π₂ = T.tt
+valid-wkenᵀ {{t = S.False}} v π₁⊆π₂ = T.tt
+valid-wkenᵀ {{t = S.Id t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {{t = S.unId t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {{t = S.Var τ∈π}} v π₁⊆π₂ = T.tt
+valid-wkenᵀ {{t = S.Abs t}} v π₁⊆π₂ = valid-wkenᵀ v (L₁.cons π₁⊆π₂)
+valid-wkenᵀ {{t = S.App t t₁}} (proj₁ , proj₂) π₁⊆π₂ = valid-wkenᵀ proj₁ π₁⊆π₂ , valid-wkenᵀ proj₂ π₁⊆π₂
+valid-wkenᵀ {{t = S.If t Then t₁ Else t₂}} (v₁ , v₂ , v₃)  π₁⊆π₂ = valid-wkenᵀ v₁ π₁⊆π₂ , valid-wkenᵀ v₂ π₁⊆π₂ , valid-wkenᵀ v₃ π₁⊆π₂
+valid-wkenᵀ {{t = S.Return l t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {{t = t S.>>= t₁}} (v₁ , v₂) π₁⊆π₂ = valid-wkenᵀ v₁ π₁⊆π₂ , valid-wkenᵀ v₂ π₁⊆π₂
+valid-wkenᵀ {{t = S.Mac l t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {T.Res l T.（）} {{t = S.Res .l t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {T.Res l T.Bool} {{t = S.Res .l t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {T.Res l (τ T.=> τ₁)} {{t = S.Res .l t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {T.Res l₁ (T.Mac l τ)} {{t = S.Res .l₁ t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {T.Res l₁ (T.Res l τ)} {{t = S.Res .l₁ t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {T.Res l (T.Id τ)} {{t = S.Res .l t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {T.Res l (T.Addr τ)} {{t = S.Res .l .(S.#[ proj₂ ])}} (proj₁ , proj₂ , is#[ .proj₂ ] , v) π₁⊆π₂
+  = proj₁ , (proj₂ , (is#[ proj₂ ]  , v))
+valid-wkenᵀ {T.Res l (T.Addr τ)} {{t = S.Res .l .(S.#[ proj₂ ]ᴰ)}} (proj₁ , proj₂ , is#[ .proj₂ ]ᴰ , v) π₁⊆π₂
+  = proj₁ , (proj₂ , (is#[ proj₂ ]ᴰ , v))
+valid-wkenᵀ {{t = S.label l⊑h t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {{t = S.label∙ l⊑h t}} () π₁⊆π₂
+valid-wkenᵀ {{t = S.unlabel l⊑h t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {{t = S.read x t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {{t = S.write x t t₁}} (v₁ , v₂) π₁⊆π₂ = valid-wkenᵀ v₁ π₁⊆π₂ , valid-wkenᵀ v₂ π₁⊆π₂
+valid-wkenᵀ {{t = S.write∙ x t t₁}} () π₁⊆π₂
+valid-wkenᵀ {{t = S.new x t}} (l∈ls , v) π₁⊆π₂ = l∈ls , valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {{t = S.new∙ x t}} () π₁⊆π₂
+valid-wkenᵀ {{t = S.#[ x ]}} v π₁⊆π₂ = T.tt
+valid-wkenᵀ {{t = S.#[ x ]ᴰ}} v π₁⊆π₂ = T.tt
+valid-wkenᵀ {{t = S.fork l⊑h t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {{t = S.fork∙ l⊑h t}} () π₁⊆π₂
+valid-wkenᵀ {{t = S.deepDup t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {{t = S.∙}} () π₁⊆π₂
 
-updateᴴ : ∀ {l ls τ π} {Ms : Memories ls} {Δ₁ Δ₂ : Heap l π} {mt : Maybe (Term π τ)} ->
+valid-wkenᶜ : ∀ {τ₁ τ₂ l π₁ π₂ ls} {Ms : Memories ls} {C : Cont l π₁ τ₁ τ₂} -> validᶜ Ms C -> (π₁⊆π₂ : π₁ ⊆ π₂) -> validᶜ Ms (wkenᶜ C π₁⊆π₂)
+valid-wkenᶜ {C = S.Var τ∈π} v π₁⊆π₂ = T.tt
+valid-wkenᶜ {C = S.# τ∈π} v π₁⊆π₂ = T.tt
+valid-wkenᶜ {C = S.Then t Else t₁} (v₁ , v₂) π₁⊆π₂ = valid-wkenᵀ {{t = t}} v₁ π₁⊆π₂ , valid-wkenᵀ {{t = t₁}} v₂ π₁⊆π₂
+valid-wkenᶜ {C = S.Bind t} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᶜ {C = S.unlabel p} v π₁⊆π₂ = T.tt
+valid-wkenᶜ {C = S.unId} v π₁⊆π₂ = T.tt
+valid-wkenᶜ {C = S.write x τ∈π} v π₁⊆π₂ = T.tt
+valid-wkenᶜ {C = S.write∙ x τ∈π} () π₁⊆π₂
+valid-wkenᶜ {C = S.read x} v π₁⊆π₂ = T.tt
+
+valid-wkenˢ : ∀ {τ₁ τ₂ l π₁ π₂ ls} {Ms : Memories ls} {S : Stack l π₁ τ₁ τ₂} -> validˢ Ms S -> (π₁⊆π₂ : π₁ ⊆ π₂) -> validˢ Ms (wkenˢ S π₁⊆π₂)
+valid-wkenˢ {S = S.[]} v π₁⊆π₂ = T.tt
+valid-wkenˢ {S = C S.∷ S} (proj₁ , proj₂) π₁⊆π₂ = (valid-wkenᶜ {C = C} proj₁ π₁⊆π₂) , (valid-wkenˢ proj₂ π₁⊆π₂)
+valid-wkenˢ {S = S.∙} v π₁⊆π₂ = v
+
+memberᴴ : ∀ {l ls τ π₁ π₂} {Ms : Memories ls} {Δ : Heap l π₂} {t : Term π₁ τ}
+  -> (τ∈π : τ ∈⟨ l ⟩ᴿ π₂) -> validᴴ Ms Δ -> τ∈π ↦ t ∈ᴴ Δ -> validᵀ Ms t
+memberᴴ ⟪ τ∈π ⟫ v t∈Δ = aux ⟪ ∈-∈ᴿ τ∈π ⟫ v t∈Δ
+  where aux : ∀ {l ls τ π₁ π₂} {Ms : Memories ls} {Δ : Heap l π₂} {t : Term π₁ τ}
+            -> (τ∈π : τ ∈⟨ l ⟩ π₂) -> validᴴ Ms Δ -> Memberᴴ (just t) τ∈π Δ -> validᵀ Ms t
+        aux .(T.⟪ L₁.here ⟫) y S.here = proj₁ y
+        aux ._ y (S.there z) = aux T.⟪ _ ⟫ (proj₂ y) z
+
+updateᴴ : ∀ {l ls τ π π'} {Ms : Memories ls} {Δ₁ Δ₂ : Heap l π} {mt : Maybe (Term π' τ)} ->
             {τ∈π : τ ∈⟨ l ⟩ π} -> validᴴ Ms Δ₁ -> validᴹᵀ Ms mt -> Updateᴴ mt τ∈π Δ₁ Δ₂ -> validᴴ Ms Δ₂
-updateᴴ = {!!}
+updateᴴ x y S.here = y , proj₂ x
+updateᴴ (proj₁ , proj₂) y (S.there z) = proj₁ , updateᴴ proj₂ y z
 
 valid⇝ : ∀ {l ls τ} {s₁ s₂ : State l τ} {Ms : Memories ls} -> valid-state Ms s₁ -> s₁ ⇝ s₂ -> valid-state Ms s₂
-valid⇝ (Δⱽ , (proj₁ , proj₂) , Sᵛ) (SS.App₁ {t₁ = t₁}) = (proj₂ , Δⱽ) , (valid-wkenᵀ {t = t₁} proj₁ _ , (T.tt , valid-wkenˢ Sᵛ _))
+valid⇝ (Δⱽ , (proj₁ , proj₂) , Sᵛ) (SS.App₁ {t₁ = t₁}) = (proj₂ , Δⱽ) , (valid-wkenᵀ {{t = t₁}} proj₁ _ , (T.tt , valid-wkenˢ Sᵛ _))
 valid⇝ (Δⱽ , tⱽ , proj₁ , proj₂) (SS.App₂ {t = t} α∈π) = Δⱽ , (valid-subst {t₂ = t} proj₁ tⱽ , proj₂)
 valid⇝ (Δⱽ , tⱽ , Sᵛ) (SS.Var₁ τ∈π t∈Δ ¬val rᴴ) = updateᴴ Δⱽ tt rᴴ , (memberᴴ τ∈π Δⱽ t∈Δ , (T.tt , Sᵛ))
 valid⇝ (Δⱽ , tⱽ , Sᵛ)  (SS.Var₁' τ∈π v∈Δ val) = Δⱽ , memberᴴ τ∈π Δⱽ v∈Δ , Sᵛ
