@@ -133,7 +133,7 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
           -> (uˢ : Ms' ≔ Ms [ H ↦ M' ]ˢ) ->
          ⟨ Ms , Γ , ⟨ Res {π = π} H #[ n ]ᴰ , write l⊑H τ∈π ∷ S ⟩ ⟩ ⟼ ⟨ Ms' , Γ , ⟨ Return {π = π} l （） , S ⟩ ⟩
 
-  Write∙₂ :  ∀ {Ms Γ τ τ' H} {π : Context} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {t : Term π Addr} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
+  Write∙₂ :  ∀ {Ms Γ τ τ' H} {π : Context} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {t : Term π (Addr τ)} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
             ⟨ Ms , Γ , ⟨ Res {π = π} H t , write∙ l⊑H τ∈π ∷ S ⟩ ⟩ ⟼ ⟨ Ms , Γ , ⟨ Return {π = π} l （） , S ⟩ ⟩
 
   -- If we read without duplicating it must be from the same level, otherwise we are leaking

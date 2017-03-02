@@ -17,7 +17,7 @@ data Ty : Set where
   Mac : (l : Label) -> Ty -> Ty
   Res : (l : Label) -> Ty -> Ty
   Id : Ty -> Ty
-  Addr : Ty
+  Addr : Ty -> Ty
 
 infixr 3 _=>_
 
@@ -25,7 +25,7 @@ Labeled : Label -> Ty -> Ty
 Labeled l τ = Res l (Id τ)
 
 Ref : Label -> Ty -> Ty
-Ref l τ = Res l Addr
+Ref l τ = Res l (Addr τ)
 
 -- I will represents MVar also using integers like references
 -- MVar : Label -> Ty -> Ty

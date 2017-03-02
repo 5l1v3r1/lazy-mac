@@ -61,8 +61,8 @@ data Eraseᵀ {π} : ∀ {τ} -> Term π τ -> Term π τ -> Set where
   new' : ∀ {l h τ} {t t' : Term _ τ} (l⊑h : l ⊑ h) (h⋤A : h ⋤ A) -> Eraseᵀ t t' -> Eraseᵀ (new l⊑h t) (new∙ l⊑h t')
   new∙ : ∀ {l h τ} {t t' : Term _ τ} (l⊑h : l ⊑ h) -> Eraseᵀ t t' -> Eraseᵀ (new∙ l⊑h t) (new∙ l⊑h t')
 
-  #[_] :  ∀ n -> Eraseᵀ #[ n ] #[ n ]
-  #[_]ᴰ :  ∀ n -> Eraseᵀ #[ n ]ᴰ #[ n ]ᴰ
+  #[_] : ∀ {τ} -> (n : ℕ) -> Eraseᵀ {τ = Addr τ} #[ n ] #[ n ]
+  #[_]ᴰ : ∀ {τ} -> (n : ℕ) -> Eraseᵀ {τ = Addr τ} #[ n ]ᴰ #[ n ]ᴰ
 
   fork : ∀ {l h} {t t' : Term _ _} -> (l⊑h : l ⊑ h) (h⊑A : h ⊑ A) -> Eraseᵀ t t' -> Eraseᵀ (fork l⊑h t) (fork l⊑h t')
   fork' : ∀ {l h} {t t' : Term _ _} -> (l⊑h : l ⊑ h) (h⋤A : h ⋤ A) -> Eraseᵀ t t' -> Eraseᵀ (fork l⊑h t) (fork∙ l⊑h t')

@@ -54,8 +54,8 @@ data Term (π : Context) : Ty -> Set where
 
   -- Here terms are supposed to be variables
   -- We use terms to avoid complicating the substitution lemma.
-  #[_] :  ℕ -> Term π Addr
-  #[_]ᴰ : ℕ -> Term π Addr  -- Duplicate on read
+  #[_] :  ∀ {τ} -> ℕ -> Term π (Addr τ)
+  #[_]ᴰ : ∀ {τ} -> ℕ -> Term π (Addr τ)  -- Duplicate on read
 
   -- Concurrency
   fork : ∀ {l h} -> (l⊑h : l ⊑ h) -> Term π (Mac h  （）) -> Term π (Mac l  （）)
@@ -78,8 +78,8 @@ data Value {π : Context} : ∀ {τ} -> Term π τ -> Set where
   Id : ∀ {τ} (t : Term π τ) -> Value (Id t)
   Mac : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Mac l t)
   Res : ∀ {l : Label} {τ} (t : Term π τ) -> Value (Res l t)
-  #[_] : (n : ℕ) -> Value #[ n ]
-  #[_]ᴰ : (n : ℕ) -> Value #[ n ]ᴰ
+  #[_] : ∀ {τ} -> (n : ℕ) -> Value {τ = Addr τ} #[ n ]
+  #[_]ᴰ : ∀ {τ} -> (n : ℕ) -> Value {τ = Addr τ} #[ n ]ᴰ
 
 --------------------------------------------------------------------------------
 

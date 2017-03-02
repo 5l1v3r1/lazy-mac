@@ -12,38 +12,38 @@ open import Relation.Binary.PropositionalEquality hiding (subst ; [_])
 open import Relation.Nullary
 open import Data.Empty
 
--- A view over sensitive (secret) computation types.
--- A is the attacker's security level
-data Secret : Ty -> Set where  Macᴴ : ∀ {h τ} -> (h⋤A : h ⋤ A) -> Secret (Mac h τ)
+-- -- A view over sensitive (secret) computation types.
+-- -- A is the attacker's security level
+-- data Secret : Ty -> Set where  Macᴴ : ∀ {h τ} -> (h⋤A : h ⋤ A) -> Secret (Mac h τ)
 
--- A view over insensitive (public) types.
--- A is the attacker's security level
-data Public : Ty -> Set where
-  Macᴸ : ∀ {τ l} -> (l⊑A : l ⊑ A) -> Public (Mac l τ)
-  Res : ∀ {τ l} -> (l⊑?A : Dec (l ⊑ A)) -> Public (Res l τ)
-  （） : Public （）
-  Bool : Public Bool
-  Id : ∀ {τ} ->  Public (Id τ)
-  Fun : ∀ {α β} -> Public (α => β)
-  Addr : Public Addr
+-- -- A view over insensitive (public) types.
+-- -- A is the attacker's security level
+-- data Public : Ty -> Set where
+--   Macᴸ : ∀ {τ l} -> (l⊑A : l ⊑ A) -> Public (Mac l τ)
+--   Res : ∀ {τ l} -> (l⊑?A : Dec (l ⊑ A)) -> Public (Res l τ)
+--   （） : Public （）
+--   Bool : Public Bool
+--   Id : ∀ {τ} ->  Public (Id τ)
+--   Fun : ∀ {α β} -> Public (α => β)
+--   Addr : Public Addr
 
--- Secret and insensitive are mutually exclusive
-secretNotPublic : ∀ {τ} -> Secret τ -> Public τ -> ⊥
-secretNotPublic (Macᴴ ¬p) (Macᴸ p) = ¬p p
+-- -- Secret and insensitive are mutually exclusive
+-- secretNotPublic : ∀ {τ} -> Secret τ -> Public τ -> ⊥
+-- secretNotPublic (Macᴴ ¬p) (Macᴸ p) = ¬p p
 
-Level : Ty -> Set
-Level τ = (Secret τ) ⊎ (Public τ)
+-- Level : Ty -> Set
+-- Level τ = (Secret τ) ⊎ (Public τ)
 
-isSecret? : (τ : Ty) -> Level τ
-isSecret? （） = inj₂ （）
-isSecret? Bool = inj₂ Bool
-isSecret? (τ => τ₁) = inj₂ Fun
-isSecret? (Mac l τ) with l ⊑? A
-isSecret? (Mac l τ) | yes p = inj₂ (Macᴸ p)
-isSecret? (Mac l τ) | no ¬p = inj₁ (Macᴴ ¬p)
-isSecret? (Res l τ) = inj₂ (Res (l ⊑? A))
-isSecret? (Id τ) = inj₂ Id
-isSecret? Addr = inj₂ Addr
+-- isSecret? : (τ : Ty) -> Level τ
+-- isSecret? （） = inj₂ （）
+-- isSecret? Bool = inj₂ Bool
+-- isSecret? (τ => τ₁) = inj₂ Fun
+-- isSecret? (Mac l τ) with l ⊑? A
+-- isSecret? (Mac l τ) | yes p = inj₂ (Macᴸ p)
+-- isSecret? (Mac l τ) | no ¬p = inj₁ (Macᴴ ¬p)
+-- isSecret? (Res l τ) = inj₂ (Res (l ⊑? A))
+-- isSecret? (Id τ) = inj₂ Id
+-- isSecret? Addr = inj₂ Addr
 --------------------------------------------------------------------------------
 
 εᵀ : ∀ {τ π} -> Term π τ -> Term π τ
