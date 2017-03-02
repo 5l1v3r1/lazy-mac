@@ -6,7 +6,7 @@ open import Types 𝓛
 
 open import Data.Maybe hiding (All)
 open import Relation.Binary.PropositionalEquality hiding ([_] ; subst)
-open import Data.Nat using (ℕ ; zero ; suc ; _+_) public
+open import Data.Nat using (ℕ ; zero ; suc ; _+_) public -- TODO remove public to avoid diamond problems ...
 open import Data.Nat renaming ( _≟_ to  _≟ᴺ_ )
 
 open import Data.Product

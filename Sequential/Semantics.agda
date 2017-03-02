@@ -106,7 +106,7 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
            {S₁ : Stack l π₁ τ₁ τ₃} {S₂ : Stack l π₂ τ₂ τ₃} {Δ₁ : Heap l π₁} {Δ₂ : Heap l π₂}
          -> (l∈Γ : l ↦ ⟨ Δ₁ ⟩ ∈ᴱ Γ)
          -> (step : ⟨ Δ₁ , t₁ , S₁ ⟩ ⇝ ⟨ Δ₂ , t₂ , S₂ ⟩)
-         -> (uᴴ : Γ' ≔ Γ [ l ↦  ⟨ Δ₂ ⟩ ]ᴱ)
+         -> (uᴹ : Γ' ≔ Γ [ l ↦  ⟨ Δ₂ ⟩ ]ᴱ)
          -> ⟨ Ms , Γ , ⟨ t₁ , S₁ ⟩ ⟩ ⟼ ⟨ Ms , Γ' , ⟨ t₂ , S₂ ⟩ ⟩
 
    -- We have to write the term in the memory segment labeled as the reference (H)
@@ -114,21 +114,21 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
    -- Note that if the current thread can also read the reference, then l ≡ H and we
    -- are still writing in the right memory.
   New : ∀ {Ms Ms' Γ τ τ' H} {π : Context} {M : Memory H} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ l ⟩ᴿ π} {l⊑H : l ⊑ H}
-         -> (H∈Γ : H ↦  M ∈ˢ Ms)
-         -> (uᴴ : Ms' ≔ Ms [ H ↦ newᴹ ∥ l⊑H , τ∈π ∥ M ]ˢ ) ->
+         -> (H∈Ms : H ↦  M ∈ˢ Ms)
+         -> (uᴹ : Ms' ≔ Ms [ H ↦ newᴹ ∥ l⊑H , τ∈π ∥ M ]ˢ ) ->
          ⟨ Ms , Γ , ⟨ new {π = π} l⊑H (Var τ∈π) , S ⟩ ⟩ ⟼ ⟨ Ms' , Γ , ⟨ Return l (Res {π = π} H #[ lengthᴹ M ]) , S ⟩ ⟩
 
   New∙ : ∀ {Ms Γ τ τ' H} {π : Context} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π} ->
          ⟨ Ms , Γ , ⟨ new∙ l⊑H (Var τ∈π) , S ⟩ ⟩ ⟼ ⟨ Ms , Γ , ⟨ Return l (Res {π = π} H ∙) , S ⟩ ⟩
 
   Write₂ : ∀ {Ms Ms' Γ τ τ' n π H} {M M' : Memory H} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
-          -> (H∈Γ : H ↦ M  ∈ˢ Ms)
+          -> (H∈Ms : H ↦ M  ∈ˢ Ms)
           -> (uᴹ : M' ≔ M [ n ↦ ∥ l⊑H , τ∈π ∥ ]ᴹ)
           -> (uˢ : Ms' ≔ Ms [ H ↦ M' ]ˢ) ->
          ⟨ Ms , Γ , ⟨ Res {π = π} H #[ n ] , write l⊑H τ∈π ∷ S ⟩ ⟩ ⟼ ⟨ Ms' , Γ , ⟨ Return {π = π} l （） , S ⟩ ⟩
 
   Writeᴰ₂ : ∀ {Ms Ms' Γ τ τ' n π H} {M M' : Memory H} {S : Stack l π _ τ'} {l⊑H : l ⊑ H} {τ∈π : τ ∈⟨ l ⟩ᴿ π}
-          -> (H∈Γ : H ↦ M  ∈ˢ Ms)
+          -> (H∈Ms : H ↦ M  ∈ˢ Ms)
           -> (uᴹ : M' ≔ M [ n ↦ ∥ l⊑H , τ∈π ∥ ]ᴹ)
           -> (uˢ : Ms' ≔ Ms [ H ↦ M' ]ˢ) ->
          ⟨ Ms , Γ , ⟨ Res {π = π} H #[ n ]ᴰ , write l⊑H τ∈π ∷ S ⟩ ⟩ ⟼ ⟨ Ms' , Γ , ⟨ Return {π = π} l （） , S ⟩ ⟩
@@ -146,7 +146,7 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
 
   -- When we read a reference from a possibly lower level we must deepDup that
   Readᴰ₂ : ∀ {Ms Γ τ τ' n L} {π : Context} {M : Memory L} {S : Stack l π _ τ'} {τ∈π : τ ∈⟨ L ⟩ᴿ π} {L⊑l : L ⊑ l}
-         -> (L∈Γ : L ↦ M ∈ˢ Ms)
+         -> (L∈Ms : L ↦ M ∈ˢ Ms)
          -> (n∈M : n ↦ ∥ refl-⊑ , τ∈π ∥ ∈ᴹ M) ->
            ⟨ Ms , Γ , ⟨ Res {π = π} L #[ n ]ᴰ , read L⊑l ∷ S ⟩ ⟩ ⟼ ⟨ Ms , Γ , ⟨ Return {π = π} l (deepDup (Var τ∈π)) , S ⟩ ⟩
 
@@ -163,7 +163,7 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
   -- Note that deepDupᵀ (deepDup t) = deepDup t, so also in case of
   -- nested deepDup (e.g. deepDup (deepDup t)) we make progress.
   DeepDup₂ : ∀ {Ms Γ Γ' π L τ τ'} {Δᴸ : Heap L π} {Δˡ : Heap l π} {t : Term π τ}  {S : Stack l π τ τ'} {L⊑l : L ⊑ l}
-             -- TODO do we need the constraint L⊑l? it does not seem so!
+             -- We need the constraint L ⊑ l when showing Stuck (ε t) => Stuck t (lemma sim⟼)
              -> (τ∈π : τ ∈⟨ L ⟩ᴿ π)
              -> (L∈Γ : L ↦ ⟨ Δᴸ ⟩ ∈ᴱ Γ)
              -> (t∈Δ : τ∈π ↦ t ∈ᴴ Δᴸ)

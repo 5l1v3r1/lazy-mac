@@ -19,7 +19,11 @@ open import Data.Maybe
 -- A valid term contains only valid references, that contain a valid address.
 
 validAddr : ∀ {l} -> Memory l -> ℕ -> Set
-validAddr M n = n < lengthᴹ M -- TODO and M ≠ ∙
+validAddr M n = n < lengthᴹ M -- TODO and M ≠ ∙ ?
+
+data IsAddr {π} : Term π Addr -> ℕ -> Set where
+  is#[_] : (n : ℕ) -> IsAddr #[ n ] n
+  is#[_]ᴰ : (n : ℕ) -> IsAddr #[ n ]ᴰ n
 
 validᵀ : ∀ {ls τ π} -> Memories ls -> Term π τ -> Set
 validᵀ Ms S.（） = ⊤
@@ -34,9 +38,8 @@ validᵀ Ms (S.If t Then t₁ Else t₂) = (validᵀ Ms t) × (validᵀ Ms t₁)
 validᵀ Ms (S.Return l t) = validᵀ Ms t
 validᵀ Ms (t S.>>= t₁) = (validᵀ Ms t) × (validᵀ Ms t₁)
 validᵀ Ms (S.Mac l t) = validᵀ Ms t
-validᵀ {ls} {τ = Res .l Addr} Ms (S.Res l S.#[ t ]) = Σ (l ∈ ls) (λ l∈ls -> validAddr (lookupˢ l∈ls Ms) t )
-validᵀ {ls} {τ = Res .l Addr} Ms (S.Res l S.#[ t ]ᴰ) = Σ (l ∈ ls) (λ l∈ls -> validAddr (lookupˢ l∈ls Ms) t )
-validᵀ {ls} Ms (S.Res l t) = validᵀ Ms t
+validᵀ {ls} {τ = Res .l Addr} Ms (S.Res l t) = Σ (l ∈ ls) (λ l∈ls -> ∃ (λ n -> IsAddr t n × validAddr (lookupˢ l∈ls Ms) n ))
+validᵀ Ms (S.Res l t) = validᵀ Ms t
 validᵀ Ms (S.label l⊑h t) = validᵀ Ms t
 validᵀ Ms (S.label∙ l⊑h t) = ⊥
 validᵀ Ms (S.unlabel l⊑h t) = validᵀ Ms t

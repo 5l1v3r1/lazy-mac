@@ -380,6 +380,12 @@ unlift-εᴹ : ∀ {l} {M M' : Memory l} {x : Dec (l ⊑ A)} -> Eraseᴹ x M M' 
 unlift-εᴹ (Id l⊑A) = refl
 unlift-εᴹ ∙ = refl
 
+ext-εᴹ : ∀ {l} {x : Dec (l ⊑ A)} {M₁ M₂ : Memory l} -> (y : Dec (l ⊑ A)) -> Eraseᴹ x M₁ M₂  -> Eraseᴹ y M₁ M₂
+ext-εᴹ (yes p) (Id l⊑A) = Id p
+ext-εᴹ (no ¬p) (Id l⊑A) = ⊥-elim (¬p l⊑A)
+ext-εᴹ {x = no ¬p} (yes p) ∙ = ⊥-elim (¬p p)
+ext-εᴹ (no ¬p) ∙ = ∙
+
 --------------------------------------------------------------------------------
 
 data EraseMapᴴ : ∀ {ls} -> Heaps ls -> Heaps ls -> Set where
@@ -415,7 +421,7 @@ unlift-map-εᴹ {l ∷ ls} (M ∷ Ms) rewrite unlift-εᴹ M | unlift-map-εᴹ
 
 data Eraseᵀˢ {l τ} : Dec (l ⊑ A) -> TS∙ l τ -> TS∙ l τ -> Set where
   ⟨_,_⟩ : ∀ {π τ'} {l⊑A : l ⊑ A} {t₁ t₂ : Term π τ'} {S₁ S₂ : Stack _ _ _ _} ->
-            Eraseᵀ t₁ t₂ -> Eraseˢ S₁ S₂ -> Eraseᵀˢ (yes l⊑A) ⟨ t₁ , S₁ ⟩ ⟨ t₂ , S₂ ⟩
+            (eᵀ : Eraseᵀ t₁ t₂)(eˢ : Eraseˢ S₁ S₂) -> Eraseᵀˢ (yes l⊑A) ⟨ t₁ , S₁ ⟩ ⟨ t₂ , S₂ ⟩
   ∙ᴸ : ∀ {l⊑A : l ⊑ A} -> Eraseᵀˢ (yes l⊑A) ∙ ∙
   ∙ : ∀ {l⋤A : l ⋤ A} {TS} -> Eraseᵀˢ (no l⋤A) TS ∙
 
@@ -439,7 +445,7 @@ ext-εᵀˢ {x = no ¬p} {no ¬p₁} ∙ = ∙
 --------------------------------------------------------------------------------
 
 data Eraseᴾ {l ls τ} (x : Dec (l ⊑ A)) (p₁ p₂ : Program l ls τ) : Set where
-  ⟨_,_,_⟩ : EraseMapᴹ (Ms p₁) (Ms p₂) -> EraseMapᴴ (Γ p₁) (Γ p₂) -> Eraseᵀˢ x (TS p₁) (TS p₂) -> Eraseᴾ x p₁ p₂
+  ⟨_,_,_⟩ : (eᴹˢ : EraseMapᴹ (Ms p₁) (Ms p₂)) (eᴴˢ : EraseMapᴴ (Γ p₁) (Γ p₂)) (eᵀˢ : Eraseᵀˢ x (TS p₁) (TS p₂)) -> Eraseᴾ x p₁ p₂
 
 lift-εᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) (p : Program l ls τ) -> Eraseᴾ x p (ε₁ᴾ x p)
 lift-εᴾ x ⟨ Ms , Γ , TS ⟩ = ⟨ lift-map-εᴹ Ms , (lift-map-εᴴ Γ) , lift-εᵀˢ x TS ⟩
