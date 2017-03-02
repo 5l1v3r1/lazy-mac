@@ -26,7 +26,7 @@ open import Data.Product
 import Data.Product as P
 open import Function
 
-import Sequential.Valid as V
+import Sequential.Valid as V hiding (wkenᴱ)
 open V 𝓛
 
 memberᴴ : ∀ {l π π' τ} {Δ Δ' : Heap l π} {t' : Term π' τ} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) ->  EraseMapᵀ Δ Δ' -> τ∈π ↦ t' ∈ᴴ Δ' -> ∃ (λ t -> Eraseᵀ t t' × τ∈π ↦ t ∈ᴴ Δ)
@@ -159,14 +159,16 @@ mk-∈ˢ (T.there l∈ls) {M S.∷ Ms} (proj₁ , proj₂) = P.map there id (mk-
 
 sim⟼ : ∀ {L ls τ} {p₁ p₁' p₂' : Program L ls τ} (L⊑A : L ⊑ A) (p₁ⱽ : validᴾ p₁) -> Eraseᴾ (yes L⊑A) p₁ p₁' -> p₁' ⟼ p₂' -> Redexᴾ p₁
 sim⟼ L⊑A (vᴹˢ , vᴴˢ , (vᵀ , vˢ)) (G.mkᴱ eᴹˢ eᴴˢ G.⟨ eᵀ , eˢ ⟩) (S₁.Pure l∈Γ' step' uᴱ') with memberᴱ L⊑A eᴴˢ l∈Γ'
-... | _ , (Mapᵀ _ eᴴ) , l∈Γ with sim⇝ {{ {!!} , (vᵀ , vˢ) }} L⊑A eᴴ eᵀ eˢ step'
+... | _ , (Mapᵀ _ eᴴ) , l∈Γ with sim⇝ {{ valid-∈ᴱ vᴴˢ l∈Γ , (vᵀ , vˢ) }} L⊑A eᴴ eᵀ eˢ step'
 ... | Step step (G.mkᴱ eᴴ' eᵗ' eˢ' ) with updateᴱ L⊑A eᴴˢ (Mapᵀ _ eᴴ') uᴱ'
 ... | _ , uˢ = S₁.Step (Pure l∈Γ step uˢ)
 sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.new l⊑H h⊑A (G.Var τ∈π) , eˢ ⟩) (S₁.New H∈Ms' uˢ') with memberˢ h⊑A eᴹˢ H∈Ms'
 ... | M , eᴹ , H∈Ms with updateˢ h⊑A eᴹˢ (newᴱᴹ ∥ l⊑H , τ∈π ∥ eᴹ) uˢ'
 ... | Ms , uˢ = S₁.Step (New H∈Ms uˢ)
-sim⟼ L⊑A (proj₁ , proj₂ , (proj₃ , H∈Ms , proj₆) , proj₅) (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.new' l⊑H h⋤A (G.Var τ∈π) , eˢ ⟩) S₁.New∙ with newˢ S.∥ l⊑H , τ∈π ∥ H∈Ms
-... | Ms' , uˢ = Step (New H∈Ms uˢ)
+sim⟼ L⊑A (proj₁ , proj₂ , (h∈ls , _) , proj₅) (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.new' l⊑H h⋤A (G.Var τ∈π) , eˢ ⟩) S₁.New∙
+  with mk-∈ˢ h∈ls proj₁
+... | h∈Γ , vᴹ  with newˢ S.∥ l⊑H , τ∈π ∥ h∈Γ
+... | Ms' , uˢ = Step (New h∈Γ uˢ)
 sim⟼ L⊑A (proj₁ , proj₂ , () , proj₃) (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.new∙ l⊑H eᵀ , eˢ ⟩) S₁.New∙
 sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.Res x #[ n ] , G.write l⊑H H⊑A τ∈π G.∷ eˢ ⟩) (S₁.Write₂ H∈Ms' uᴹ' uˢ') with memberˢ H⊑A eᴹˢ H∈Ms'
 ... | M , eᴹ , H∈Ms with updateᴹ S.∥ l⊑H , τ∈π ∥ eᴹ uᴹ'
