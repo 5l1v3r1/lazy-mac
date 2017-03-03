@@ -220,6 +220,10 @@ wkenˢ {S = S.[]} Ms₁⊆Ms₂ Sᵛ = T.tt
 wkenˢ {S = C S.∷ S} Ms₁⊆Ms₂ (proj₁ , proj₂) = (wkenᶜ {C = C} Ms₁⊆Ms₂ proj₁) , (wkenˢ Ms₁⊆Ms₂ proj₂)
 wkenˢ {S = S.∙} Ms₁⊆Ms₂ ()
 
+wkenTS∙ : ∀ {l τ} {ls₁ ls₂} {Ms₁ : Memories ls₁} {Ms₂ : Memories ls₂} {Ts : TS∙ l τ} -> Ms₁ ⊆ˢ Ms₂ -> validTS∙ Ms₁ Ts -> validTS∙ Ms₂ Ts
+wkenTS∙ {Ts = S.mkTS t S} x v = wkenᵀ x t (proj₁ v) , wkenˢ x (proj₂ v)
+wkenTS∙ {Ts = S.∙} x ()
+
 -- wkenᴹ : ∀ {l} {M₁ M₂ : Memory l} -> M₁ ⊆ᴹ M₂ -> validᴹ M₁ -> validᴹ M₂
 -- wkenᴹ ∙ ()
 -- wkenᴹ nil isV = {!!}
@@ -545,3 +549,16 @@ valid⟼ (Msⱽ , Γⱽ , tt , Sⱽ) (SS.DeepDup₂ {t = t} τ∈π L∈Γ t∈�
 ... | Δˡⱽ | Δᴸⱽ  with memberᴴ τ∈π Δᴸⱽ t∈Δ
 ... | tⱽ = Msⱽ , updateᴱ Γⱽ (valid-deepDupᵀ {{t = t}} tⱽ , Δˡⱽ) uᴱ , tt , valid-wkenˢ Sⱽ _
 valid⟼ (Msⱽ , Γⱽ , ()) SS.Hole
+
+⟼-⊆ˢ : ∀ {ls τ l} {p₁ p₂ : Program l ls τ} -> p₁ ⟼ p₂ -> Ms p₁ ⊆ˢ Ms p₂
+⟼-⊆ˢ (SS.Pure l∈Γ step uᴹ) = refl-⊆ˢ
+⟼-⊆ˢ (SS.New H∈Ms uᴹ) = newᴹ-⊆ˢ H∈Ms uᴹ
+⟼-⊆ˢ SS.New∙ = refl-⊆ˢ
+⟼-⊆ˢ (SS.Write₂ H∈Ms uᴹ uˢ) = writeᴹ-⊆ˢ H∈Ms uˢ (writeᴹ-⊆ᴹ uᴹ)
+⟼-⊆ˢ (SS.Writeᴰ₂ H∈Ms uᴹ uˢ) = writeᴹ-⊆ˢ H∈Ms uˢ (writeᴹ-⊆ᴹ uᴹ)
+⟼-⊆ˢ SS.Write∙₂ = refl-⊆ˢ
+⟼-⊆ˢ (SS.Read₂ l∈Γ n∈M) = refl-⊆ˢ
+⟼-⊆ˢ (SS.Readᴰ₂ L∈Ms n∈M) = refl-⊆ˢ
+⟼-⊆ˢ (SS.DeepDup₁ ¬var l∈Γ uᴱ) = refl-⊆ˢ
+⟼-⊆ˢ (SS.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = refl-⊆ˢ
+⟼-⊆ˢ SS.Hole = refl-⊆ˢ

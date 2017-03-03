@@ -122,3 +122,8 @@ updateᴾ (there T∈P) T' = P.map (_◅_ _) there (updateᴾ T∈P T')
 lookupᴾ : ∀ {l ls} -> l ∈ ls -> Pools ls -> Pool l
 lookupᴾ here (T ◅ Ps) = T
 lookupᴾ (there l∈ls) (T ◅ Ps) = lookupᴾ l∈ls Ps
+
+lengthᴾ : ∀ {l} -> Pool l -> ℕ
+lengthᴾ [] = 0
+lengthᴾ (t ◅ P) = suc (lengthᴾ P)
+lengthᴾ ∙ = 0
