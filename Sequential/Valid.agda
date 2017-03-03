@@ -7,11 +7,10 @@ import Types as T hiding (wken-∈)
 open T 𝓛
 
 import Sequential.Calculus as S renaming (⟨_,_,_⟩ to mkP ; ⟨_,_⟩ to mkTS)
-open S 𝓛 hiding (wkenˢ ; wkenᴴ)
+open S 𝓛 hiding (wkenˢ ; wkenᴴ ; wkenᶜ)
 
 open import Data.Nat using (_≤_ ; _<_ ; s≤s ; z≤n ; decTotalOrder)
 open import Data.Empty
---import Data.List as LL
 open import Data.Product as P
 open import Data.Maybe
 
@@ -205,8 +204,21 @@ wkenᴴ {Δ = S.[]} Ms₁⊆Ms₂ Δᴱ = tt
 wkenᴴ {Δ = mt S.∷ Δ} Ms₁⊆Ms₂  (mtⱽ  , Δᴱ) = wkenᴹᵀ {mt = mt} Ms₁⊆Ms₂ mtⱽ  , wkenᴴ {Δ = Δ} Ms₁⊆Ms₂ Δᴱ
 wkenᴴ {Δ = S.∙} _ ()
 
+wkenᶜ : ∀ {ls₁ ls₂ l π τ₁ τ₂} {C : Cont l π τ₁ τ₂} {Ms₁ : Memories ls₁} {Ms₂ : Memories ls₂} -> Ms₁ ⊆ˢ Ms₂ -> validᶜ Ms₁ C -> validᶜ Ms₂ C
+wkenᶜ {C = S.Var τ∈π} Ms₁⊆Ms₂ Cᵛ = T.tt
+wkenᶜ {C = S.# τ∈π} Ms₁⊆Ms₂ Cᵛ = T.tt
+wkenᶜ {C = S.Then x Else x₁} Ms₁⊆Ms₂ Cᵛ = (wkenᵀ Ms₁⊆Ms₂ x (proj₁ Cᵛ)) , (wkenᵀ Ms₁⊆Ms₂ x₁ (proj₂ Cᵛ))
+wkenᶜ {C = S.Bind x} Ms₁⊆Ms₂ Cᵛ = wkenᵀ Ms₁⊆Ms₂ x Cᵛ
+wkenᶜ {C = S.unlabel p} Ms₁⊆Ms₂ Cᵛ = T.tt
+wkenᶜ {C = S.unId} Ms₁⊆Ms₂ Cᵛ = T.tt
+wkenᶜ {C = S.write x τ∈π} Ms₁⊆Ms₂ Cᵛ = T.tt
+wkenᶜ {C = S.write∙ x τ∈π} Ms₁⊆Ms₂ ()
+wkenᶜ {C = S.read x} Ms₁⊆Ms₂ Cᵛ = T.tt
+
 wkenˢ : ∀ {ls₁ ls₂ l π τ₁ τ₂} {S : Stack l π τ₁ τ₂} {Ms₁ : Memories ls₁} {Ms₂ : Memories ls₂} -> Ms₁ ⊆ˢ Ms₂ -> validˢ Ms₁ S -> validˢ Ms₂ S
-wkenˢ {S = S} Ms₁⊆Ms₂ Sᵛ = {!!}
+wkenˢ {S = S.[]} Ms₁⊆Ms₂ Sᵛ = T.tt
+wkenˢ {S = C S.∷ S} Ms₁⊆Ms₂ (proj₁ , proj₂) = (wkenᶜ {C = C} Ms₁⊆Ms₂ proj₁) , (wkenˢ Ms₁⊆Ms₂ proj₂)
+wkenˢ {S = S.∙} Ms₁⊆Ms₂ ()
 
 -- wkenᴹ : ∀ {l} {M₁ M₂ : Memory l} -> M₁ ⊆ᴹ M₂ -> validᴹ M₁ -> validᴹ M₂
 -- wkenᴹ ∙ ()
@@ -275,171 +287,7 @@ valid-∈ᴱ (proj₁ , proj₂) (S.there y₁) = valid-∈ᴱ proj₂ y₁
 import Sequential.Semantics as SS
 open SS 𝓛
 
-open import Relation.Binary.PropositionalEquality hiding (subst)
-
--- valid-memberᴴ : ∀ {l ls} {Ms : Heaps ls} {H : Heap l} -> validᴴ Ms -> l ↦ H ∈ᴴ Ms -> validᴴ₂ Ms H
--- valid-memberᴴ (proj₁ , proj₂) S.here = proj₁
--- valid-memberᴴ (proj₁ , proj₂) (S.there l∈Ms) = wkenᴴ₂ (drop refl-⊆ˢ) (valid-memberᴴ proj₂ l∈Ms)
-
--- valid-memberᴱ : ∀ {l τ π₁ π₂ ls} {Ms : Memories ls} {Δ : Heap l π₁} {t : Term π₂ τ} {x : τ ∈⟨ l ⟩ᴿ π₁} -> validᴴ Ms Δ -> x ↦ t ∈ᴴ Δ -> validᵀ Ms t
--- valid-memberᴱ {x = T.⟪ τ∈π ⟫} = {!!} -- aux
---   -- where aux : ∀ {l τ π₁ π₂ ls} {Ms : Memories ls} {Δ : Heap l π₁} {t : Term π₂ τ} {x : τ ∈⟨ l ⟩ π₁} -> validᴴ Ms Δ -> Memberᴴ (just t) x Δ -> validᵀ Ms t
---   --       aux (proj₁ , proj₂) S.here = proj₁
---   --       aux {Δ = just x S.∷ Δ} (_ , Δⱽ) (S.there t∈Δ) = aux Δⱽ t∈Δ
---   --       aux {Δ = nothing S.∷ Δ} Δⱽ (S.there t∈Δ) = aux Δⱽ t∈Δ
-
--- valid-newᴹ : ∀ {l τ} (c : Cell l τ) (M : Memory l) -> validᴹ M -> validᴹ (newᴹ c M) × (lengthᴹ M ≤ lengthᴹ (newᴹ c M))
--- valid-newᴹ c S.[] ok-M = tt , z≤n
--- valid-newᴹ c (cᴸ S.∷ M) ok-M = P.map id s≤s (valid-newᴹ c M ok-M)
--- valid-newᴹ c S.∙ ()
-
--- valid-writeᴹ : ∀ {l τ} {c : Cell l τ} {M M' : Memory l} {n} -> M' ≔ M [ n ↦ c ]ᴹ -> validᴹ M -> validᴹ M' × lengthᴹ M ≤ lengthᴹ M'
--- valid-writeᴹ {M = _ ∷ M} S.here Mⱽ = Mⱽ , s≤s refl-≤
--- valid-writeᴹ (S.there u) Mⱽ = P.map id s≤s (valid-writeᴹ u Mⱽ)
-
--- valid-new-Addr : ∀ {l ls τ} {Ms Ms' : Memories ls} {M : Memory l} -> validᴹ M -> (c : Cell l τ) ->
---               (uˢ : Ms' ≔ Ms [ l ↦ newᴹ c M ]ˢ) -> validAddr (lookupˢ (updateˢ-∈ uˢ) Ms') (lengthᴹ M)
--- valid-new-Addr {M = M} Mᵛ c (S.there uᴴ) = valid-new-Addr {M = M} Mᵛ c uᴴ
--- valid-new-Addr {M = M} Mᵛ c S.here = aux {c = c} {M = M} Mᵛ
---  where aux : ∀ {l τ} {c : Cell l τ} {M : Memory l} -> validᴹ M -> lengthᴹ M < lengthᴹ (newᴹ c M)
---        aux {M = S.[]} M≠∙ = s≤s z≤n
---        aux {M = cᴸ S.∷ M} M≠∙ = s≤s (aux {M = M} M≠∙)
---        aux {M = S.∙} ()
-
-
--- update-valid-Addr : ∀ {l} {M₁ M₂ : Memory l} {n : ℕ} -> validAddr M₁ n ->
---                     validᴹ M₁ -> validᴹ M₂ -> lengthᴹ M₁ ≤ lengthᴹ M₂ -> validAddr M₂ n
--- update-valid-Addr {_} {M₁} {M₂} aⱽ Mⱽ₁ Mⱽ₂ M₁≤M₂ = trans-≤ aⱽ M₁≤M₂
-
--- newᴹ-≤ : ∀ {l τ} (M : Memory l) (c : Cell l τ) -> lengthᴹ M ≤ lengthᴹ (newᴹ c M)
--- newᴹ-≤ S.[] c = z≤n
--- newᴹ-≤ (cᴸ S.∷ M) c = s≤s (newᴹ-≤ M c)
--- newᴹ-≤ S.∙ c = refl-≤
-
--- -- newᴴ-≤ : ∀ {l ls} {M₁ M₂ : Heaps ls} {M₁ M₂ : Memory l} {Δ : Heap l π} -> l ↦ ⟨ Δ ⟩ ∈ᴱ Ms₁ -> Ms₂ ≔ Ms₁ [ l ↦ ⟨ Δ ⟩ ]ᴱ ->
--- --            (lengthᴹ M₁) ≤ (lengthᴹ M₂) ->
--- --           (∀ {l} -> (l∈ls : l ∈ ls) ->
--- --              lengthᴹ (lookupˢ l∈ls Ms₁) ≤ lengthᴹ (lookupˢ l∈ls Ms₂))
--- -- newᴴ-≤ = ?
--- -- S.here S.here M₁≤M₂ T.here = M₁≤M₂
--- -- newᴴ-≤ S.here S.here _ (T.there l∈ls) = refl-≤
--- -- newᴴ-≤ {l} S.here (S.there {u = u} y) = ⊥-elim (∈-not-unique (updateᴱ-∈ y) u)
--- -- newᴴ-≤ (S.there {u = u} x) S.here = ⊥-elim (∈-not-unique (memberᴱ-∈ x) u)
--- -- newᴴ-≤ {Ms₁ = S.⟨ x , x₁ ⟩ S.∷ Ms₁} (S.there x₂) (S.there y) _ T.here = refl-≤
--- -- newᴴ-≤ {Ms₁ = S.∙ S.∷ Ms₁} (S.there x) (S.there y) _ T.here = refl-≤
--- -- newᴴ-≤ (S.there x) (S.there y) M₁≤M₂ (T.there z) = newᴴ-≤ x y M₁≤M₂ z
-
--- update-validᵀ : ∀ {l π  τ ls} {Ms₁ Ms₂ : Memories ls} {M₁ M₂ : Memory l} ->
---                 l ↦ M₁ ∈ˢ Ms₁ ->
---                 Ms₂ ≔ Ms₁ [ l ↦ M₁ ]ˢ -> (lengthᴹ M₁) ≤ (lengthᴹ M₂) -> (t : Term π τ) -> validᵀ Ms₁ t -> validᵀ Ms₂ t
--- update-validᵀ l∈Ms u M₁≤M₂ S.（） tⱽ = tt
--- update-validᵀ l∈Ms u M₁≤M₂ S.True tⱽ = tt
--- update-validᵀ l∈Ms u M₁≤M₂ S.False tⱽ = tt
--- update-validᵀ l∈Ms u M₁≤M₂ (S.Id t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.unId t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.Var τ∈π) tⱽ = tt
--- update-validᵀ l∈Ms u M₁≤M₂ (S.Abs t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.App t t₁) (tⱽ , t₁ⱽ) = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ , update-validᵀ l∈Ms u M₁≤M₂ t₁ t₁ⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.If t Then t₁ Else t₂) (tⱽ , t₁ⱽ , t₂ⱽ)
---   = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ , update-validᵀ l∈Ms u M₁≤M₂ t₁ t₁ⱽ , update-validᵀ l∈Ms u M₁≤M₂ t₂ t₂ⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.Return l₁ t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (t S.>>= t₁) (tⱽ , t₁ⱽ) = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ , update-validᵀ l∈Ms u M₁≤M₂ t₁ t₁ⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.Mac l₁ t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ {τ = Res .l₁ （）} l∈Ms u M₁≤M₂ (S.Res l₁ t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ {τ = Res .l₁ Bool} l∈Ms u M₁≤M₂ (S.Res l₁ t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ {τ = Res .l₁ (τ => τ₁)} l∈Ms u M₁≤M₂ (S.Res l₁ t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ {τ = Res .l₂ (Mac l₁ τ)} l∈Ms u M₁≤M₂ (S.Res l₂ t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ {τ = Res .l₂ (Res l₁ τ)} l∈Ms u M₁≤M₂ (S.Res l₂ t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ {τ = Res .l₁ (Id τ)} l∈Ms u M₁≤M₂ (S.Res l₁ t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ {τ = Res .l₁ Addr} l∈Ms u M₁≤M₂ (S.Res l₁ (S.unId t)) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ {τ = Res .l₁ Addr} l∈Ms u M₁≤M₂ (S.Res l₁ (S.Var τ∈π)) tⱽ = tt
--- update-validᵀ {τ = Res .l₁ Addr} l∈Ms u M₁≤M₂ (S.Res l₁ (S.App t t₁)) (tⱽ , t₁ⱽ) = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ , update-validᵀ l∈Ms u M₁≤M₂ t₁ t₁ⱽ
--- update-validᵀ {τ = Res .l₁ Addr} l∈Ms u M₁≤M₂ (S.Res l₁ (S.If t Then t₁ Else t₂)) (tⱽ , t₁ⱽ , t₂ⱽ)
---   = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ , update-validᵀ l∈Ms u M₁≤M₂ t₁ t₁ⱽ , update-validᵀ l∈Ms u M₁≤M₂ t₂ t₂ⱽ
--- update-validᵀ {τ = Res .l₁ Addr} l∈Ms u M₁≤M₂ (S.Res l₁ S.#[ n ]) (l∈ls , tⱽ) = l∈ls , trans-≤ tⱽ {!!} -- (newᴴ-≤ l∈Ms u M₁≤M₂ l∈ls)
--- update-validᵀ {τ = Res .l₁ Addr} l∈Ms u M₁≤M₂ (S.Res l₁ S.#[ n ]ᴰ) (l∈ls , tⱽ) = l∈ls , trans-≤ tⱽ {!!} -- (newᴴ-≤ l∈Ms u M₁≤M₂ l∈ls)
--- update-validᵀ {τ = Res .l₁ Addr} l∈Ms u M₁≤M₂ (S.Res l₁ (S.deepDup t)) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ {τ = Res .l₁ Addr} l∈Ms u M₁≤M₂ (S.Res l₁ S.∙) ()
--- update-validᵀ l∈Ms u M₁≤M₂ (S.label l⊑h t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.label∙ l⊑h t) ()
--- update-validᵀ l∈Ms u M₁≤M₂ (S.unlabel l⊑h t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.read x t) tⱽ =  update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.write x t t₁) (tⱽ , t₁ⱽ) = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ ,  update-validᵀ l∈Ms u M₁≤M₂ t₁ t₁ⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.write∙ x t t₁) ()
--- update-validᵀ l∈Ms u M₁≤M₂ (S.new x t) ok = {!!} -- (ok , tⱽ) = {!!} -- ok , update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.new∙ x t) ()
--- update-validᵀ l∈Ms u M₁≤M₂ S.#[ x ] tⱽ = tt
--- update-validᵀ l∈Ms u M₁≤M₂ S.#[ x ]ᴰ tⱽ = tt
--- update-validᵀ l∈Ms u M₁≤M₂ (S.fork l⊑h t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ (S.fork∙ l⊑h t) ()
--- update-validᵀ l∈Ms u M₁≤M₂ (S.deepDup t) tⱽ = update-validᵀ l∈Ms u M₁≤M₂ t tⱽ
--- update-validᵀ l∈Ms u M₁≤M₂ S.∙ ()
-
--- update-validᶜ : ∀ {l π l' ls τ₁ τ₂} {C : Cont l' π τ₁ τ₂} {Ms₁ Ms₂ : Memories ls} {M₁ M₂ : Memory l} ->
---                 l ↦ M₁ ∈ˢ Ms₁ ->
---                 Ms₂ ≔ Ms₁ [ l ↦ M₂ ]ˢ -> (lengthᴹ M₁) ≤ (lengthᴹ M₂)
---                 -> validᶜ Ms₁ C -> validᶜ Ms₂ C
--- update-validᶜ {C = S.Var τ∈π} l∈Ms u M₁≤M₂ Cⱽ = tt
--- update-validᶜ {C = S.# τ∈π} l∈Ms u M₁≤M₂ Cⱽ = tt
--- update-validᶜ {C = S.Then t₁ Else t₂} l∈Ms u M₁≤M₂ (proj₁ , proj₂) = {!!} -- (update-validᵀ l∈Ms u M₁≤M₂ t₁ proj₁) , (update-validᵀ l∈Ms u M₁≤M₂ t₂ proj₂)
--- update-validᶜ {C = S.Bind t} l∈Ms u M₁≤M₂ Cⱽ = {!!} -- update-validᵀ l∈Ms u M₁≤M₂ t Cⱽ
--- update-validᶜ {C = S.unlabel p} l∈Ms u M₁≤M₂ Cⱽ = tt
--- update-validᶜ {C = S.unId} l∈Ms u M₁≤M₂ Cⱽ = tt
--- update-validᶜ {C = S.write x τ∈π} l∈Ms u M₁≤M₂ Cⱽ = tt
--- update-validᶜ {C = S.write∙ x τ∈π} l∈Ms u M₁≤M₂ ()
--- update-validᶜ {C = S.read x} l∈Ms u M₁≤M₂ Cⱽ = tt
-
--- update-validˢ : ∀ {l π l' ls τ₁ τ₂} {S : Stack l' π τ₁ τ₂} {Ms Ms' : Memories ls} {M₁ M₂ : Memory l} ->
---                   l ↦ M₁ ∈ˢ Ms ->
---                   Ms' ≔ Ms [ l ↦ M₂ ]ˢ -> (lengthᴹ M₁) ≤ (lengthᴹ M₂)
---                 -> validˢ Ms S -> validˢ Ms' S
--- update-validˢ {S = S.[]} l∈Ms u M₁≤M₂ Sⱽ = tt
--- update-validˢ {S = C S.∷ S} l∈Ms u M₁≤M₂ (Cⱽ , Sⱽ) = update-validᶜ {C = C} l∈Ms u M₁≤M₂ Cⱽ , (update-validˢ l∈Ms u M₁≤M₂ Sⱽ)
--- update-validˢ {S = S.∙} l∈Ms u M₁≤M₂ ()
-
--- -- update-⊆ˢ : ∀ {l π ls} {Ms Ms' : Heaps ls} {Δ : Heap l π} {M₁ M₂ : Memory l} ->
--- --               l ↦ ⟨ Δ ⟩ ∈ᴴ Ms ->
--- --                 Ms' ≔ Ms [ l ↦ ⟨ Δ ⟩ ]ᴴ ->
--- --                 (lengthᴹ M₁) ≤ (lengthᴹ M₂) ->
--- --                 Ms ⊆ˢ Ms'
--- -- update-⊆ˢ S.here S.here M₁≤M₂ = ?
--- -- cons (⟨ M₁≤M₂ , refl-⊆ᴱ ⟩) refl-⊆ˢ
--- -- update-⊆ˢ S.here (S.there {u = u} uᴴ) M₁≤M₂ = ⊥-elim (∈-not-unique (update-∈ uᴴ) u)
--- -- update-⊆ˢ (S.there {u = u} l∈Δ) S.here M₁≤M₂ = ⊥-elim (∈-not-unique (member-∈ l∈Δ) u)
--- -- update-⊆ˢ (S.there l∈Δ) (S.there u₁) M₁≤M₂ = cons refl-⊆'ᴴ (update-⊆ˢ l∈Δ u₁ M₁≤M₂)
-
--- -- update-validᴴ : ∀ {l π ls} {Ms Ms' : Heaps ls} {Δ : Heap l π} {M₁ M₂ : Memory l} ->
--- --                   l ↦ ⟨ Δ ⟩ ∈ᴴ Ms ->
--- --                   Ms' ≔ Ms [ l ↦ ⟨ Δ ⟩ ]ᴴ ->
--- --                   (lengthᴹ M₁) ≤ (lengthᴹ M₂) ->
--- --                   validᴹ M₂ ->
--- --                   validᴴ Ms -> validᴴ Ms'
--- -- update-validᴴ = ?
--- -- {Ms = _ ∷ Ms} {Δ = Δ} {M₁} {M₂} = ?
--- -- S.here S.here M₁≤M₂ M₂ⱽ ((proj₁ , proj₂) , proj₃)
--- --   = (M₂ⱽ , wkenᴱ {Δ = Δ} (cons (⟨ M₁≤M₂ , refl-⊆ᴱ ⟩) refl-⊆ˢ) proj₂ ) , proj₃
--- -- update-validᴴ {Ms = S._∷_ {{u}} _ _} S.here (S.there b) M₁≤M₂ M₂ⱽ Msⱽ = ⊥-elim (∈-not-unique (update-∈ b) u)
--- -- update-validᴴ {Ms = S._∷_ {{u}} _ _} (S.there a) S.here M₁≤M₂ M₂ⱽ Msⱽ = ⊥-elim (∈-not-unique (member-∈ a) u)
--- -- update-validᴴ {Ms = S.⟨ M' , Δ' ⟩ S.∷ Ms} (S.there a) (S.there b) M₁≤M₂ M₂ⱽ ((proj₁ , proj₂) , proj₃)
--- --   = (proj₁ , wkenᴱ {Δ = Δ'} (update-⊆ˢ (there a) (there b) M₁≤M₂) proj₂) , (update-validᴴ a b M₁≤M₂ M₂ⱽ proj₃)
--- -- update-validᴴ {Ms = S.∙ S.∷ Ms} (S.there a) (S.there b) M₁≤M₂ M₂ⱽ (() , proj₂)
-
-
-
--- -- This does not go because I need to restrict Ms to get to the memory where the update occurs
--- -- which may make some references invalid.
--- -- update-valid'ᴴ : ∀ {l π₁ π₂ ls ls'} {Ms Ms' : Heaps ls} {Ms'' : Heaps ls'} {Δ₁ : Heap l π₁} {Δ₂ : Heap l π₂} {M : Memory l} ->
--- --                   l ↦ ⟨ M , Δ₁ ⟩ ∈ᴴ Ms ->
--- --                   Ms' ≔ Ms [ l ↦ ⟨ M , Δ₂ ⟩ ]ᴴ ->
--- --                   validᴴ Ms -> Ms ⊆ˢ Ms'' -> validᴴ Ms'' Δ₂ -> validᴴ Ms'
--- -- update-valid'ᴴ S.here S.here Msⱽ Ms⊆ˢMs'' Δ₂ⱽ = {!!}
--- -- update-valid'ᴴ S.here (S.there {u = u} uᴴ) Msⱽ _ Δ₂ⱽ = ⊥-elim (∈-not-unique (update-∈ uᴴ) u)
--- -- update-valid'ᴴ (S.there {u = u} l∈Ms) S.here Msⱽ _ Δ₂ⱽ = ⊥-elim (∈-not-unique (member-∈ l∈Ms) u)
--- -- update-valid'ᴴ {Ms = S.⟨ x , x₁ ⟩ S.∷ Ms} (S.there l∈Ms) (S.there u₁) (proj₁ , proj₂) Ms⊆ˢMs'' Δ₂ⱽ = {!!} , (update-valid'ᴴ l∈Ms u₁ proj₂ {!drop ?!}  Δ₂ⱽ)
--- -- update-valid'ᴴ {Ms = S.∙ S.∷ Ms} (S.there l∈Ms) (S.there u₁) (() , proj₂) Δ₂ⱽ
-
-valid-subst : ∀ {τ τ' π ls} {Ms : Memories ls} {t₁ : Term π τ} {t₂ : Term (τ ∷ π) τ'} -> validᵀ Ms t₁ -> validᵀ Ms t₂ -> validᵀ Ms (subst t₁ t₂)
-valid-subst = {!!}
+open import Relation.Binary.PropositionalEquality hiding (subst ; [_])
 
 valid-wkenᵀ : ∀ {τ π₁ π₂ ls} {Ms : Memories ls} {{t : Term π₁ τ}} -> validᵀ Ms t -> (π₁⊆π₂ : π₁ ⊆ π₂) -> validᵀ Ms (wken t π₁⊆π₂)
 valid-wkenᵀ {{t = S.（）}} v π₁⊆π₂ = T.tt
@@ -479,7 +327,7 @@ valid-wkenᵀ {{t = S.fork∙ l⊑h t}} () π₁⊆π₂
 valid-wkenᵀ {{t = S.deepDup t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
 valid-wkenᵀ {{t = S.∙}} () π₁⊆π₂
 
-valid-wkenᶜ : ∀ {τ₁ τ₂ l π₁ π₂ ls} {Ms : Memories ls} {C : Cont l π₁ τ₁ τ₂} -> validᶜ Ms C -> (π₁⊆π₂ : π₁ ⊆ π₂) -> validᶜ Ms (wkenᶜ C π₁⊆π₂)
+valid-wkenᶜ : ∀ {τ₁ τ₂ l π₁ π₂ ls} {Ms : Memories ls} {C : Cont l π₁ τ₁ τ₂} -> validᶜ Ms C -> (π₁⊆π₂ : π₁ ⊆ π₂) -> validᶜ Ms (S.wkenᶜ 𝓛 C π₁⊆π₂)
 valid-wkenᶜ {C = S.Var τ∈π} v π₁⊆π₂ = T.tt
 valid-wkenᶜ {C = S.# τ∈π} v π₁⊆π₂ = T.tt
 valid-wkenᶜ {C = S.Then t Else t₁} (v₁ , v₂) π₁⊆π₂ = valid-wkenᵀ {{t = t}} v₁ π₁⊆π₂ , valid-wkenᵀ {{t = t₁}} v₂ π₁⊆π₂
@@ -495,8 +343,94 @@ valid-wkenˢ {S = S.[]} v π₁⊆π₂ = T.tt
 valid-wkenˢ {S = C S.∷ S} (proj₁ , proj₂) π₁⊆π₂ = (valid-wkenᶜ {C = C} proj₁ π₁⊆π₂) , (valid-wkenˢ proj₂ π₁⊆π₂)
 valid-wkenˢ {S = S.∙} v π₁⊆π₂ = v
 
-valid-deepDupᵀ : ∀ {π τ ls} {t : Term π τ} {Ms : Memories ls} -> validᵀ Ms t -> validᵀ Ms (deepDupᵀ t)
-valid-deepDupᵀ = {!!}
+valid-subst : ∀ {π τ τ' ls} {Ms : Memories ls} {t₁ : Term π τ} {t₂ : Term (τ ∷ π) τ'} -> validᵀ Ms t₁ -> validᵀ Ms t₂ -> validᵀ Ms (subst t₁ t₂)
+valid-subst {π} {Ms = Ms} {t₁'} {t₂'} = aux [] π t₁' t₂'
+  where aux' : ∀ {l} {α β} (π₁ π₂ : Context) (t₁ : Term π₂ β) (x : α ∈⟨ l ⟩ (π₁ ++ [ β ] ++ π₂)) -> validᵀ Ms t₁ -> validᵀ Ms (var-subst π₁ π₂ t₁ x)
+        aux' T.[] π₂ t₁ T.⟪ L₁.here ⟫ isV = isV
+        aux' T.[] π₂ t₁ T.⟪ L₁.there τ∈π ⟫ isV = tt
+        aux' (_ T.∷ π₁) π₂ t₁ ⟪ here ⟫ isV = tt
+        aux' {l} (_ T.∷ π₁) π₂ t₁ ⟪ there x ⟫ isV with aux' {l} π₁ π₂ t₁ ⟪ x ⟫ isV
+        ... | r = valid-wkenᵀ {{ var-subst π₁ π₂ t₁ ⟪ x ⟫ }} r (drop refl-⊆)
+
+        aux : ∀ {τ α} (π₁ π₂ : Context) (t₁ : Term π₂ α) (t₂ : Term (π₁ ++ [ α ] ++ π₂) τ) ->
+                      validᵀ Ms t₁ -> validᵀ Ms t₂ -> validᵀ Ms (tm-subst π₁ π₂ t₁ t₂)
+        aux π₁ π₂ t₁ S.（） v₁ v₂ = T.tt
+        aux π₁ π₂ t₁ S.True v₁ v₂ = T.tt
+        aux π₁ π₂ t₁ S.False v₁ v₂ = T.tt
+        aux π₁ π₂ t₁ (S.Id t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux π₁ π₂ t₁ (S.unId t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux π₁ π₂ t₁ (S.Var T.⟪ τ∈π ⟫) v₁ v₂ = aux' π₁ π₂ t₁ ⟪ ∈ᴿ-∈ τ∈π ⟫ v₁
+        aux π₁ π₂ t₁ (S.Abs t₂) v₁ v₂ = aux (_ T.∷ π₁) π₂ t₁ t₂ v₁ v₂
+        aux π₁ π₂ t₁ (S.App t₂ t₃) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ (proj₁ v₂) , aux π₁ π₂ t₁ t₃ v₁ (proj₂ v₂)
+        aux π₁ π₂ t₁ (S.If t₂ Then t₃ Else t₄) v₁ (proj₁ , proj₂ , proj₃)
+          = aux π₁ π₂ t₁ t₂ v₁ proj₁ , aux π₁ π₂ t₁ t₃ v₁ proj₂ , aux π₁ π₂ t₁ t₄ v₁ proj₃
+        aux π₁ π₂ t₁ (S.Return l t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux π₁ π₂ t₁ (t₂ S.>>= t₃) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ (proj₁ v₂) , aux π₁ π₂ t₁ t₃ v₁ (proj₂ v₂)
+        aux π₁ π₂ t₁ (S.Mac l t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux {T.Res .l T.（）} π₁ π₂ t₁ (S.Res l t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux {T.Res .l T.Bool} π₁ π₂ t₁ (S.Res l t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux {T.Res .l (τ T.=> τ₁)} π₁ π₂ t₁ (S.Res l t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux {T.Res .l₁ (T.Mac l τ)} π₁ π₂ t₁ (S.Res l₁ t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux {T.Res .l₁ (T.Res l τ)} π₁ π₂ t₁ (S.Res l₁ t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux {T.Res .l (T.Id τ)} π₁ π₂ t₁ (S.Res l t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux {T.Res .l (T.Addr τ)} π₁ π₂ t₁ (S.Res l .(S.#[ n ])) v₁ (l∈ls , n , is#[ .n ] , isV) = l∈ls , n , is#[ n ] , isV
+        aux {T.Res .l (T.Addr τ)} π₁ π₂ t₁ (S.Res l .(S.#[ n ]ᴰ)) v₁ (l∈ls , n , is#[ .n ]ᴰ , isV) = l∈ls , n , is#[ n ]ᴰ , isV
+        aux π₁ π₂ t₁ (S.label l⊑h t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux π₁ π₂ t₁ (S.label∙ l⊑h t₂) v₁ ()
+        aux π₁ π₂ t₁ (S.unlabel l⊑h t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux π₁ π₂ t₁ (S.read x t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux π₁ π₂ t₁ (S.write x t₂ t₃) v₁ (proj₁ , proj₂) = aux π₁ π₂ t₁ t₂ v₁ proj₁ , aux π₁ π₂ t₁ t₃ v₁ proj₂
+        aux π₁ π₂ t₁ (S.write∙ x t₂ t₃) v₁ ()
+        aux π₁ π₂ t₁ (S.new x t₂) v₁ v₂ = (proj₁ v₂) , (aux π₁ π₂ t₁ t₂ v₁ (proj₂ v₂))
+        aux π₁ π₂ t₁ (S.new∙ x t₂) v₁ ()
+        aux π₁ π₂ t₁ S.#[ x ] v₁ v₂ = tt
+        aux π₁ π₂ t₁ S.#[ x ]ᴰ v₁ v₂ = tt
+        aux π₁ π₂ t₁ (S.fork l⊑h t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux π₁ π₂ t₁ (S.fork∙ l⊑h t₂) v₁ ()
+        aux π₁ π₂ t₁ (S.deepDup t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux π₁ π₂ t₁ S.∙ v₁ ()
+
+open import Relation.Nullary
+
+valid-deepDupᵀ : ∀ {π τ ls} {{t : Term π τ}} {Ms : Memories ls} -> validᵀ Ms t -> validᵀ Ms (deepDupᵀ t)
+valid-deepDupᵀ {{t}} {Ms} v = aux [] t v
+  where aux : ∀ {τ π} -> (vs : Vars π) (t : Term π τ) -> validᵀ Ms t -> validᵀ Ms (dup-ufv vs t)
+        aux vs S.（） v₁ = T.tt
+        aux vs S.True v₁ = T.tt
+        aux vs S.False v₁ = T.tt
+        aux vs (S.Id t₁) v₁ = aux vs t₁ v₁
+        aux vs (S.unId t₁) v₁ = aux vs t₁ v₁
+        aux vs (S.Var τ∈π) v₁ with memberⱽ (∈ᴿ-∈ (T.τ∈π τ∈π)) vs
+        ... | yes _ = T.tt
+        ... | no _ = T.tt
+        aux vs (S.Abs t₁) v₁ = aux (L₁.here S.∷ mapⱽ L₁.there vs) t₁ v₁
+        aux vs (S.App t₁ t₂) (v₁ , v₂) = aux vs t₁ v₁ , aux vs t₂ v₂
+        aux vs (S.If t₁ Then t₂ Else t₃) (v₁ , v₂ , v₃) = aux vs t₁ v₁ , aux vs t₂ v₂ , aux vs t₃ v₃
+        aux vs (S.Return l t₁) v₁ = aux vs t₁ v₁
+        aux vs (t₁ S.>>= t₂) (v₁ , v₂) = aux vs t₁ v₁ , aux vs t₂ v₂
+        aux vs (S.Mac l t₁) v₁ = aux vs t₁ v₁
+        aux {T.Res .l T.（）} vs (S.Res l t₁) v₁ = aux vs t₁ v₁
+        aux {T.Res .l T.Bool} vs (S.Res l t₁) v₁ = aux vs t₁ v₁
+        aux {T.Res .l (τ T.=> τ₁)} vs (S.Res l t₁) v₁ = aux vs t₁ v₁
+        aux {T.Res .l₁ (T.Mac l τ)} vs (S.Res l₁ t₁) v₁ = aux vs t₁ v₁
+        aux {T.Res .l₁ (T.Res l τ)} vs (S.Res l₁ t₁) v₁ = aux vs t₁ v₁
+        aux {T.Res .l (T.Id τ)} vs (S.Res l t₁) v₁ = aux vs t₁ v₁
+        aux {T.Res .l (T.Addr τ)} vs (S.Res l .(S.#[ v₂ ])) (v₁ , v₂ , is#[ .v₂ ] , v₄) = v₁ , v₂ , is#[ v₂ ]ᴰ , v₄
+        aux {T.Res .l (T.Addr τ)} vs (S.Res l .(S.#[ v₂ ]ᴰ)) (v₁ , v₂ , is#[ .v₂ ]ᴰ , v₄) = v₁ , v₂ , is#[ v₂ ]ᴰ , v₄
+        aux vs (S.label l⊑h t₁) v₁ = aux vs t₁ v₁
+        aux vs (S.label∙ l⊑h t₁) ()
+        aux vs (S.unlabel l⊑h t₁) v₁ = aux vs t₁ v₁
+        aux vs (S.read x t₁) v₁ = aux vs t₁ v₁
+        aux vs (S.write x t₁ t₂) (v₁ , v₂) = aux vs t₁ v₁ , aux vs t₂ v₂
+        aux vs (S.write∙ x t₁ t₂) ()
+        aux vs (S.new x t₁) (h∈ls , v₁) = h∈ls , aux vs t₁ v₁
+        aux vs (S.new∙ x t₁) ()
+        aux vs S.#[ x ] v₁ = T.tt
+        aux vs S.#[ x ]ᴰ v₁ = T.tt
+        aux vs (S.fork l⊑h t₁) v₁ = aux vs t₁ v₁
+        aux vs (S.fork∙ l⊑h t₁) ()
+        aux vs (S.deepDup t₁) v₁ = v₁
+        aux vs S.∙ ()
 
 memberᴴ : ∀ {l ls τ π₁ π₂} {Ms : Memories ls} {Δ : Heap l π₂} {t : Term π₁ τ}
   -> (τ∈π : τ ∈⟨ l ⟩ᴿ π₂) -> validᴴ Ms Δ -> τ∈π ↦ t ∈ᴴ Δ -> validᵀ Ms t
@@ -547,41 +481,47 @@ updateᴱ (proj₁ , proj₂) Hⱽ S.here = Hⱽ , proj₂
 updateᴱ (proj₁ , proj₂) Hⱽ (S.there u₁) = proj₁ , updateᴱ proj₂ Hⱽ u₁
 
 memberˢ : ∀ {l ls} {Ms : Memories ls} {M : Memory l} -> map-validᴹ Ms -> l ↦ M ∈ˢ Ms -> validᴹ M
-memberˢ = {!!}
+memberˢ v S.here = proj₁ v
+memberˢ v (S.there M∈Ms) = memberˢ (proj₂ v) M∈Ms
 
 updateˢ : ∀ {l ls} {Ms₁ Ms₂ : Memories ls} {M : Memory l} -> validᴹ M -> map-validᴹ Ms₁ -> Ms₂ ≔ Ms₁ [ l ↦ M ]ˢ -> map-validᴹ Ms₂
-updateˢ = {!!}
+updateˢ v₁ v₂ S.here = v₁ , proj₂ v₂
+updateˢ v₁ (proj₁ , proj₂) (S.there u₁) = proj₁ , updateˢ v₁ proj₂ u₁
 
 valid-newᴹ : ∀ {l τ} {M : Memory l} (c : Cell l τ) -> validᴹ M -> validᴹ (newᴹ c M)
-valid-newᴹ = {!!}
+valid-newᴹ {M = S.[]} c v = T.tt
+valid-newᴹ {M = cᴸ S.∷ M} c v = valid-newᴹ {M = M} c v
+valid-newᴹ {M = S.∙} c ()
 
 valid-writeᴹ : ∀ {n l τ} {c : Cell l τ} {M₁ M₂ : Memory l} -> validᴹ M₁ -> M₂ ≔ M₁ [ n ↦ c ]ᴹ -> validᴹ M₂
-valid-writeᴹ = {!!}
+valid-writeᴹ v S.here = v
+valid-writeᴹ v (S.there u) = valid-writeᴹ v u
 
-newᴹ-⊆ᴹ : ∀ {l τ} {M : Memory l} {c : Cell l τ} -> M ⊆ᴹ newᴹ c M
-newᴹ-⊆ᴹ = {!!}
+newᴹ-⊆ᴹ : ∀ {l τ} {c : Cell l τ} {M : Memory l} -> M ⊆ᴹ newᴹ c M
+newᴹ-⊆ᴹ {M = S.[]} = nil
+newᴹ-⊆ᴹ {M = cᴸ S.∷ M} = cons newᴹ-⊆ᴹ
+newᴹ-⊆ᴹ {M = S.∙} = ∙
 
 newᴹ-⊆ˢ : ∀ {ls l τ} {M : Memory l} {c : Cell l τ} {Ms₁ Ms₂ : Memories ls} -> l ↦ M ∈ˢ Ms₁ -> Ms₂ ≔ Ms₁ [ l ↦ newᴹ c M ]ˢ -> Ms₁ ⊆ˢ Ms₂
-newᴹ-⊆ˢ = {!!}
+newᴹ-⊆ˢ S.here S.here = cons newᴹ-⊆ᴹ refl-⊆ˢ
+newᴹ-⊆ˢ S.here (S.there {u = u} y) = ⊥-elim (∈-not-unique (updateˢ-∈ y) u)
+newᴹ-⊆ˢ (S.there {u = u} m) S.here = ⊥-elim (∈-not-unique (memberˢ-∈ m) u)
+newᴹ-⊆ˢ (S.there m) (S.there u₁) = cons refl-⊆ᴹ (newᴹ-⊆ˢ m u₁)
 
 writeᴹ-⊆ᴹ : ∀ {l τ n} {M₁ M₂ : Memory l} {c : Cell l τ} -> M₂ ≔ M₁ [ n ↦ c ]ᴹ -> M₁ ⊆ᴹ M₂
-writeᴹ-⊆ᴹ = {!!}
+writeᴹ-⊆ᴹ S.here = cons refl-⊆ᴹ
+writeᴹ-⊆ᴹ (S.there u) = cons (writeᴹ-⊆ᴹ u)
 
 writeᴹ-⊆ˢ : ∀ {ls l} {M₁ M₂ : Memory l} {Ms₁ Ms₂ : Memories ls} ->
             l ↦ M₁ ∈ˢ Ms₁ -> Ms₂ ≔ Ms₁ [ l ↦ M₂ ]ˢ -> M₁ ⊆ᴹ M₂ -> Ms₁ ⊆ˢ Ms₂
-writeᴹ-⊆ˢ = {!!}
-
-
--- newᴹ-validAddr : ∀ {ls l τ} {M : Memory l} {Ms₁ Ms₂ : Memories ls} {c : Cell l τ} ->
---                    (l∈ls : l ∈ ls) -> l ↦ M ∈ˢ Ms₁ -> Ms₂ ≔ Ms₁ [ l ↦ newᴹ c M ]ˢ -> ValidAddr (lookupˢ l∈ls Ms₂) (lengthᴹ M) τ
--- newᴹ-validAddr L₁.here S.here S.here = {!!}
--- newᴹ-validAddr L₁.here (S.there l∈Ms) (S.here {u = u}) = ⊥-elim (∈-not-unique (memberˢ-∈ l∈Ms) u)
--- newᴹ-validAddr (L₁.there l∈ls) l∈Ms (S.here {u = u}) = ⊥-elim (∈-not-unique l∈ls u)
--- newᴹ-validAddr l∈ls l∈Ms (S.there u₁) = {!!}
+writeᴹ-⊆ˢ S.here S.here M₁⊆M₂ = cons M₁⊆M₂ refl-⊆ˢ
+writeᴹ-⊆ˢ S.here (S.there {u = u} y) M₁⊆M₂ = ⊥-elim (∈-not-unique (updateˢ-∈ y) u)
+writeᴹ-⊆ˢ (S.there {u = u} l∈Ms) S.here M₁⊆M₂ = ⊥-elim (∈-not-unique (memberˢ-∈ l∈Ms) u)
+writeᴹ-⊆ˢ (S.there l∈Ms) (S.there u₁) M₁⊆M₂ = cons refl-⊆ᴹ (writeᴹ-⊆ˢ l∈Ms u₁ M₁⊆M₂)
 
 newᴹ-validAddr : ∀ {l τ} {M : Memory l} (c : Cell l τ) -> validᴹ M -> ValidAddr (newᴹ c M) (lengthᴹ M) τ
 newᴹ-validAddr {M = S.[]} c v = here
-newᴹ-validAddr {M = cᴸ S.∷ M} c v = there (newᴹ-validAddr c v)
+newᴹ-validAddr {M = cᴸ S.∷ M} c v = there (newᴹ-validAddr {M = M} c v)
 newᴹ-validAddr {M = S.∙} c ()
 
 valid⟼ : ∀ {ls τ l} {p₁ p₂ : Program l ls τ} -> validᴾ p₁ -> p₁ ⟼ p₂ -> validᴾ p₂
@@ -603,5 +543,5 @@ valid⟼ (Msⱽ , Γⱽ , tⱽ , Sⱽ) (SS.Readᴰ₂ L∈Ms n∈M) = Msⱽ , Γ
 valid⟼ (Msⱽ , Γⱽ , tⱽ , Sⱽ) (SS.DeepDup₁ ¬var l∈Γ uᴱ) = Msⱽ , updateᴱ Γⱽ (tⱽ , (memberᴱ Γⱽ l∈Γ)) uᴱ , tt , valid-wkenˢ Sⱽ _
 valid⟼ (Msⱽ , Γⱽ , tt , Sⱽ) (SS.DeepDup₂ {t = t} τ∈π L∈Γ t∈Δ l∈Γ uᴱ) with memberᴱ Γⱽ l∈Γ | memberᴱ Γⱽ L∈Γ
 ... | Δˡⱽ | Δᴸⱽ  with memberᴴ τ∈π Δᴸⱽ t∈Δ
-... | tⱽ = Msⱽ , updateᴱ Γⱽ (valid-deepDupᵀ {t = t} tⱽ , Δˡⱽ) uᴱ , tt , valid-wkenˢ Sⱽ _
+... | tⱽ = Msⱽ , updateᴱ Γⱽ (valid-deepDupᵀ {{t = t}} tⱽ , Δˡⱽ) uᴱ , tt , valid-wkenˢ Sⱽ _
 valid⟼ (Msⱽ , Γⱽ , ()) SS.Hole
