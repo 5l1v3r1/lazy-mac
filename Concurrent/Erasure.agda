@@ -30,10 +30,6 @@ open SC 𝓛
 
 open Scheduler.Security.NIˢ 𝓛 A 𝓝 renaming (State to Stateˢ)
 
--- εᵀ : ∀ {l} ->  Thread l -> Thread l
--- εᵀ ⟨ t , S ⟩ = ⟨ SE.εᵀ t , SE.εˢ S ⟩
--- εᵀ ∙ = ∙
-
 map-εᵀ : ∀ {l} -> l ⊑ A -> Pool l -> Pool l
 map-εᵀ l⊑A  C.[] = []
 map-εᵀ l⊑A (t C.◅ P) = εᵀˢ (yes l⊑A) t ◅ map-εᵀ l⊑A P
@@ -63,7 +59,7 @@ map-εᴾ (T C.◅ P) = (εᴾ (_ ⊑? A) T) ◅ (map-εᴾ P)
 εᴳ : ∀ {ls} -> Global ls -> Global ls
 εᴳ C.⟨ Σ , Ms , Γ , P ⟩ = C.⟨ εˢ Σ , map-εᴹ Ms , map-εᴴ Γ , map-εᴾ P ⟩
 
-import Data.Product as P
+open import Data.Product as P
 
 memberᴾ : ∀ {l ls} {T : Pool l} {P : Pools ls} -> (l⊑A : l ⊑ A) -> l ↦ T ∈ᴾ P -> l ↦ (εᴾ (yes l⊑A) T) ∈ᴾ (map-εᴾ P)
 memberᴾ {l} l⊑A C.here with l ⊑? A
@@ -87,20 +83,30 @@ updateᴾᴸ {T = T} l⊑A C.here | yes p rewrite εᴾ-ext-≡ (yes l⊑A) (yes
 updateᴾᴸ l⊑A C.here | no ¬p = ⊥-elim (¬p l⊑A)
 updateᴾᴸ l⊑A (C.there x) = C.there (updateᴾᴸ l⊑A x)
 
-done-ε : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> IsDoneTS Ts -> IsDoneTS (εᵀˢ (yes l⊑A) Ts)
-done-ε l⊑A (isDoneTS isVal) = isDoneTS (εᵀ-Val isVal)
+--------------------------------------------------------------------------------
+-- TODO move to right module?
 
 import Sequential.Graph as S₂
 open S₂ 𝓛 A
 
-stuck-ε : ∀ {l ls τ} {p : Program l ls τ} -> (l⊑A : l ⊑ A) -> Stuckᴾ p -> Stuckᴾ (SE.ε₁ᴾ (yes l⊑A) p)
-stuck-ε {l} {ls} {τ} {p = SC.⟨ Ms , Γ , Ts ⟩} l⊑A (¬done P., ¬redex P., ¬fork) = εᵀˢ¬done ¬done P., ε¬redex l⊑A ¬redex P., εᵀˢ¬IsForkTS l⊑A ¬fork
-  where
-        -- open import Sequential.Lemmas Sequential.Lemmas 𝓛 A -- simᴾ is almost completed
-        postulate ε¬redex : ∀ {l ls τ} {p : Program l ls τ} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
-        -- ε¬redex {l} {ls} {τ} {p = p} l⊑A ¬redex redex = simᴾ (lift-map-εᴾ (yes l⊑A) p) ¬redex redex
+open import Sequential.Valid 𝓛
 
-        postulate εᵀˢ¬done : {Ts : TS∙ l τ} -> ¬ (IsDoneTS Ts) -> ¬ (IsDoneTS (εᵀˢ (yes l⊑A) Ts))
+done-ε : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> IsDoneTS Ts -> IsDoneTS (εᵀˢ (yes l⊑A) Ts)
+done-ε l⊑A (isDoneTS isVal) = isDoneTS (εᵀ-Val isVal)
+
+stuck-ε : ∀ {l ls τ} {p : Program l ls τ} {{pⱽ : validᴾ p}} -> (l⊑A : l ⊑ A) -> Stuckᴾ p -> Stuckᴾ (SE.ε₁ᴾ (yes l⊑A) p)
+stuck-ε {l} {_} {τ} {{pⱽ}}  l⊑A (¬done , ¬redex , ¬fork) = εᵀˢ¬done ¬done , ε¬redex l⊑A ¬redex , εᵀˢ¬IsForkTS l⊑A ¬fork
+  where
+        open import Sequential.Lemmas 𝓛 A
+        ε¬redex : ∀ {l ls τ} {p : Program l ls τ} {{pᵛ : validᴾ p}} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
+        ε¬redex {l} {ls} {τ} {p = p} l⊑A ¬redex redex = simᴾ (lift-εᴾ (yes l⊑A) p) ¬redex redex
+
+        εᵀˢ¬done : {Ts : TS∙ l τ} -> ¬ (IsDoneTS Ts) -> ¬ (IsDoneTS (εᵀˢ (yes l⊑A) Ts))
+        εᵀˢ¬done {Ts} ¬done done-ε' with (lift-εᵀˢ (yes _) Ts)
+        ... | e with doneᴱ e done-ε'
+        ... | r rewrite unlift-εᵀˢ e = ⊥-elim (¬done r)
+
+--------------------------------------------------------------------------------
 
 lengthᵀ-ε-≡ : ∀ {l} (l⊑A : l ⊑ A) (T : Pool l) -> lengthᵀ T ≡ lengthᵀ (εᴾ (yes l⊑A) T)
 lengthᵀ-ε-≡ l⊑A C.[] = refl

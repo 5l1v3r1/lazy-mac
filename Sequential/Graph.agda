@@ -228,10 +228,6 @@ forkᴱ (fork p h⊑A e) (S.Fork .p t₁) = S.Fork p _
 forkᴱ (fork' p h⋤A e) (S.Fork∙ .p t₁) = S.Fork p _
 forkᴱ (fork∙ p e) (S.Fork∙ .p t₁) = S.Fork∙ p _
 
--- ε¬fork : ∀ {π τ l} {t : Term π (Mac l τ)} -> ¬ (IsFork t) -> ¬ (IsFork (εᵀ t))
--- ε¬fork ¬fork ¬fork-ε = {!aux!}
---   where aux : ∀ {π τ l} {t t' : Term π (Mac l τ)} -> Eraseᵀ t t' -> ¬ (IsFork t) -> ¬ (IsFork t')
---         aux = {!!}
 --------------------------------------------------------------------------------
 
 data Eraseᶜ {π l} : ∀ {τ₁ τ₂} -> Cont l π τ₁ τ₂ -> Cont l π τ₁ τ₂ -> Set where
@@ -441,6 +437,12 @@ ext-εᵀˢ {x = yes p} {yes p₁} ∙ᴸ = ∙ᴸ
 ext-εᵀˢ {x = yes p} {no ¬p} e = ⊥-elim (¬p p)
 ext-εᵀˢ {x = no ¬p} {yes p} e = ⊥-elim (¬p p)
 ext-εᵀˢ {x = no ¬p} {no ¬p₁} ∙ = ∙
+
+import Sequential.Semantics as S₁
+open S₁ 𝓛
+
+doneᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> IsDoneTS Ts₂ -> IsDoneTS Ts₁
+doneᴱ ⟨ eᵀ , [] ⟩ (S₁.isDoneTS isVal) = S₁.isDoneTS (valᴱ eᵀ isVal)
 
 --------------------------------------------------------------------------------
 

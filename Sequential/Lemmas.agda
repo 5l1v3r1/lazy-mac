@@ -26,7 +26,7 @@ open import Data.Product
 import Data.Product as P
 open import Function
 
-import Sequential.Valid as V hiding (wkenᴱ)
+import Sequential.Valid as V hiding (memberᴴ ; updateᴴ ; memberᴱ ; updateᴱ ; memberˢ ; updateˢ)
 open V 𝓛
 
 memberᴴ : ∀ {l π π' τ} {Δ Δ' : Heap l π} {t' : Term π' τ} -> (τ∈π : τ ∈⟨ l ⟩ᴿ π) ->  EraseMapᵀ Δ Δ' -> τ∈π ↦ t' ∈ᴴ Δ' -> ∃ (λ t -> Eraseᵀ t t' × τ∈π ↦ t ∈ᴴ Δ)
@@ -138,15 +138,12 @@ newˢ : ∀ {l ls τ} {M : Memory l} {Ms : Memories ls} -> (c : Cell l τ) ->
 newˢ c S.here = _ , here
 newˢ c (S.there u₁) = P.map (_∷_ _) there (newˢ c u₁)
 
-updateᴹ-valid : ∀ {l τ n} {M : Memory l} -> (c : Cell l τ) -> validᴹ M -> validAddr M n -> ∃ (λ M' -> M' ≔ M [ n ↦ c ]ᴹ)
+-- TODO: don't need validᴹ M anyomre
+updateᴹ-valid : ∀ {l τ n} {M : Memory l} -> (c : Cell l τ) -> validᴹ M -> ValidAddr M n τ -> ∃ (λ M' -> M' ≔ M [ n ↦ c ]ᴹ)
 updateᴹ-valid {M = S.[]} c vᴹ ()
--- TODO This does not go because the type of the original cell might be different from the type of the new cell.
--- Fixes:
--- 1) Give up this invariant in the memory update data-type (quick if it does not break anything else)
--- 2) Make Addr typed and assume this invariant in Valid (should not break anything, just propagate changes)
-updateᴹ-valid {n = S.zero} {cᴸ S.∷ M} c vᴹ vᴬ = {!!} , {!here!}
-updateᴹ-valid {n = S.suc n} {cᴸ S.∷ M} c vᴹ (s≤s vᴬ) = P.map (_∷_ _) there (updateᴹ-valid c vᴹ vᴬ)
-updateᴹ-valid {M = S.∙} c () vᴬ
+updateᴹ-valid {M = cᴸ S.∷ M} c vᴹ V.here = _ , here
+updateᴹ-valid {M = cᴸ S.∷ M} c vᴹ (V.there isVA) = P.map (_∷_ _) there (updateᴹ-valid c vᴹ isVA)
+updateᴹ-valid {M = S.∙} c vᴹ ()
 
 updataˢ-valid : ∀ {l ls} {M : Memory l} {Ms : Memories ls} -> l ∈ ls -> ∃ (λ Ms' -> Ms' ≔ Ms [ l ↦ M ]ˢ)
 updataˢ-valid {Ms = M' ∷ Ms} T.here = _ ∷ Ms , here
