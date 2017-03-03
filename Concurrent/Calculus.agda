@@ -118,3 +118,7 @@ updateᵀ (there x) t' = P.map (_◅_ _) there (updateᵀ x t')
 updateᴾ : ∀ {l ls} {T : Pool l} {P : Pools ls} -> l ↦ T ∈ᴾ P -> (T' : Pool l) -> ∃ (λ P' → P' ≔ P [ l ↦ T' ]ᴾ)
 updateᴾ here T' = _ , here
 updateᴾ (there T∈P) T' = P.map (_◅_ _) there (updateᴾ T∈P T')
+
+lookupᴾ : ∀ {l ls} -> l ∈ ls -> Pools ls -> Pool l
+lookupᴾ here (T ◅ Ps) = T
+lookupᴾ (there l∈ls) (T ◅ Ps) = lookupᴾ l∈ls Ps
