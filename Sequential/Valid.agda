@@ -6,21 +6,14 @@ module Sequential.Valid (𝓛 : L.Lattice) where
 import Types as T hiding (wken-∈)
 open T 𝓛
 
-import Sequential.Calculus as S renaming (⟨_,_,_⟩ to mkP ; ⟨_,_⟩ to mkTS) -- hiding (wkenᴱ)
-open S 𝓛
+import Sequential.Calculus as S renaming (⟨_,_,_⟩ to mkP ; ⟨_,_⟩ to mkTS)
+open S 𝓛 hiding (wkenˢ ; wkenᴴ)
 
 open import Data.Nat using (_≤_ ; _<_ ; s≤s ; z≤n ; decTotalOrder)
 open import Data.Empty
 --import Data.List as LL
 open import Data.Product as P
 open import Data.Maybe
-
--- open decTotalOrder ℕ renaming (trans to trans-≤)
-
--- A valid term contains only valid references, that contain a valid address.
-
-validAddr : ∀ {l} -> Memory l -> ℕ -> Set
-validAddr M n = n < lengthᴹ M -- TODO and M ≠ ∙ ?
 
 data ValidAddr {l} : Memory l -> ℕ -> Ty -> Set where
   here : ∀ {τ} {M : Memory l} {c : Cell l τ} -> ValidAddr (c ∷ M) 0 τ
@@ -30,6 +23,7 @@ data IsAddr {π τ} : Term π (Addr τ) -> ℕ -> Set where
   is#[_] : (n : ℕ) -> IsAddr #[ n ] n
   is#[_]ᴰ : (n : ℕ) -> IsAddr #[ n ]ᴰ n
 
+-- A valid term contains only valid references, that contain a valid address.
 validᵀ : ∀ {ls τ π} -> Memories ls -> Term π τ -> Set
 validᵀ Ms S.（） = ⊤
 validᵀ Ms S.True = ⊤
@@ -128,7 +122,7 @@ open import Function
 data _⊆ᴹ_ {l : Label} : Memory l -> Memory l -> Set where
   ∙ : ∙ ⊆ᴹ ∙
   nil : ∀ {M} -> [] ⊆ᴹ M
-  cons : ∀ {τ M₁ M₂} {c : Cell l τ} -> M₁ ⊆ᴹ M₂ -> (c ∷ M₁) ⊆ᴹ (c ∷ M₂)
+  cons : ∀ {τ M₁ M₂} {c₁ c₂ : Cell l τ} -> M₁ ⊆ᴹ M₂ -> (c₁ ∷ M₁) ⊆ᴹ (c₂ ∷ M₂)
 
 data _⊆ˢ_ : ∀ {ls₁ ls₂} -> Memories ls₁ -> Memories ls₂ -> Set where
   nil : [] ⊆ˢ []
@@ -206,10 +200,13 @@ wkenᴹᵀ : ∀ {ls₁ ls₂ π τ} {Ms₁ : Memories ls₁} {Ms₂ : Memories 
 wkenᴹᵀ {mt = just x} Ms₁⊆Ms₂ v = wkenᵀ Ms₁⊆Ms₂ x v
 wkenᴹᵀ {mt = nothing} Ms₁⊆Ms₂ v = T.tt
 
-wkenᴱ : ∀ {l π ls₁ ls₂} {Δ : Heap l π} {Ms₁ : Memories ls₁} {Ms₂ : Memories ls₂} -> Ms₁ ⊆ˢ Ms₂ -> validᴴ Ms₁ Δ -> validᴴ Ms₂ Δ
-wkenᴱ {Δ = S.[]} Ms₁⊆Ms₂ Δᴱ = tt
-wkenᴱ {Δ = mt S.∷ Δ} Ms₁⊆Ms₂  (mtⱽ  , Δᴱ) = wkenᴹᵀ {mt = mt} Ms₁⊆Ms₂ mtⱽ  , wkenᴱ {Δ = Δ} Ms₁⊆Ms₂ Δᴱ
-wkenᴱ {Δ = S.∙} _ ()
+wkenᴴ : ∀ {l π ls₁ ls₂} {Δ : Heap l π} {Ms₁ : Memories ls₁} {Ms₂ : Memories ls₂} -> Ms₁ ⊆ˢ Ms₂ -> validᴴ Ms₁ Δ -> validᴴ Ms₂ Δ
+wkenᴴ {Δ = S.[]} Ms₁⊆Ms₂ Δᴱ = tt
+wkenᴴ {Δ = mt S.∷ Δ} Ms₁⊆Ms₂  (mtⱽ  , Δᴱ) = wkenᴹᵀ {mt = mt} Ms₁⊆Ms₂ mtⱽ  , wkenᴴ {Δ = Δ} Ms₁⊆Ms₂ Δᴱ
+wkenᴴ {Δ = S.∙} _ ()
+
+wkenˢ : ∀ {ls₁ ls₂ l π τ₁ τ₂} {S : Stack l π τ₁ τ₂} {Ms₁ : Memories ls₁} {Ms₂ : Memories ls₂} -> Ms₁ ⊆ˢ Ms₂ -> validˢ Ms₁ S -> validˢ Ms₂ S
+wkenˢ {S = S} Ms₁⊆Ms₂ Sᵛ = {!!}
 
 -- wkenᴹ : ∀ {l} {M₁ M₂ : Memory l} -> M₁ ⊆ᴹ M₂ -> validᴹ M₁ -> validᴹ M₂
 -- wkenᴹ ∙ ()
@@ -217,7 +214,7 @@ wkenᴱ {Δ = S.∙} _ ()
 -- wkenᴹ (cons M₁⊆M₂) isV = {!!}
 
 wkenᴴ∙ : ∀ {l ls₁ ls₂} {Ms₁ : Memories ls₁} {Ms₂ : Memories ls₂} {H : Heap∙ l} -> Ms₁ ⊆ˢ Ms₂ -> validᴴ∙ Ms₁ H -> validᴴ∙ Ms₂ H
-wkenᴴ∙ {H = S.⟨ Δ ⟩} Ms₁⊆Ms₂ x = wkenᴱ {Δ = Δ} Ms₁⊆Ms₂ x
+wkenᴴ∙ {H = S.⟨ Δ ⟩} Ms₁⊆Ms₂ x = wkenᴴ {Δ = Δ} Ms₁⊆Ms₂ x
 wkenᴴ∙ {H = S.∙} _ ()
 
 -- wkenᴴ : ∀ {ls₁ ls₂} {Ms₁ : Heaps ls₁} {Ms₂ : Heaps ls₂} -> Ms₁ ⊆ˢ Ms₂ -> validᴴ Ms₁ -> validᴴ Ms₂
@@ -228,6 +225,8 @@ wkenᴴ∙ {H = S.∙} _ ()
 map-wkenᴴ : ∀ {ls ls₁ ls₂} {Ms₁ : Memories ls₁} {Ms₂ : Memories ls₂} {Γ : Heaps ls} -> Ms₁ ⊆ˢ Ms₂ -> map-validᴴ Ms₁ Γ -> map-validᴴ Ms₂ Γ
 map-wkenᴴ {Γ = S.[]} Ms₁⊆Ms₂ v = T.tt
 map-wkenᴴ {Γ = H S.∷ Γ} Ms₁⊆Ms₂ v = (wkenᴴ∙ {H = H} Ms₁⊆Ms₂ (proj₁ v)) , (map-wkenᴴ Ms₁⊆Ms₂ (proj₂ v))
+
+
 
 --------------------------------------------------------------------------------
 -- Initial Valid configurations
@@ -491,10 +490,13 @@ valid-wkenᶜ {C = S.write x τ∈π} v π₁⊆π₂ = T.tt
 valid-wkenᶜ {C = S.write∙ x τ∈π} () π₁⊆π₂
 valid-wkenᶜ {C = S.read x} v π₁⊆π₂ = T.tt
 
-valid-wkenˢ : ∀ {τ₁ τ₂ l π₁ π₂ ls} {Ms : Memories ls} {S : Stack l π₁ τ₁ τ₂} -> validˢ Ms S -> (π₁⊆π₂ : π₁ ⊆ π₂) -> validˢ Ms (wkenˢ S π₁⊆π₂)
+valid-wkenˢ : ∀ {τ₁ τ₂ l π₁ π₂ ls} {Ms : Memories ls} {S : Stack l π₁ τ₁ τ₂} -> validˢ Ms S -> (π₁⊆π₂ : π₁ ⊆ π₂) -> validˢ Ms (S.wkenˢ 𝓛 S π₁⊆π₂)
 valid-wkenˢ {S = S.[]} v π₁⊆π₂ = T.tt
 valid-wkenˢ {S = C S.∷ S} (proj₁ , proj₂) π₁⊆π₂ = (valid-wkenᶜ {C = C} proj₁ π₁⊆π₂) , (valid-wkenˢ proj₂ π₁⊆π₂)
 valid-wkenˢ {S = S.∙} v π₁⊆π₂ = v
+
+valid-deepDupᵀ : ∀ {π τ ls} {t : Term π τ} {Ms : Memories ls} -> validᵀ Ms t -> validᵀ Ms (deepDupᵀ t)
+valid-deepDupᵀ = {!!}
 
 memberᴴ : ∀ {l ls τ π₁ π₂} {Ms : Memories ls} {Δ : Heap l π₂} {t : Term π₁ τ}
   -> (τ∈π : τ ∈⟨ l ⟩ᴿ π₂) -> validᴴ Ms Δ -> τ∈π ↦ t ∈ᴴ Δ -> validᵀ Ms t
@@ -544,38 +546,62 @@ updateᴱ : ∀ {ls ls' l} {Ms : Memories ls'} {Γ Γ' : Heaps ls} {H : Heap∙ 
 updateᴱ (proj₁ , proj₂) Hⱽ S.here = Hⱽ , proj₂
 updateᴱ (proj₁ , proj₂) Hⱽ (S.there u₁) = proj₁ , updateᴱ proj₂ Hⱽ u₁
 
+memberˢ : ∀ {l ls} {Ms : Memories ls} {M : Memory l} -> map-validᴹ Ms -> l ↦ M ∈ˢ Ms -> validᴹ M
+memberˢ = {!!}
+
+updateˢ : ∀ {l ls} {Ms₁ Ms₂ : Memories ls} {M : Memory l} -> validᴹ M -> map-validᴹ Ms₁ -> Ms₂ ≔ Ms₁ [ l ↦ M ]ˢ -> map-validᴹ Ms₂
+updateˢ = {!!}
+
+valid-newᴹ : ∀ {l τ} {M : Memory l} (c : Cell l τ) -> validᴹ M -> validᴹ (newᴹ c M)
+valid-newᴹ = {!!}
+
+valid-writeᴹ : ∀ {n l τ} {c : Cell l τ} {M₁ M₂ : Memory l} -> validᴹ M₁ -> M₂ ≔ M₁ [ n ↦ c ]ᴹ -> validᴹ M₂
+valid-writeᴹ = {!!}
+
+newᴹ-⊆ᴹ : ∀ {l τ} {M : Memory l} {c : Cell l τ} -> M ⊆ᴹ newᴹ c M
+newᴹ-⊆ᴹ = {!!}
+
+newᴹ-⊆ˢ : ∀ {ls l τ} {M : Memory l} {c : Cell l τ} {Ms₁ Ms₂ : Memories ls} -> l ↦ M ∈ˢ Ms₁ -> Ms₂ ≔ Ms₁ [ l ↦ newᴹ c M ]ˢ -> Ms₁ ⊆ˢ Ms₂
+newᴹ-⊆ˢ = {!!}
+
+writeᴹ-⊆ᴹ : ∀ {l τ n} {M₁ M₂ : Memory l} {c : Cell l τ} -> M₂ ≔ M₁ [ n ↦ c ]ᴹ -> M₁ ⊆ᴹ M₂
+writeᴹ-⊆ᴹ = {!!}
+
+writeᴹ-⊆ˢ : ∀ {ls l} {M₁ M₂ : Memory l} {Ms₁ Ms₂ : Memories ls} ->
+            l ↦ M₁ ∈ˢ Ms₁ -> Ms₂ ≔ Ms₁ [ l ↦ M₂ ]ˢ -> M₁ ⊆ᴹ M₂ -> Ms₁ ⊆ˢ Ms₂
+writeᴹ-⊆ˢ = {!!}
+
+
+-- newᴹ-validAddr : ∀ {ls l τ} {M : Memory l} {Ms₁ Ms₂ : Memories ls} {c : Cell l τ} ->
+--                    (l∈ls : l ∈ ls) -> l ↦ M ∈ˢ Ms₁ -> Ms₂ ≔ Ms₁ [ l ↦ newᴹ c M ]ˢ -> ValidAddr (lookupˢ l∈ls Ms₂) (lengthᴹ M) τ
+-- newᴹ-validAddr L₁.here S.here S.here = {!!}
+-- newᴹ-validAddr L₁.here (S.there l∈Ms) (S.here {u = u}) = ⊥-elim (∈-not-unique (memberˢ-∈ l∈Ms) u)
+-- newᴹ-validAddr (L₁.there l∈ls) l∈Ms (S.here {u = u}) = ⊥-elim (∈-not-unique l∈ls u)
+-- newᴹ-validAddr l∈ls l∈Ms (S.there u₁) = {!!}
+
+newᴹ-validAddr : ∀ {l τ} {M : Memory l} (c : Cell l τ) -> validᴹ M -> ValidAddr (newᴹ c M) (lengthᴹ M) τ
+newᴹ-validAddr {M = S.[]} c v = here
+newᴹ-validAddr {M = cᴸ S.∷ M} c v = there (newᴹ-validAddr c v)
+newᴹ-validAddr {M = S.∙} c ()
+
 valid⟼ : ∀ {ls τ l} {p₁ p₂ : Program l ls τ} -> validᴾ p₁ -> p₁ ⟼ p₂ -> validᴾ p₂
 valid⟼ (proj₁ , proj₂ , proj₃ , proj₄) (SS.Pure l∈Γ step uᴹ) with valid⇝ ((memberᴱ proj₂ l∈Γ) , (proj₃ , proj₄)) step
 ... | Δ₂ⱽ  , t₂ⱽ , S₂ⱽ = proj₁ , (updateᴱ proj₂ Δ₂ⱽ uᴹ , (t₂ⱽ , S₂ⱽ))
-valid⟼ (Δⱽ , tⱽ , Sᵛ) (SS.New H∈Ms uᴹ) = {!!}
-valid⟼ (Δⱽ , tⱽ , Sᵛ) SS.New∙ = {!!}
-valid⟼ (Δⱽ , tⱽ , Sᵛ) (SS.Write₂ H∈Ms uᴹ uˢ) = {!!}
-valid⟼ (Δⱽ , tⱽ , Sᵛ) (SS.Writeᴰ₂ H∈Ms uᴹ uˢ) = {!!}
-valid⟼ (Δⱽ , tⱽ , Sᵛ) SS.Write∙₂ = {!!}
-valid⟼ (Δⱽ , tⱽ , Sᵛ) (SS.Read₂ l∈Γ n∈M) = {!!}
-valid⟼ (Δⱽ , tⱽ , Sᵛ) (SS.Readᴰ₂ L∈Ms n∈M) = {!!}
-valid⟼ (Δⱽ , tⱽ , Sᵛ) (SS.DeepDup₁ ¬var l∈Γ uᴱ) = {!!}
-valid⟼ (Δⱽ , tⱽ , Sᵛ) (SS.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = {!!}
-valid⟼ (Δⱽ , tⱽ , Sᵛ) SS.Hole = {!!}
--- (proj₁ , proj₂ , proj₃ ) (SS.Pure l∈Ms step uᴴ) = FIXME
---   where postulate FIXME : ∀ {a} {A : Set a} -> A
---         with valid-memberᴴ proj₁ l∈Ms
--- ... | Mⱽ , Δⱽ = {!!} , ({!!} , {!!})
--- valid⟼ (proj₁ , proj₃ , proj₂) (SS.New {M = M} {τ∈π = τ∈π} {l⊑h = l⊑h} H∈Ms uᴴ) = ?
--- -- with valid-memberᴴ proj₁ H∈Ms
--- -- ... | Mⱽ , Δⱽ with valid-newᴹ ∥ l⊑h ,  τ∈π ∥ M Mⱽ
--- -- ... | M'ⱽ , ok-Addr = update-validᴴ H∈Ms uᴴ ok-Addr M'ⱽ proj₁ , (((updateᴱ-∈ uᴴ) , valid-new-Addr {M = M} Mⱽ ∥ l⊑h ,  τ∈π ∥ uᴴ) , update-validˢ H∈Ms uᴴ (newᴹ-- -- -≤ M ∥ l⊑h ,  τ∈π ∥) proj₂)
--- valid⟼ (proj₁ , () , proj₂) SS.New∙
--- valid⟼ (proj₁ , proj₂ , proj₃ , proj₄) (SS.Write₂ H∈Ms uᴹ uᴴ) = ?
--- -- with valid-memberᴴ proj₁ H∈Ms
--- -- ... | Mⱽ , Δⱽ with valid-writeᴹ uᴹ Mⱽ
--- -- ... | M'ⱽ , M₁≤M₂ = (update-validᴴ H∈Ms uᴴ M₁≤M₂ M'ⱽ proj₁) , (tt , (update-validˢ H∈Ms uᴴ M₁≤M₂ proj₄))
--- valid⟼ (proj₁ , proj₂ , proj₃ , proj₄) (SS.Writeᴰ₂ H∈Ms uᴹ uᴴ) = ?
--- -- with valid-memberᴴ proj₁ H∈Ms
--- -- ... | Mⱽ , Δⱽ with valid-writeᴹ uᴹ Mⱽ
--- -- ... | M'ⱽ , M₁≤M₂ = (update-validᴴ H∈Ms uᴴ M₁≤M₂ M'ⱽ proj₁) , (tt , (update-validˢ H∈Ms uᴴ M₁≤M₂ proj₄))
--- valid⟼ (proj₁ , proj₃ , () , proj₂) SS.Write∙₂
--- valid⟼ (proj₁ , proj₃ , proj₂ , proj₄) (SS.Read₂ l∈Ms n∈M) = proj₁ , (T.tt , proj₄)
--- valid⟼ (proj₁ , proj₂ , proj₃ , proj₄) (SS.Readᴰ₂ L∈Ms n∈M) = proj₁ , T.tt , proj₄
--- --... |  Δⱽ  = proj₁ , (valid-memberᴱ {Δ = Δ} {x = τ∈π} Δⱽ t∈Δ , proj₂)
--- valid⟼ () SS.Hole
+valid⟼ (Msⱽ , Γⱽ , (H∈ls , tⱽ) , Sⱽ) (SS.New {Γ = Γ} {M = M₁} {τ∈π = τ∈π} {l⊑H = l⊑H} H∈Ms uˢ) with newᴹ-⊆ˢ H∈Ms uˢ | memberˢ Msⱽ H∈Ms
+... | Ms₁⊆Ms₂ | M₁ⱽ with valid-newᴹ {M = M₁} S.∥ l⊑H , τ∈π  ∥ M₁ⱽ
+... | M₂ⱽ with newᴹ-validAddr {M = M₁} S.∥ l⊑H , τ∈π  ∥ M₁ⱽ
+... | r rewrite lookupˢ-updateˢ-≡ H∈ls uˢ
+  =  updateˢ M₂ⱽ Msⱽ uˢ , (map-wkenᴴ {Γ = Γ} Ms₁⊆Ms₂ Γⱽ , ((H∈ls , (lengthᴹ M₁) , (is#[ _ ] , r)) , wkenˢ Ms₁⊆Ms₂ Sⱽ))
+valid⟼ (Msⱽ , Γⱽ , () , Sⱽ) SS.New∙
+valid⟼ (Msⱽ , Γⱽ , tⱽ , Sⱽ) (SS.Write₂ {Γ = Γ} H∈Ms uᴹ uˢ) with writeᴹ-⊆ˢ H∈Ms uˢ (writeᴹ-⊆ᴹ uᴹ)
+... | Ms₁⊆Ms₂ = (updateˢ (valid-writeᴹ (memberˢ Msⱽ H∈Ms) uᴹ) Msⱽ uˢ) , ((map-wkenᴴ {Γ = Γ} Ms₁⊆Ms₂ Γⱽ) , (tt , wkenˢ Ms₁⊆Ms₂ (proj₂ Sⱽ)))
+valid⟼ (Msⱽ , Γⱽ , tⱽ , Sⱽ) (SS.Writeᴰ₂ {Γ = Γ} H∈Ms uᴹ uˢ) with writeᴹ-⊆ˢ H∈Ms uˢ (writeᴹ-⊆ᴹ uᴹ)
+... | Ms₁⊆Ms₂ = (updateˢ (valid-writeᴹ (memberˢ Msⱽ H∈Ms) uᴹ) Msⱽ uˢ) , ((map-wkenᴴ {Γ = Γ} Ms₁⊆Ms₂ Γⱽ) , (tt , wkenˢ Ms₁⊆Ms₂ (proj₂ Sⱽ)))
+valid⟼ (Msⱽ , Γⱽ , tⱽ , () , proj₂) SS.Write∙₂
+valid⟼ (Msⱽ , Γⱽ , tⱽ , Sⱽ) (SS.Read₂ l∈Γ n∈M) = Msⱽ , Γⱽ , tt , proj₂ Sⱽ
+valid⟼ (Msⱽ , Γⱽ , tⱽ , Sⱽ) (SS.Readᴰ₂ L∈Ms n∈M) = Msⱽ , Γⱽ , tt , proj₂ Sⱽ
+valid⟼ (Msⱽ , Γⱽ , tⱽ , Sⱽ) (SS.DeepDup₁ ¬var l∈Γ uᴱ) = Msⱽ , updateᴱ Γⱽ (tⱽ , (memberᴱ Γⱽ l∈Γ)) uᴱ , tt , valid-wkenˢ Sⱽ _
+valid⟼ (Msⱽ , Γⱽ , tt , Sⱽ) (SS.DeepDup₂ {t = t} τ∈π L∈Γ t∈Δ l∈Γ uᴱ) with memberᴱ Γⱽ l∈Γ | memberᴱ Γⱽ L∈Γ
+... | Δˡⱽ | Δᴸⱽ  with memberᴴ τ∈π Δᴸⱽ t∈Δ
+... | tⱽ = Msⱽ , updateᴱ Γⱽ (valid-deepDupᵀ {t = t} tⱽ , Δˡⱽ) uᴱ , tt , valid-wkenˢ Sⱽ _
+valid⟼ (Msⱽ , Γⱽ , ()) SS.Hole

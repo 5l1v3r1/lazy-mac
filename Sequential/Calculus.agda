@@ -316,6 +316,18 @@ lookupˢ : ∀ {l ls} -> l ∈ ls -> Memories ls -> Memory l
 lookupˢ here (M ∷ Ms) = M
 lookupˢ (there l∈ls) (M ∷ Ms) = lookupˢ l∈ls Ms
 
+lookupˢ-memberˢ-≡ : ∀ {l ls} {M : Memory l} {Ms : Memories ls} -> (l∈ls : l ∈ ls) -> l ↦ M ∈ˢ Ms ->  M ≡ lookupˢ l∈ls Ms
+lookupˢ-memberˢ-≡ here here = refl
+lookupˢ-memberˢ-≡ here (there {u = u} M∈Ms) = ⊥-elim (∈-not-unique (memberˢ-∈ M∈Ms) u)
+lookupˢ-memberˢ-≡ (there l∈ls) (here {u = u}) = ⊥-elim (∈-not-unique l∈ls u)
+lookupˢ-memberˢ-≡ (there l∈ls) (there M∈Ms) = lookupˢ-memberˢ-≡ l∈ls M∈Ms
+
+lookupˢ-updateˢ-≡ : ∀ {l ls} {M : Memory l} {Ms₁ Ms₂ : Memories ls} -> (l∈ls : l ∈ ls) -> Ms₂ ≔ Ms₁ [ l ↦ M ]ˢ -> M ≡ lookupˢ l∈ls Ms₂
+lookupˢ-updateˢ-≡ here here = refl
+lookupˢ-updateˢ-≡ here (there {u = u} y₁) = ⊥-elim (∈-not-unique (updateˢ-∈ y₁) u)
+lookupˢ-updateˢ-≡ (there x) (here {u = u}) = ⊥-elim (∈-not-unique x u)
+lookupˢ-updateˢ-≡ (there x) (there y₁) = lookupˢ-updateˢ-≡ x y₁
+
 --------------------------------------------------------------------------------
 
 data Heap∙ (l : Label) : Set where
