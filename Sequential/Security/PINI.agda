@@ -1,6 +1,6 @@
 import Lattice as L
 
-module Sequential.PINI (𝓛 : L.Lattice) (A : L.Label 𝓛) where
+module Sequential.Security.PINI (𝓛 : L.Lattice) (A : L.Label 𝓛) where
 
 open import Types 𝓛
 
@@ -12,14 +12,14 @@ import Sequential.Semantics as S₁
 open S₁ 𝓛
 
 open import Sequential.Determinism 𝓛
-open import Sequential.Erasure 𝓛 A
+open import Sequential.Security.Erasure 𝓛 A
 
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
 open import Data.Empty
 
-open import Sequential.Graph 𝓛 A
-open import Sequential.LowEq 𝓛 A
+open import Sequential.Security.Graph 𝓛 A
+open import Sequential.Security.LowEq 𝓛 A
 
 pini : ∀ {l ls τ} {p₁ p₁' p₂ p₂' : Program l ls τ} -> p₁ ≅ᴾ p₂ -> p₁ ⟼ p₁' -> p₂ ⟼ p₂' -> p₁' ≅ᴾ p₂'
 pini eq s₁ s₂ = aux eq (εᴾ-sim s₁) (εᴾ-sim s₂)

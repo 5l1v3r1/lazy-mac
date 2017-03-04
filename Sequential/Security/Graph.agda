@@ -4,14 +4,14 @@
 
 import Lattice as L
 
-module Sequential.Graph (𝓛 : L.Lattice) (A : L.Label 𝓛) where
+module Sequential.Security.Graph (𝓛 : L.Lattice) (A : L.Label 𝓛) where
 
 import Types as T
 open T 𝓛
 
 import Sequential.Calculus as S
 open S 𝓛
-open import Sequential.Erasure 𝓛 A as SE hiding (memberᴴ ; updateᴴ ; memberᴱ)
+open import Sequential.Security.Erasure 𝓛 A as SE hiding (memberᴴ ; updateᴴ ; memberᴱ)
 
 open import Relation.Nullary
 
@@ -179,54 +179,6 @@ unlift-εᵀ (fork' l⊑h h⋤A x) | no ¬p rewrite unlift-εᵀ x = refl
 unlift-εᵀ (fork∙ l⊑h x) rewrite unlift-εᵀ x = refl
 unlift-εᵀ (deepDup x) rewrite unlift-εᵀ x = refl
 unlift-εᵀ ∙ = refl
-
-wkenᴱ : ∀ {π₁ π₂ τ} {t t' : Term π₁ τ} -> Eraseᵀ t t' -> (p : π₁ ⊆ π₂) ->  Eraseᵀ (wken t p) (wken t' p)
-wkenᴱ {π₁} {π₂} {τ} {t} e p with lift-εᵀ (wken t p)
-... | x rewrite unlift-εᵀ e = x
-
-substᴱ :  ∀ {π α β} {x x' : Term π α} {t t' : Term (α ∷ π) β} -> Eraseᵀ x x' -> Eraseᵀ t t' -> Eraseᵀ (subst x t) (subst x' t')
-substᴱ {x = x} {t = t} e₁ e₂ with lift-εᵀ (subst x t)
-... | e rewrite unlift-εᵀ e₁ | unlift-εᵀ e₂ = e
-
-deepDupᵀᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Eraseᵀ (deepDupᵀ t) (deepDupᵀ t')
-deepDupᵀᴱ {t = t} e with lift-εᵀ (deepDupᵀ t)
-... | e' rewrite unlift-εᵀ e = e'
-
-¬valᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> ¬ (Value t') -> ¬ (Value t)
-¬valᴱ （） ¬val S.（） = ¬val S.（）
-¬valᴱ True ¬val S.True = ¬val S.True
-¬valᴱ False ¬val S.False = ¬val S.False
-¬valᴱ (Abs x) ¬val (S.Abs t) = ¬val (S.Abs _)
-¬valᴱ (Id x) ¬val (S.Id t) = ¬val (S.Id _)
-¬valᴱ (Mac x) ¬val (S.Mac t) = ¬val (S.Mac _)
-¬valᴱ (Res x x₁) ¬val (S.Res t) = ¬val (S.Res _)
-¬valᴱ (Res∙ x) ¬val (S.Res t) = ¬val (S.Res _)
-¬valᴱ #[ n ] ¬val S.#[ .n ] = ¬val S.#[ n ]
-¬valᴱ #[ n ]ᴰ ¬val S.#[ .n ]ᴰ = ¬val S.#[ n ]ᴰ
-
-¬varᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> ¬ (IsVar t') -> ¬ (IsVar t)
-¬varᴱ (Var τ∈π) ¬var (S.Var .τ∈π) = ¬var (S.Var τ∈π)
-
-valᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Value t' -> Value t
-valᴱ （） S.（） = S.（）
-valᴱ True S.True = S.True
-valᴱ False S.False = S.False
-valᴱ (Abs e) (S.Abs t₁) = S.Abs _
-valᴱ (Id e) (S.Id t₁) = S.Id _
-valᴱ (Mac e) (S.Mac t₁) = S.Mac _
-valᴱ (Res x e) (S.Res t₁) = S.Res _
-valᴱ (Res∙ x) (S.Res .S.∙) = S.Res _
-valᴱ #[ n ] S.#[ .n ] = S.#[ n ]
-valᴱ #[ n ]ᴰ S.#[ .n ]ᴰ = S.#[ n ]ᴰ
-
-val₁ᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Value t -> Value t'
-val₁ᴱ e val with εᵀ-Val val
-... | val' rewrite unlift-εᵀ e = val'
-
-forkᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> IsFork t' -> IsFork t
-forkᴱ (fork p h⊑A e) (S.Fork .p t₁) = S.Fork p _
-forkᴱ (fork' p h⋤A e) (S.Fork∙ .p t₁) = S.Fork p _
-forkᴱ (fork∙ p e) (S.Fork∙ .p t₁) = S.Fork∙ p _
 
 --------------------------------------------------------------------------------
 
@@ -438,12 +390,6 @@ ext-εᵀˢ {x = yes p} {no ¬p} e = ⊥-elim (¬p p)
 ext-εᵀˢ {x = no ¬p} {yes p} e = ⊥-elim (¬p p)
 ext-εᵀˢ {x = no ¬p} {no ¬p₁} ∙ = ∙
 
-import Sequential.Semantics as S₁
-open S₁ 𝓛
-
-doneᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> IsDoneTS Ts₂ -> IsDoneTS Ts₁
-doneᴱ ⟨ eᵀ , [] ⟩ (S₁.isDoneTS isVal) = S₁.isDoneTS (valᴱ eᵀ isVal)
-
 --------------------------------------------------------------------------------
 
 data Eraseᴾ {l ls τ} (x : Dec (l ⊑ A)) (p₁ p₂ : Program l ls τ) : Set where
@@ -455,3 +401,61 @@ lift-εᴾ x ⟨ Ms , Γ , TS ⟩ = ⟨ lift-map-εᴹ Ms , (lift-map-εᴴ Γ) 
 unlift-εᴾ : ∀ {l ls τ} {p p' : Program l ls τ} {x : Dec (l ⊑ A)} -> Eraseᴾ x p p' -> p' ≡ ε₁ᴾ x p
 unlift-εᴾ ⟨ Ms , Γ , TS ⟩
   rewrite unlift-map-εᴹ Ms | unlift-map-εᴴ Γ | unlift-εᵀˢ TS  = refl
+
+--------------------------------------------------------------------------------
+
+-- Lemmas
+
+wkenᴱ : ∀ {π₁ π₂ τ} {t t' : Term π₁ τ} -> Eraseᵀ t t' -> (p : π₁ ⊆ π₂) ->  Eraseᵀ (wken t p) (wken t' p)
+wkenᴱ {π₁} {π₂} {τ} {t} e p with lift-εᵀ (wken t p)
+... | x rewrite unlift-εᵀ e = x
+
+substᴱ :  ∀ {π α β} {x x' : Term π α} {t t' : Term (α ∷ π) β} -> Eraseᵀ x x' -> Eraseᵀ t t' -> Eraseᵀ (subst x t) (subst x' t')
+substᴱ {x = x} {t = t} e₁ e₂ with lift-εᵀ (subst x t)
+... | e rewrite unlift-εᵀ e₁ | unlift-εᵀ e₂ = e
+
+deepDupᵀᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Eraseᵀ (deepDupᵀ t) (deepDupᵀ t')
+deepDupᵀᴱ {t = t} e with lift-εᵀ (deepDupᵀ t)
+... | e' rewrite unlift-εᵀ e = e'
+
+¬valᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> ¬ (Value t') -> ¬ (Value t)
+¬valᴱ （） ¬val S.（） = ¬val S.（）
+¬valᴱ True ¬val S.True = ¬val S.True
+¬valᴱ False ¬val S.False = ¬val S.False
+¬valᴱ (Abs x) ¬val (S.Abs t) = ¬val (S.Abs _)
+¬valᴱ (Id x) ¬val (S.Id t) = ¬val (S.Id _)
+¬valᴱ (Mac x) ¬val (S.Mac t) = ¬val (S.Mac _)
+¬valᴱ (Res x x₁) ¬val (S.Res t) = ¬val (S.Res _)
+¬valᴱ (Res∙ x) ¬val (S.Res t) = ¬val (S.Res _)
+¬valᴱ #[ n ] ¬val S.#[ .n ] = ¬val S.#[ n ]
+¬valᴱ #[ n ]ᴰ ¬val S.#[ .n ]ᴰ = ¬val S.#[ n ]ᴰ
+
+¬varᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> ¬ (IsVar t') -> ¬ (IsVar t)
+¬varᴱ (Var τ∈π) ¬var (S.Var .τ∈π) = ¬var (S.Var τ∈π)
+
+valᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Value t' -> Value t
+valᴱ （） S.（） = S.（）
+valᴱ True S.True = S.True
+valᴱ False S.False = S.False
+valᴱ (Abs e) (S.Abs t₁) = S.Abs _
+valᴱ (Id e) (S.Id t₁) = S.Id _
+valᴱ (Mac e) (S.Mac t₁) = S.Mac _
+valᴱ (Res x e) (S.Res t₁) = S.Res _
+valᴱ (Res∙ x) (S.Res .S.∙) = S.Res _
+valᴱ #[ n ] S.#[ .n ] = S.#[ n ]
+valᴱ #[ n ]ᴰ S.#[ .n ]ᴰ = S.#[ n ]ᴰ
+
+val₁ᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Value t -> Value t'
+val₁ᴱ e val with εᵀ-Val val
+... | val' rewrite unlift-εᵀ e = val'
+
+forkᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> IsFork t' -> IsFork t
+forkᴱ (fork p h⊑A e) (S.Fork .p t₁) = S.Fork p _
+forkᴱ (fork' p h⋤A e) (S.Fork∙ .p t₁) = S.Fork p _
+forkᴱ (fork∙ p e) (S.Fork∙ .p t₁) = S.Fork∙ p _
+
+import Sequential.Semantics as S₁
+open S₁ 𝓛
+
+doneᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> IsDoneTS Ts₂ -> IsDoneTS Ts₁
+doneᴱ ⟨ eᵀ , [] ⟩ (S₁.isDoneTS isVal) = S₁.isDoneTS (valᴱ eᵀ isVal)

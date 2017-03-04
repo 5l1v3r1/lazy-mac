@@ -1,13 +1,13 @@
 import Lattice as L
 
-module Sequential.Lemmas (𝓛 : L.Lattice) (A : L.Label 𝓛) where
+module Sequential.Security.Lemmas (𝓛 : L.Lattice) (A : L.Label 𝓛) where
 
 import Types as T
 open T 𝓛
 
 import Sequential.Calculus as S renaming (⟨_,_,_⟩ to ⟨_∥_∥_⟩)
 open S 𝓛
-open import Sequential.Erasure 𝓛 A as SE hiding (memberᴴ ; updateᴴ ; memberᴱ ; updateᴱ ; updateᴹ ; memberᴹ)
+open import Sequential.Security.Erasure 𝓛 A as SE hiding (memberᴴ ; updateᴴ ; memberᴱ ; updateᴱ ; updateᴹ ; memberᴹ)
 
 open import Relation.Nullary
 
@@ -16,7 +16,7 @@ open S₁ 𝓛
 
 open import Data.Nat as N
 
-import Sequential.Graph as G renaming (⟨_,_,_⟩ to mkᴱ)
+import Sequential.Security.Graph as G renaming (⟨_,_,_⟩ to mkᴱ)
 open G 𝓛 A
 
 open import Data.Empty

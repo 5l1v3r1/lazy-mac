@@ -78,3 +78,9 @@ _∈⟨_⟩ᴿ_  : Ty -> Label -> Context -> Set
 τ ∈⟨ l ⟩ᴿ π = τ ∈⟨ l ⟩ (reverse π)
 
 --------------------------------------------------------------------------------
+
+open import Relation.Nullary
+
+-- Could not find this in the standard library.
+contrapositive : ∀ {A B : Set} -> (A -> B) ->  ¬ B -> ¬ A
+contrapositive a⇒b ¬b a = ¬b (a⇒b a)
