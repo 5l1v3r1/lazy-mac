@@ -20,7 +20,7 @@ open SC 𝓛
 import Sequential.Semantics as SS
 open SS 𝓛
 
-import Concurrent.Calculus as C
+import Concurrent.Calculus as C hiding (lookupᴾ)
 open C 𝓛 𝓢
 -- open import Concurrent.Calculus 𝓛 𝓢
 
@@ -68,6 +68,7 @@ open import Function
 -- they are not defined so becuase they are inconvinient to reason with
 postulate _∈ᴸ_ : (l : Label) (ls : List Label) -> l ∈ ls  -- TODO probably can be added to the lattice
 
+-- TODO maybe not needed
 lookupᴾ : ∀ {l ls} -> l ∈ ls -> (P : Pools ls) -> ∃ (λ T → l ↦ T ∈ᴾ P)
 lookupᴾ here (T C.◅ P) = T , here
 lookupᴾ (there q) (T' C.◅ P) = P.map id there (lookupᴾ q P)
