@@ -227,32 +227,54 @@ fork-≈ t₁≈t₂ isFork = fork-≈' isFork t₁≈t₂
 forkTS-≈ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> (IsForkTS Ts₁) -> (IsForkTS Ts₂)
 forkTS-≈ (Kᵀˢ G.⟨ eᵀ₁ , eˢ₁ ⟩ G.⟨ eᵀ , eˢ ⟩) (SS.isForkTS isFork) = SS.isForkTS (fork-≈ ⟨ eᵀ₁ , eᵀ ⟩ isFork)
 
+-- TODO can this substitute ε¬Redex ? (and do it without validity assumption)
+redex-≈ : ∀ {l ls τ} {l⊑A : l ⊑ A} {p₁ p₂ : Program l ls τ}  -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Redexᴾ p₁  -> Redexᴾ p₂
+redex-≈ ⟨ Ms₁≈Ms₂ , Γ₁≈Γ₂ , Kᵀˢ G.∙ᴸ G.∙ᴸ ⟩ (SS.Step step) = SS.Step SS.Hole
+redex-≈ {l} {ls} {τ} {l⊑A} ⟨ Ms₁≈Ms₂ , Γ₁≈Γ₂ , Kᵀˢ G.⟨ eᵀ , eˢ ⟩ G.⟨ eᵀ₁ , eˢ₁ ⟩ ⟩ (SS.Step step) = aux Ms₁≈Ms₂ Γ₁≈Γ₂ ⟨ eᵀ , eᵀ₁ ⟩ (Kˢ eˢ eˢ₁) step
+  where aux : ∀ {π τ'} {Ms₁ Ms₂ : Memories ls} {Γ₁ Γ₂ : Heaps ls} {p₁' : Program l ls τ}
+                {t₁ t₂ : Term π τ'} {S₁ S₂ : Stack _ _ _ _} -> Ms₁ map-≈ᴹ Ms₂ -> Γ₁ map-≈ᴴ Γ₂ -> t₁ ≈ᵀ t₂ -> S₁ ≈ˢ S₂ ->
+                  SC.⟨ Ms₁ , Γ₁ , ⟨ t₁ , S₁ ⟩ ⟩ ⟼ p₁' -> Redexᴾ SC.⟨ Ms₂ , Γ₂ , ⟨ t₂ , S₂ ⟩ ⟩
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ t₁≈t₂ S₁≈S₂ (SS.Pure l∈Γ step₁ uᴹ) = {!!}
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ ⟨ G.new l⊑H h⊑A (G.Var ._) , G.new .l⊑H h⊑A₁ (G.Var ._) ⟩ S₁≈S₂ (SS.New H∈Ms uᴹ) = SS.Step (New {!H∈Ms!} {!!}) -- Step {!New ? ?!}
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ ⟨ G.new' l⊑H h⋤A (G.Var ._) , G.new' .l⊑H h⋤A₁ (G.Var ._) ⟩ S₁≈S₂ (SS.New H∈Ms uᴹ) = SS.Step (New {!!} {!!})
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ ⟨ G.new' l⊑H h⋤A (G.Var ._) , G.new∙ .l⊑H (G.Var ._) ⟩ S₁≈S₂ (SS.New H∈Ms uᴹ) = SS.Step New∙
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ t₁≈t₂ S₁≈S₂ SS.New∙ = {!!}
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ t₁≈t₂ S₁≈S₂ (SS.Write₂ H∈Ms uᴹ uˢ) = {!!}
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ t₁≈t₂ S₁≈S₂ (SS.Writeᴰ₂ H∈Ms uᴹ uˢ) = {!!}
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ t₁≈t₂ S₁≈S₂ SS.Write∙₂ = {!!}
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ t₁≈t₂ S₁≈S₂ (SS.Read₂ l∈Γ n∈M) = {!!}
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ t₁≈t₂ S₁≈S₂ (SS.Readᴰ₂ L∈Ms n∈M) = {!!}
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ t₁≈t₂ S₁≈S₂ (SS.DeepDup₁ ¬var l∈Γ uᴱ) = {!!}
+        aux Ms₁≈Ms₃ Γ₁≈Γ₃ t₁≈t₂ S₁≈S₂ (SS.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = {!!} -- ⟨ Ms₁≈Ms₂ , Γ₁≈Γ₂ , Kᵀˢ x₁ x₂ ⟩ step = {!!}
+
 --------------------------------------------------------------------------------
+
+-- TODO move proofs done-ε etc ... in Graph.Lemmas ?
+-- TODO make Security submodule ?
 
 open import Sequential.Valid 𝓛
 
 done-ε : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> IsDoneTS Ts -> IsDoneTS (εᵀˢ (yes l⊑A) Ts)
 done-ε l⊑A (isDoneTS isVal) = isDoneTS (εᵀ-Val isVal)
 
+
 open import Sequential.Lemmas 𝓛 A
 
 ε¬redex : ∀ {l ls τ} {p : Program l ls τ} {{pᵛ : validᴾ p}} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
 ε¬redex {l} {ls} {τ} {p = p} l⊑A ¬redex redex = simᴾ (lift-εᴾ (yes l⊑A) p) ¬redex redex
 
-εᵀˢ¬done : ∀ {l τ} {Ts : TS∙ l τ} {l⊑A : l ⊑ A} -> ¬ (IsDoneTS Ts) -> ¬ (IsDoneTS (εᵀˢ (yes l⊑A) Ts))
-εᵀˢ¬done {Ts = Ts} ¬done done-ε' with (lift-εᵀˢ (yes _) Ts)
-... | e with doneᴱ e done-ε'
-... | r rewrite unlift-εᵀˢ e = ⊥-elim (¬done r)
-
 -- Could not find this in the standard library.
 contrapositive : ∀ {A B : Set} -> (A -> B) ->  ¬ B -> ¬ A
 contrapositive a⇒b ¬b a = ¬b (a⇒b a)
 
+ε¬done : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> ¬ (IsDoneTS Ts) -> ¬ (IsDoneTS (εᵀˢ (yes l⊑A) Ts))
+ε¬done l⊑A ¬done = contrapositive (doneᴱ (lift-εᵀˢ (yes l⊑A) _)) ¬done
+
 ¬fork-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> ¬ (IsFork t₁) -> ¬ (IsFork t₂)
-¬fork-≈ t₁≈t₂ ¬fork isFork = contrapositive (fork-≈ (sym-≈ᵀ t₁≈t₂)) ¬fork isFork
+¬fork-≈ t₁≈t₂ = contrapositive (fork-≈ (sym-≈ᵀ t₁≈t₂))
 
 ¬IsForkTS-≈ : ∀ {τ l} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> ¬ (IsForkTS Ts₁) -> ¬ (IsForkTS Ts₂)
-¬IsForkTS-≈ Ts₁≈Ts₂ ¬fork forkTS = contrapositive (forkTS-≈ (sym-≈ᵀˢ Ts₁≈Ts₂)) ¬fork forkTS
+¬IsForkTS-≈ Ts₁≈Ts₂ = contrapositive (forkTS-≈ (sym-≈ᵀˢ Ts₁≈Ts₂))
 
 ¬done-≈ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> ¬ (IsDoneTS Ts₁) -> ¬ (IsDoneTS Ts₂)
 ¬done-≈ {l⊑A = l⊑A} Ts₁≈Ts₂ ¬done  = contrapositive (done-≈ l⊑A (sym-≈ᵀˢ Ts₁≈Ts₂)) ¬done
@@ -260,13 +282,13 @@ contrapositive a⇒b ¬b a = ¬b (a⇒b a)
 open import Data.Product
 
 stuck-ε : ∀ {l ls τ} {p : Program l ls τ} {{pⱽ : validᴾ p}} -> (l⊑A : l ⊑ A) -> Stuckᴾ p -> Stuckᴾ (SE.ε₁ᴾ (yes l⊑A) p)
-stuck-ε {l} {_} {τ} {{pⱽ}}  l⊑A (¬done , ¬redex , ¬fork) = εᵀˢ¬done ¬done , ε¬redex l⊑A ¬redex , εᵀˢ¬IsForkTS l⊑A ¬fork
+stuck-ε {l} {_} {τ} {{pⱽ}}  l⊑A (¬done , ¬redex , ¬fork) = (ε¬done l⊑A ¬done) , ε¬redex l⊑A ¬redex , εᵀˢ¬IsForkTS l⊑A ¬fork
 
 --------------------------------------------------------------------------------
 
 -- TODO can this be proven using Sequential.Lemmas ?
-postulate redex-≈ : ∀ {l ls τ} {p₁ p₁' p₂ : Program l ls τ} -> (l⊑A : l ⊑ A) -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> p₁ ⟼ p₁' ->
-            ∃ (λ p₂' -> (p₁' ≈ᴾ⟨ yes l⊑A ⟩ p₂') × (p₂ ⟼ p₂'))
+-- postulate redex-≈ : ∀ {l ls τ} {p₁ p₁' p₂ : Program l ls τ} -> (l⊑A : l ⊑ A) -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> p₁ ⟼ p₁' ->
+--             ∃ (λ p₂' -> (p₁' ≈ᴾ⟨ yes l⊑A ⟩ p₂') × (p₂ ⟼ p₂'))
 -- redex-≈ = {!!}
 
 import Sequential.Calculus renaming (⟨_,_,_⟩ to mkᴾ)
@@ -274,7 +296,6 @@ import Sequential.Calculus renaming (⟨_,_,_⟩ to mkᴾ)
 open _≈ᴾ⟨_⟩_
 
 
--- TODO can this be proven using Sequential.Lemmas ?
 stuck-≈ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (l⊑A : l ⊑ A) -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Stuckᴾ p₁ -> Stuckᴾ p₂
 stuck-≈ {p₁ = SC.mkᴾ Ms₁ Γ₁ Ts₁} {SC.mkᴾ Ms₂ Γ₂ Ts₂} l⊑A p₁≈p₂ (¬done , ¬redex , ¬fork)
   = ¬done-≈ (Ts₁≈Ts₂ p₁≈p₂) ¬done , contrapositive {!redex-≈!} ¬redex , ¬IsForkTS-≈ (Ts₁≈Ts₂ p₁≈p₂) ¬fork
