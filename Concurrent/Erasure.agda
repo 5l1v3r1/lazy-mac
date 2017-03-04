@@ -84,29 +84,6 @@ updateᴾᴸ l⊑A C.here | no ¬p = ⊥-elim (¬p l⊑A)
 updateᴾᴸ l⊑A (C.there x) = C.there (updateᴾᴸ l⊑A x)
 
 --------------------------------------------------------------------------------
--- TODO move to right module?
-
-import Sequential.Graph as S₂
-open S₂ 𝓛 A
-
-open import Sequential.Valid 𝓛
-
-done-ε : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> IsDoneTS Ts -> IsDoneTS (εᵀˢ (yes l⊑A) Ts)
-done-ε l⊑A (isDoneTS isVal) = isDoneTS (εᵀ-Val isVal)
-
-stuck-ε : ∀ {l ls τ} {p : Program l ls τ} {{pⱽ : validᴾ p}} -> (l⊑A : l ⊑ A) -> Stuckᴾ p -> Stuckᴾ (SE.ε₁ᴾ (yes l⊑A) p)
-stuck-ε {l} {_} {τ} {{pⱽ}}  l⊑A (¬done , ¬redex , ¬fork) = εᵀˢ¬done ¬done , ε¬redex l⊑A ¬redex , εᵀˢ¬IsForkTS l⊑A ¬fork
-  where
-        open import Sequential.Lemmas 𝓛 A
-        ε¬redex : ∀ {l ls τ} {p : Program l ls τ} {{pᵛ : validᴾ p}} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
-        ε¬redex {l} {ls} {τ} {p = p} l⊑A ¬redex redex = simᴾ (lift-εᴾ (yes l⊑A) p) ¬redex redex
-
-        εᵀˢ¬done : {Ts : TS∙ l τ} -> ¬ (IsDoneTS Ts) -> ¬ (IsDoneTS (εᵀˢ (yes l⊑A) Ts))
-        εᵀˢ¬done {Ts} ¬done done-ε' with (lift-εᵀˢ (yes _) Ts)
-        ... | e with doneᴱ e done-ε'
-        ... | r rewrite unlift-εᵀˢ e = ⊥-elim (¬done r)
-
---------------------------------------------------------------------------------
 
 lengthᵀ-ε-≡ : ∀ {l} (l⊑A : l ⊑ A) (T : Pool l) -> lengthᵀ T ≡ lengthᵀ (εᴾ (yes l⊑A) T)
 lengthᵀ-ε-≡ l⊑A C.[] = refl

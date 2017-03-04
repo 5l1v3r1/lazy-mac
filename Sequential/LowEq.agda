@@ -19,8 +19,6 @@ open import Relation.Binary.PropositionalEquality
 open import Data.Empty
 open import Relation.Nullary
 open import Data.Maybe as M
-open import Data.Product using (_×_ ; proj₁ ; proj₂)
-import Data.Product as P
 
 --------------------------------------------------------------------------------
 
@@ -36,6 +34,15 @@ data _≈ᵀ_ {π τ} (t₁ t₂ : Term π τ) : Set where
 ⌜_⌝ᵀ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≅ᵀ t₂ -> t₁ ≈ᵀ t₂
 ⌜_⌝ᵀ {t₁ = t₁} {t₂} eq with lift-εᵀ t₁ | lift-εᵀ t₂
 ... | x | y rewrite eq = ⟨ x , y ⟩
+
+refl-≈ᵀ : ∀ {π τ} {t : Term π τ} -> t ≈ᵀ t
+refl-≈ᵀ = ⌜ refl ⌝ᵀ
+
+sym-≈ᵀ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> t₂ ≈ᵀ t₁
+sym-≈ᵀ t₁≈t₂ = ⌜ sym ⌞ t₁≈t₂ ⌟ᵀ ⌝ᵀ
+
+trans-≈ᵀ : ∀ {π τ} {t₁ t₂ t₃ : Term π τ} -> t₁ ≈ᵀ t₂ -> t₂ ≈ᵀ t₃ -> t₁ ≈ᵀ t₃
+trans-≈ᵀ t₁≈t₂ t₂≈t₃ = ⌜ trans ⌞ t₁≈t₂ ⌟ᵀ ⌞ t₂≈t₃ ⌟ᵀ ⌝ᵀ
 
 --------------------------------------------------------------------------------
 
@@ -146,6 +153,16 @@ data _≈ᵀˢ⟨_⟩_ {l τ} (Ts₁ : TS∙ l τ) (x : Dec (l ⊑ A)) (Ts₂ : 
 ⌜_⌝ᵀˢ {Ts₁ = Ts₁} {Ts₂} {x} eq with lift-εᵀˢ x Ts₁ | lift-εᵀˢ x Ts₂
 ... | e₁ | e₂ rewrite eq = Kᵀˢ e₁ e₂
 
+
+refl-≈ᵀˢ : ∀ {l τ} {Ts : TS∙ l τ} -> Ts ≈ᵀˢ⟨ l ⊑? A ⟩ Ts
+refl-≈ᵀˢ = ⌜ refl ⌝ᵀˢ
+
+sym-≈ᵀˢ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} {x : Dec (l ⊑ A)} -> Ts₁ ≈ᵀˢ⟨ x ⟩ Ts₂ -> Ts₂ ≈ᵀˢ⟨ x ⟩ Ts₁
+sym-≈ᵀˢ Ts₁≈Ts₂ = ⌜ sym ⌞ Ts₁≈Ts₂ ⌟ᵀˢ ⌝ᵀˢ
+
+trans-≈ᵀˢ : ∀ {l τ} {Ts₁ Ts₂ Ts₃ : TS∙ l τ} {x : Dec (l ⊑ A)} -> Ts₁ ≈ᵀˢ⟨ x ⟩ Ts₂ -> Ts₂ ≈ᵀˢ⟨ x ⟩ Ts₃ -> Ts₁ ≈ᵀˢ⟨ x ⟩ Ts₃
+trans-≈ᵀˢ Ts₁≈Ts₂ Ts₂≈Ts₃ = ⌜ trans ⌞ Ts₁≈Ts₂ ⌟ᵀˢ ⌞ Ts₂≈Ts₃ ⌟ᵀˢ ⌝ᵀˢ
+
 --------------------------------------------------------------------------------
 
 _≅ᴾ⟨_⟩_ : ∀ {l ls τ} -> Program l ls τ -> Dec (l ⊑ A) -> Program l ls τ -> Set
@@ -176,6 +193,15 @@ record _≈ᴾ⟨_⟩_ {l ls τ} (p₁ : Program l ls τ) (x : Dec (l ⊑ A)) (p
 _≅ᴾ_ : ∀ {l ls τ} -> Program l ls τ -> Program l ls τ -> Set
 p₁ ≅ᴾ p₂ = p₁ ≅ᴾ⟨ (_ ⊑? A) ⟩ p₂
 
+refl-≈ᴾ : ∀ {l ls τ} {p : Program l ls τ} -> p ≈ᴾ⟨ l ⊑? A ⟩ p
+refl-≈ᴾ {l} = ⌜ refl ⌝ᴾ
+
+sym-≈ᴾ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} {x : Dec (l ⊑ A)} -> p₁ ≈ᴾ⟨ x ⟩ p₂ -> p₂ ≈ᴾ⟨ x ⟩ p₁
+sym-≈ᴾ eq = ⌜ sym ⌞ eq ⌟ᴾ ⌝ᴾ
+
+trans-≈ᴾ : ∀ {l ls τ} {p₁ p₂ p₃ : Program l ls τ} {x : Dec (l ⊑ A)} -> p₁ ≈ᴾ⟨ x ⟩ p₂ -> p₂ ≈ᴾ⟨ x ⟩ p₃ -> p₁ ≈ᴾ⟨ x ⟩ p₃
+trans-≈ᴾ eq₁ eq₂ = ⌜ trans ⌞ eq₁ ⌟ᴾ ⌞ eq₂ ⌟ᴾ ⌝ᴾ
+
 --------------------------------------------------------------------------------
 
 import Sequential.Semantics as SS
@@ -184,40 +210,71 @@ open SS 𝓛
 val-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> Value t₁ -> Value t₂
 val-≈ ⟨ e₁ , e₂ ⟩ val = valᴱ e₂ (val₁ᴱ e₁ val)
 
--- TODO can this be proven using Sequential.Lemmas ?
-postulate stuck-≈ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (l⊑A : l ⊑ A) -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Stuckᴾ p₁ -> Stuckᴾ p₂
--- stuck-≈ l⊑A eq stuck₁ = {!!}
-
-¬fork-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> ¬ (IsFork t₁) -> ¬ (IsFork t₂)
-¬fork-≈ ⟨ unId e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
-¬fork-≈ ⟨ Var τ∈π , () ⟩ ¬fork₁ (SC.Fork p t)
-¬fork-≈ ⟨ App e₂ e₁ , () ⟩ ¬fork₁ (SC.Fork p t)
-¬fork-≈ ⟨ If e₁ Then e₂ Else e₃ , () ⟩ ¬fork₁ (SC.Fork p t)
-¬fork-≈ ⟨ Return e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
-¬fork-≈ ⟨ e₁ >>= e₂ , () ⟩ ¬fork₁ (SC.Fork p t)
-¬fork-≈ ⟨ Mac e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
-¬fork-≈ ⟨ unlabel l⊑h e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
-¬fork-≈ ⟨ read l⊑h e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
-¬fork-≈ ⟨ write l⊑h h⊑A e₁ e₂ , () ⟩ ¬fork₁ (SC.Fork p t)
-¬fork-≈ ⟨ write' l⊑h h⋤A e₁ e₂ , () ⟩ ¬fork₁ (SC.Fork p t)
-¬fork-≈ ⟨ write∙ l⊑h e₁ e₂ , () ⟩ ¬fork₁ (SC.Fork p t)
-¬fork-≈ ⟨ fork l⊑h h⊑A e₁ , fork .l⊑h h⊑A₁ e₂ ⟩ ¬fork₁ (SC.Fork .l⊑h t₁) = ¬fork₁ (SC.Fork l⊑h _)
-¬fork-≈ ⟨ fork' l⊑h h⋤A e₁ , fork' .l⊑h h⋤A₁ e₂ ⟩ ¬fork₁ (SC.Fork .l⊑h t₁) = ¬fork₁ (SC.Fork l⊑h _)
-¬fork-≈ ⟨ fork∙ l⊑h e₁ , fork' .l⊑h h⋤A e₂ ⟩ ¬fork₁ (SC.Fork .l⊑h t₁) = ¬fork₁ (SC.Fork∙ l⊑h _)
-¬fork-≈ ⟨ deepDup e₁ , () ⟩ ¬fork₁ (SC.Fork p t₁)
-¬fork-≈ ⟨ ∙ , () ⟩ ¬fork₁ (SC.Fork p t)
-¬fork-≈ ⟨ fork' p h⋤A e₁ , fork∙ .p e₂ ⟩ ¬fork₁ (SC.Fork∙ .p t₁) = ¬fork₁ (SC.Fork p _)
-¬fork-≈ ⟨ fork∙ p e₁ , fork∙ .p e₂ ⟩ ¬fork₁ (SC.Fork∙ .p t₁) = ¬fork₁ (SC.Fork∙ p _)
-
-¬IsForkTS-≈ : ∀ {τ l} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> ¬ (IsForkTS Ts₁) -> ¬ (IsForkTS Ts₂)
-¬IsForkTS-≈ (Kᵀˢ G.⟨ e₁ , e₂ ⟩ G.⟨ e₁' , e₂' ⟩) ¬fork (isForkTS isFo) = ¬fork-≈ ⟨ e₁ , e₁' ⟩ (¬IsForkTs¬IsFork ¬fork) isFo
-
 done-≈ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} -> (l⊑A : l ⊑ A) -> Ts₁ ≈ᵀˢ⟨ (yes l⊑A) ⟩ Ts₂ -> IsDoneTS Ts₁ -> IsDoneTS Ts₂
 done-≈ l⊑A (Kᵀˢ G.⟨ x₃ , G.[] ⟩ G.⟨ x₁ , G.[] ⟩) (SS.isDoneTS isVal) = isDoneTS (val-≈ ⟨ x₃ , x₁ ⟩ isVal)
 
+fork-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> (IsFork t₁) -> (IsFork t₂)
+fork-≈ t₁≈t₂ isFork = fork-≈' isFork t₁≈t₂
+  where -- Pattern matching in the original order hits a bug.
+        fork-≈' : ∀ {π τ} {t₁ t₂ : Term π τ} -> (IsFork t₁) -> t₁ ≈ᵀ t₂ -> (IsFork t₂)
+        fork-≈' (SC.Fork p t) ⟨ G.fork .p h⊑A e₁ , G.fork .p h⊑A₁ e₂ ⟩ = SC.Fork p _
+        fork-≈' (SC.Fork p t) ⟨ G.fork' .p h⋤A e₁ , G.fork' .p h⋤A₁ e₂ ⟩ = SC.Fork p _
+        fork-≈' (SC.Fork p t) ⟨ G.fork' .p h⋤A e₁ , G.fork∙ .p e₂ ⟩ = SC.Fork∙ p _
+        fork-≈' (SC.Fork∙ p t) ⟨ G.fork∙ .p e₁ , G.fork' .p h⋤A e₂ ⟩ = SC.Fork p _
+        fork-≈' (SC.Fork∙ p t) ⟨ G.fork∙ .p e₁ , G.fork∙ .p e₂ ⟩ = SC.Fork∙ p _
+
+
+forkTS-≈ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> (IsForkTS Ts₁) -> (IsForkTS Ts₂)
+forkTS-≈ (Kᵀˢ G.⟨ eᵀ₁ , eˢ₁ ⟩ G.⟨ eᵀ , eˢ ⟩) (SS.isForkTS isFork) = SS.isForkTS (fork-≈ ⟨ eᵀ₁ , eᵀ ⟩ isFork)
+
+--------------------------------------------------------------------------------
+
+open import Sequential.Valid 𝓛
+
+done-ε : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> IsDoneTS Ts -> IsDoneTS (εᵀˢ (yes l⊑A) Ts)
+done-ε l⊑A (isDoneTS isVal) = isDoneTS (εᵀ-Val isVal)
+
+open import Sequential.Lemmas 𝓛 A
+
+ε¬redex : ∀ {l ls τ} {p : Program l ls τ} {{pᵛ : validᴾ p}} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (SE.ε₁ᴾ (yes l⊑A) p))
+ε¬redex {l} {ls} {τ} {p = p} l⊑A ¬redex redex = simᴾ (lift-εᴾ (yes l⊑A) p) ¬redex redex
+
+εᵀˢ¬done : ∀ {l τ} {Ts : TS∙ l τ} {l⊑A : l ⊑ A} -> ¬ (IsDoneTS Ts) -> ¬ (IsDoneTS (εᵀˢ (yes l⊑A) Ts))
+εᵀˢ¬done {Ts = Ts} ¬done done-ε' with (lift-εᵀˢ (yes _) Ts)
+... | e with doneᴱ e done-ε'
+... | r rewrite unlift-εᵀˢ e = ⊥-elim (¬done r)
+
+-- Could not find this in the standard library.
+contrapositive : ∀ {A B : Set} -> (A -> B) ->  ¬ B -> ¬ A
+contrapositive a⇒b ¬b a = ¬b (a⇒b a)
+
+¬fork-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> ¬ (IsFork t₁) -> ¬ (IsFork t₂)
+¬fork-≈ t₁≈t₂ ¬fork isFork = contrapositive (fork-≈ (sym-≈ᵀ t₁≈t₂)) ¬fork isFork
+
+¬IsForkTS-≈ : ∀ {τ l} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> ¬ (IsForkTS Ts₁) -> ¬ (IsForkTS Ts₂)
+¬IsForkTS-≈ Ts₁≈Ts₂ ¬fork forkTS = contrapositive (forkTS-≈ (sym-≈ᵀˢ Ts₁≈Ts₂)) ¬fork forkTS
+
+¬done-≈ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> ¬ (IsDoneTS Ts₁) -> ¬ (IsDoneTS Ts₂)
+¬done-≈ {l⊑A = l⊑A} Ts₁≈Ts₂ ¬done  = contrapositive (done-≈ l⊑A (sym-≈ᵀˢ Ts₁≈Ts₂)) ¬done
+
 open import Data.Product
+
+stuck-ε : ∀ {l ls τ} {p : Program l ls τ} {{pⱽ : validᴾ p}} -> (l⊑A : l ⊑ A) -> Stuckᴾ p -> Stuckᴾ (SE.ε₁ᴾ (yes l⊑A) p)
+stuck-ε {l} {_} {τ} {{pⱽ}}  l⊑A (¬done , ¬redex , ¬fork) = εᵀˢ¬done ¬done , ε¬redex l⊑A ¬redex , εᵀˢ¬IsForkTS l⊑A ¬fork
+
+--------------------------------------------------------------------------------
 
 -- TODO can this be proven using Sequential.Lemmas ?
 postulate redex-≈ : ∀ {l ls τ} {p₁ p₁' p₂ : Program l ls τ} -> (l⊑A : l ⊑ A) -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> p₁ ⟼ p₁' ->
             ∃ (λ p₂' -> (p₁' ≈ᴾ⟨ yes l⊑A ⟩ p₂') × (p₂ ⟼ p₂'))
 -- redex-≈ = {!!}
+
+import Sequential.Calculus renaming (⟨_,_,_⟩ to mkᴾ)
+
+open _≈ᴾ⟨_⟩_
+
+
+-- TODO can this be proven using Sequential.Lemmas ?
+stuck-≈ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} (l⊑A : l ⊑ A) -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Stuckᴾ p₁ -> Stuckᴾ p₂
+stuck-≈ {p₁ = SC.mkᴾ Ms₁ Γ₁ Ts₁} {SC.mkᴾ Ms₂ Γ₂ Ts₂} l⊑A p₁≈p₂ (¬done , ¬redex , ¬fork)
+  = ¬done-≈ (Ts₁≈Ts₂ p₁≈p₂) ¬done , contrapositive {!redex-≈!} ¬redex , ¬IsForkTS-≈ (Ts₁≈Ts₂ p₁≈p₂) ¬fork
