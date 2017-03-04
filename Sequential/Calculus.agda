@@ -316,6 +316,10 @@ lookupˢ : ∀ {l ls} -> l ∈ ls -> Memories ls -> Memory l
 lookupˢ here (M ∷ Ms) = M
 lookupˢ (there l∈ls) (M ∷ Ms) = lookupˢ l∈ls Ms
 
+lookup-∈ˢ : ∀ {l ls} -> (l∈ls : l ∈ ls) (Ms : Memories ls) -> l ↦ lookupˢ l∈ls Ms ∈ˢ Ms
+lookup-∈ˢ here (M ∷ Ms) = here
+lookup-∈ˢ (there x) (_ ∷ Ms) = there (lookup-∈ˢ x Ms)
+
 lookupˢ-memberˢ-≡ : ∀ {l ls} {M : Memory l} {Ms : Memories ls} -> (l∈ls : l ∈ ls) -> l ↦ M ∈ˢ Ms ->  M ≡ lookupˢ l∈ls Ms
 lookupˢ-memberˢ-≡ here here = refl
 lookupˢ-memberˢ-≡ here (there {u = u} M∈Ms) = ⊥-elim (∈-not-unique (memberˢ-∈ M∈Ms) u)

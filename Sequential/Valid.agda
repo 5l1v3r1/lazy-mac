@@ -562,3 +562,16 @@ valid⟼ (Msⱽ , Γⱽ , ()) SS.Hole
 ⟼-⊆ˢ (SS.DeepDup₁ ¬var l∈Γ uᴱ) = refl-⊆ˢ
 ⟼-⊆ˢ (SS.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = refl-⊆ˢ
 ⟼-⊆ˢ SS.Hole = refl-⊆ˢ
+
+--------------------------------------------------------------------------------
+
+-- TODO: don't need validᴹ M anyomre
+updateᴹ-valid : ∀ {l τ n} {M : Memory l} -> (c : Cell l τ) -> ValidAddr M n τ -> ∃ (λ M' -> M' ≔ M [ n ↦ c ]ᴹ)
+updateᴹ-valid {M = S.[]} c ()
+updateᴹ-valid {M = cᴸ S.∷ M} c here = _ , here
+updateᴹ-valid {M = cᴸ S.∷ M} c (there isVA) = P.map (_∷_ _) there (updateᴹ-valid c isVA)
+updateᴹ-valid {M = S.∙} c  ()
+
+updataˢ-valid : ∀ {l ls} {M : Memory l} {Ms : Memories ls} -> l ∈ ls -> ∃ (λ Ms' -> Ms' ≔ Ms [ l ↦ M ]ˢ)
+updataˢ-valid {Ms = M' ∷ Ms} T.here = _ ∷ Ms , here
+updataˢ-valid {Ms = M' ∷ Ms} (T.there l∈ls) = P.map (_∷_ M') there (updataˢ-valid l∈ls)

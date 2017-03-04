@@ -95,9 +95,7 @@ mt₁ ≅ᴹᵀ mt₂ = M.map εᵀ mt₁ ≡ M.map εᵀ mt₂
 
 --------------------------------------------------------------------------------
 
--- -- TODO remove?
-
--- data _≈ᴴ⟨_⟩_ {l π} (Δ₁ : Heap l π) (x : Dec (l ⊑ A)) (Δ₂ : Heap l π) : Set where
+--data _≈ᴴ⟨_⟩_ {l π} (Δ₁ : Heap l π) (x : Dec (l ⊑ A)) (Δ₂ : Heap l π) : Set where
 --   Kᴴ : ∀ {Δᴱ : Heap l π} -> Eraseᴴ x Δ₁ Δᴱ -> Eraseᴴ x Δ₂ Δᴱ -> Δ₁ ≈ᴴ⟨ x ⟩ Δ₂
 
 --------------------------------------------------------------------------------
@@ -121,6 +119,21 @@ trans-≈ᴴ a b = map-⌜ trans map-⌞ a ⌟ᴴ map-⌞ b ⌟ᴴ ⌝ᴴ
 
 --------------------------------------------------------------------------------
 
+_≅ᴹ⟨_⟩_ : ∀ {l} -> Memory l -> Dec (l ⊑ A) -> Memory l -> Set
+M₁ ≅ᴹ⟨ x ⟩ M₂ = εᴹ x M₁ ≡ εᴹ x M₂
+
+data _≈ᴹ⟨_⟩_ {l} (M₁ : Memory l) (x : Dec (l ⊑ A)) (M₂ : Memory l) : Set where
+  Kᴹ : ∀ {Mᴱ : Memory l} -> Eraseᴹ x M₁ Mᴱ -> Eraseᴹ x M₂ Mᴱ -> M₁ ≈ᴹ⟨ x ⟩ M₂
+
+⌞_⌟ᴹ : ∀ {l} {M₁ M₂ : Memory l} {x : Dec _}  -> M₁ ≈ᴹ⟨ x ⟩ M₂ -> M₁ ≅ᴹ⟨ x ⟩ M₂
+⌞ Kᴹ e₁ e₂ ⌟ᴹ rewrite unlift-εᴹ e₁ | unlift-εᴹ e₂ = refl
+
+⌜_⌝ᴹ : ∀ {l} {M₁ M₂ : Memory l} {x : Dec (l ⊑ A)} -> M₁ ≅ᴹ⟨ x ⟩ M₂ -> M₁ ≈ᴹ⟨ x ⟩  M₂
+⌜_⌝ᴹ {M₁ = M₁} {M₂} {x} eq with lift-εᴹ x M₁ | lift-εᴹ x M₂
+... | e₁ | e₂ rewrite eq = Kᴹ e₁ e₂
+
+--------------------------------------------------------------------------------
+
 _map-≅ᴹ_ : ∀ {ls} (Ms₁ Ms₂ : Memories ls) -> Set
 Ms₁ map-≅ᴹ Ms₂ = map-εᴹ Ms₁ ≡ map-εᴹ Ms₂
 
@@ -134,7 +147,7 @@ map-⌜_⌝ᴹ : ∀ {ls} {Ms₁ Ms₂ : Memories ls} -> Ms₁ map-≅ᴹ Ms₂ 
 map-⌜_⌝ᴹ {Ms₁ = Ms₁} {Ms₂} eq with lift-map-εᴹ Ms₁ | lift-map-εᴹ Ms₂
 ... | e₁ | e₂ rewrite eq = K-mapᴹ e₁ e₂
 
-trans-≈ᴹ : ∀ {ls} {Γ₁ Γ₂ Γ₃ : Memories ls} -> Γ₁ map-≈ᴹ Γ₂ -> Γ₂ map-≈ᴹ Γ₃ -> Γ₁ map-≈ᴹ Γ₃
+trans-≈ᴹ : ∀ {ls} {Ms₁ Ms₂ Ms₃ : Memories ls} -> Ms₁ map-≈ᴹ Ms₂ -> Ms₂ map-≈ᴹ Ms₃ -> Ms₁ map-≈ᴹ Ms₃
 trans-≈ᴹ a b = map-⌜ trans map-⌞ a ⌟ᴹ map-⌞ b ⌟ᴹ ⌝ᴹ
 
 

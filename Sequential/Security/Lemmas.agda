@@ -138,17 +138,6 @@ newˢ : ∀ {l ls τ} {M : Memory l} {Ms : Memories ls} -> (c : Cell l τ) ->
 newˢ c S.here = _ , here
 newˢ c (S.there u₁) = P.map (_∷_ _) there (newˢ c u₁)
 
--- TODO: don't need validᴹ M anyomre
-updateᴹ-valid : ∀ {l τ n} {M : Memory l} -> (c : Cell l τ) -> validᴹ M -> ValidAddr M n τ -> ∃ (λ M' -> M' ≔ M [ n ↦ c ]ᴹ)
-updateᴹ-valid {M = S.[]} c vᴹ ()
-updateᴹ-valid {M = cᴸ S.∷ M} c vᴹ V.here = _ , here
-updateᴹ-valid {M = cᴸ S.∷ M} c vᴹ (V.there isVA) = P.map (_∷_ _) there (updateᴹ-valid c vᴹ isVA)
-updateᴹ-valid {M = S.∙} c vᴹ ()
-
-updataˢ-valid : ∀ {l ls} {M : Memory l} {Ms : Memories ls} -> l ∈ ls -> ∃ (λ Ms' -> Ms' ≔ Ms [ l ↦ M ]ˢ)
-updataˢ-valid {Ms = M' ∷ Ms} T.here = _ ∷ Ms , here
-updataˢ-valid {Ms = M' ∷ Ms} (T.there l∈ls) = P.map (_∷_ M') there (updataˢ-valid l∈ls)
-
 mk-∈ˢ : ∀ {l ls} -> (l∈ls : l ∈ ls) -> {Ms : Memories ls} -> map-validᴹ Ms ->
              let M = lookupˢ l∈ls Ms in  l ↦ M ∈ˢ Ms × validᴹ M
 mk-∈ˢ T.here {M S.∷ Ms} (proj₁ , proj₂) = here , proj₁
