@@ -95,8 +95,34 @@ mt₁ ≅ᴹᵀ mt₂ = M.map εᵀ mt₁ ≡ M.map εᵀ mt₂
 
 --------------------------------------------------------------------------------
 
---data _≈ᴴ⟨_⟩_ {l π} (Δ₁ : Heap l π) (x : Dec (l ⊑ A)) (Δ₂ : Heap l π) : Set where
---   Kᴴ : ∀ {Δᴱ : Heap l π} -> Eraseᴴ x Δ₁ Δᴱ -> Eraseᴴ x Δ₂ Δᴱ -> Δ₁ ≈ᴴ⟨ x ⟩ Δ₂
+_map-≅ᵀ_ : ∀ {l π} -> Heap l π  -> Heap l π -> Set
+Δ₁ map-≅ᵀ Δ₂ = map-εᵀ Δ₁ ≡ map-εᵀ Δ₂
+
+data _map-≈ᵀ_ {l π} (Δ₁ Δ₂ : Heap l π) : Set where
+  K-mapᵀ : ∀ {Δᴱ : Heap l π} -> (e₁ : EraseMapᵀ Δ₁ Δᴱ) (e₂ : EraseMapᵀ Δ₂ Δᴱ) -> Δ₁ map-≈ᵀ Δ₂
+
+map-⌞_⌟ᵀ : ∀ {l π} {Δ₁ Δ₂ : Heap l π} -> Δ₁ map-≈ᵀ Δ₂ -> Δ₁ map-≅ᵀ Δ₂
+map-⌞ K-mapᵀ e₁ e₂ ⌟ᵀ rewrite unlift-map-εᵀ e₁ | unlift-map-εᵀ e₂ = refl
+
+map-⌜_⌝ᵀ : ∀ {l π} {Δ₁ Δ₂ : Heap l π} -> Δ₁ map-≅ᵀ Δ₂ -> Δ₁ map-≈ᵀ Δ₂
+map-⌜_⌝ᵀ {Δ₁ = Δ₁} {Δ₂} eq with lift-map-εᵀ Δ₁ | lift-map-εᵀ Δ₂
+... | e₁ | e₂ rewrite eq = K-mapᵀ e₁ e₂
+
+
+--------------------------------------------------------------------------------
+
+_≅ᴴ⟨_⟩_ : ∀ {l} -> Heap∙ l -> Dec (l ⊑ A) -> Heap∙ l -> Set
+H₁ ≅ᴴ⟨ x ⟩ H₂ = εᴴ x H₁ ≡ εᴴ x H₂
+
+data _≈ᴴ⟨_⟩_ {l} (H₁ : Heap∙ l) (x : Dec (l ⊑ A)) (H₂ : Heap∙ l) : Set where
+  Kᴴ : ∀ {Hᴱ : Heap∙ l} -> (e₁ : Eraseᴴ x H₁ Hᴱ) (e₂ : Eraseᴴ x H₂ Hᴱ) -> H₁ ≈ᴴ⟨ x ⟩ H₂
+
+⌞_⌟ᴴ : ∀ {l} {H₁ H₂ : Heap∙ l} {x : Dec (l ⊑ A)} -> H₁ ≈ᴴ⟨ x ⟩ H₂ -> H₁ ≅ᴴ⟨ x ⟩ H₂
+⌞ Kᴴ e₁ e₂ ⌟ᴴ rewrite unlift-εᴴ e₁ | unlift-εᴴ e₂ = refl
+
+⌜_⌝ᴴ : ∀ {l} {H₁ H₂ : Heap∙ l} {x : Dec (l ⊑ A)} -> H₁ ≅ᴴ⟨ x ⟩ H₂ -> H₁ ≈ᴴ⟨ x ⟩ H₂
+⌜_⌝ᴴ {H₁ = H₁} {H₂} {x} eq with lift-εᴴ x H₁ | lift-εᴴ x H₂
+... | e₁ | e₂ rewrite eq = Kᴴ e₁ e₂
 
 --------------------------------------------------------------------------------
 -- Structural low-equivalence for Heaps

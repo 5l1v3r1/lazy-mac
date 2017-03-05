@@ -2,7 +2,9 @@ import Lattice as L₁
 
 module Sequential.Security.Lemmas2 (𝓛 : L₁.Lattice) (A : L₁.Label 𝓛) where
 
-open import Types 𝓛
+import Types as T
+open T 𝓛
+
 open import Sequential.Security.Erasure 𝓛 A as SE hiding (updateᴹ)
 import Sequential.Security.Graph as G
 open G 𝓛 A
@@ -29,6 +31,7 @@ open import Relation.Binary.PropositionalEquality
 open import Data.Empty
 open import Relation.Nullary
 open import Data.Product
+open import Data.Maybe
 
 val-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> Value t₁ -> Value t₂
 val-≈ L.⟨ e₁ , e₂ ⟩ val = valᴱ e₂ (val₁ᴱ e₁ val)
@@ -59,9 +62,29 @@ open import Data.Product as P
 open import Function
 import Sequential.Calculus renaming (⟨_,_,_⟩ to mkᴾ ; ⟨_,_⟩ to mkᵀ)
 
-member-≈ᴱ : ∀ {l ls} {Γ₁ Γ₂ : Heaps ls} {H₁ : Heap∙ l} (x : Dec (l ⊑ A)) -> Γ₁ map-≈ᴴ Γ₂ -> l ↦ H₁ ∈ᴱ Γ₁ ->
-          ∃ (λ H₂ → H₁ ≈ᴴ⟨ x ⟩ H₂ × l ↦ H₂ ∈ᴱ Γ₂)
-member-≈ᴱ = ?
+member-≈ᴴ : ∀ {l π₁ π₂ τ} {Δ₁ Δ₂ : Heap l π₁} {t₁ : Term π₂ τ} {τ∈π : τ ∈⟨ l ⟩ᴿ π₁} -> Δ₁ map-≈ᵀ Δ₂ -> τ∈π ↦ t₁ ∈ᴴ Δ₁ ->
+            Σ (Term π₂ τ) (λ t₂ → t₁ ≈ᵀ t₂ × τ∈π ↦ t₂ ∈ᴴ Δ₂)
+member-≈ᴴ {τ∈π = τ∈π} Δ₁≈Δ₂ t∈Δ = aux Δ₁≈Δ₂ t∈Δ
+  where aux : ∀ {l π₁ π₂ τ} {Δ₁ Δ₂ : Heap l π₁} {t₁ : Term π₂ τ} {τ∈π : τ ∈⟨ l ⟩ π₁} -> Δ₁ map-≈ᵀ Δ₂ -> Memberᴴ (just t₁) τ∈π Δ₁ ->
+              Σ (Term π₂ τ) (λ t₂ → t₁ ≈ᵀ t₂ × Memberᴴ (just t₂) τ∈π Δ₂)
+        aux (L.K-mapᵀ (G.just x G.∷ e₁) (G.just x₁ G.∷ e₂)) SC.here = _ , L.⟨ x , x₁ ⟩ , here
+        aux (L.K-mapᵀ (x G.∷ e₁) (x₁ G.∷ e₂)) (SC.there t∈Δ₁) = P.map id (P.map id there) (aux (L.K-mapᵀ e₁ e₂) t∈Δ₁)
+
+-- update-≈ᴴ : ∀ {l π₁ π₂ τ} {Δ₁ Δ₁' Δ₂ : Heap l π₁} {mt₁ mt₂ : Maybe (Term π₂ τ)} {τ∈π : τ ∈⟨ l ⟩ π₁} ->
+--               Δ₁ map-≈ᵀ Δ₂ -> mt₁ ≈ᴹᵀ mt₂ -> Updateᴴ mt₁ τ∈π Δ₁ Δ₁' -> Σ (Heap l π₁) (λ Δ₂' → Updateᴴ mt₂ τ∈π Δ₂ Δ₂')
+-- update-≈ᴴ Δ₁≈Δ₂ mt₁≈mt₂ u = {!!}
+
+member-≈ᴱ : ∀ {l ls π} {Γ₁ Γ₂ : Heaps ls} {Δ₁ : Heap l π} (l⊑A : l ⊑ A) -> Γ₁ map-≈ᴴ Γ₂ -> l ↦ ⟨ Δ₁ ⟩ ∈ᴱ Γ₁ ->
+            Σ (Heap l π) (λ Δ₂ → ⟨ Δ₁ ⟩ ≈ᴴ⟨ yes l⊑A ⟩ ⟨ Δ₂ ⟩ × l ↦ ⟨ Δ₂ ⟩ ∈ᴱ Γ₂)
+member-≈ᴱ {l} l⊑A (L.K-mapᴴ (x₁ G.∷ x₄) (x₂ G.∷ x₃)) SC.here with l ⊑? A
+member-≈ᴱ l⊑A (L.K-mapᴴ (G.Mapᵀ l⊑A₁ x G.∷ x₄) (G.Mapᵀ .l⊑A₁ x₁ G.∷ x₃)) SC.here | .(yes l⊑A₁) = _ , ((L.Kᴴ (G.Mapᵀ l⊑A x) (G.Mapᵀ l⊑A x₁)) , here)
+member-≈ᴱ l⊑A (L.K-mapᴴ (G.∙ G.∷ x₄) (G.∙ G.∷ x₃)) SC.here | (no l⋤A) = ⊥-elim (l⋤A l⊑A)
+member-≈ᴱ l⊑A (L.K-mapᴴ (x₃ G.∷ x₂) (x G.∷ x₁)) (SC.there l∈Γ) = P.map id (P.map id there) (member-≈ᴱ l⊑A (L.K-mapᴴ x₂ x₁) l∈Γ)
+
+update-≈ᴱ : ∀ {l ls} {Γ₁ Γ₁' Γ₂ : Heaps ls} {H₁ H₂ : Heap∙ l} -> Γ₁ map-≈ᴴ Γ₂ -> Γ₁' ≔ Γ₁ [ l ↦ H₁ ]ᴱ ->
+            ∃ (λ Γ₂' → Γ₂' ≔ Γ₂ [ l ↦ H₂ ]ᴱ)
+update-≈ᴱ (L.K-mapᴴ (x₃ G.∷ x₂) (x G.∷ x₁)) SC.here = _ , here
+update-≈ᴱ (L.K-mapᴴ (x₃ G.∷ x₂) (x G.∷ x₁)) (SC.there u₁) = P.map (_∷_ _) there (update-≈ᴱ (L.K-mapᴴ x₂ x₁) u₁)
 
 member-≈ˢ : ∀ {l ls} {Ms₁ Ms₂ : Memories ls} {M₁ : Memory l} (x : Dec (l ⊑ A)) -> Ms₁ map-≈ᴹ Ms₂ -> l ↦ M₁ ∈ˢ Ms₁ ->
           ∃ (λ M₂ →  M₁ ≈ᴹ⟨ x ⟩ M₂ × l ↦ M₂ ∈ˢ Ms₂)
@@ -155,13 +178,21 @@ redex⟼ v₁ v₂ Ms₁≈Ms₂ Γ₁≈Γ₂ L.⟨ G.Res x G.#[ n ]ᴰ , G.Res
   with member-≈ˢ (yes x) Ms₁≈Ms₂ L∈Ms
 ... | M₂ , M₁≈M₂ , l∈Ms' = Step (Readᴰ₂ l∈Ms' (member-≈ᴹ M₁≈M₂ n∈M))
 redex⟼ {l⊑A = l⊑A} v₁ v₂ Ms₁≈Ms₂ Γ₁≈Γ₂ L.⟨ G.Res∙ x , e₂ ⟩ S₁≈S₂ (SS.Readᴰ₂ {L⊑l = L⊑l} L∈Ms n∈M) = ⊥-elim (x (trans-⊑ L⊑l l⊑A))
-redex⟼ v₁ v₂ Ms₁≈Ms₂ Γ₁≈Γ₂ L.⟨ G.deepDup e₁ , G.deepDup e₂ ⟩ S₁≈S₂ (SS.DeepDup₁ ¬var l∈Γ uᴱ)
-  = Step (DeepDup₁ (¬var-≈ L.⟨ e₁ , e₂ ⟩ ¬var) {!!} {!!})
-redex⟼ v₁ v₂ Ms₁≈Ms₂ Γ₁≈Γ₂ t₁≈t₂ S₁≈S₂ (SS.DeepDup₂ τ∈π L∈Γ t∈Δ l∈Γ uᴱ) = {!!}
+redex⟼ {l⊑A = l⊑A} v₁ v₂ Ms₁≈Ms₂ Γ₁≈Γ₂ L.⟨ G.deepDup e₁ , G.deepDup e₂ ⟩ S₁≈S₂ (SS.DeepDup₁ ¬var l∈Γ uᴱ)
+  with member-≈ᴱ l⊑A Γ₁≈Γ₂ l∈Γ
+... | Δ₂ , Δ₁≈Δ₂ , l∈Γ₂ with update-≈ᴱ Γ₁≈Γ₂ uᴱ
+... | Γ₂' , uᴱ' = Step (DeepDup₁ (¬var-≈ L.⟨ e₁ , e₂ ⟩ ¬var) l∈Γ₂ uᴱ')
+redex⟼ {l⊑A = l⊑A} v₁ v₂ Ms₁≈Ms₂ Γ₁≈Γ₂ L.⟨ G.deepDup (G.Var τ∈π) , G.deepDup (G.Var .τ∈π) ⟩ S₁≈S₂ (SS.DeepDup₂ {L⊑l = L⊑l} .τ∈π L∈Γ t∈Δ l∈Γ uᴱ)
+  with member-≈ᴱ (trans-⊑ L⊑l l⊑A) Γ₁≈Γ₂ L∈Γ
+... | Δ₁ , L.Kᴴ (G.Mapᵀ ._ e₁) (G.Mapᵀ ._ e₂) , L∈Γ₂ with member-≈ᴴ {τ∈π = τ∈π} (L.K-mapᵀ e₁ e₂) t∈Δ
+... | t₂ , t₁≈t₂ , t∈Δ₂ᴸ  with member-≈ᴱ l⊑A Γ₁≈Γ₂ l∈Γ
+... | Δ₂ ,  Δ₁≈Δ₂ , l∈Γ₂ with update-≈ᴱ Γ₁≈Γ₂ uᴱ
+... | Γ₂' , uᴱ' = SS.Step (DeepDup₂ {L⊑l = L⊑l} τ∈π L∈Γ₂ t∈Δ₂ᴸ l∈Γ₂ uᴱ')
 
 redex-≈ : ∀ {l ls τ} {l⊑A : l ⊑ A} {p₁ p₂ : Program l ls τ} {{v₁ : validᴾ p₁}} {{v₂ : validᴾ p₂}} ->
             p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Redexᴾ p₁  -> Redexᴾ p₂
-redex-≈ {l⊑A = l⊑A} {{v₁}} {{v₂}} (L.is≈ᴾ Ms₁≈Ms₂ Γ₁≈Γ₂ (L.Kᵀˢ G.⟨ eᵀ , eˢ ⟩ G.⟨ eᵀ₁ , eˢ₁ ⟩)) (Step step) = redex⟼ {l⊑A = l⊑A} v₁ v₂ Ms₁≈Ms₂ Γ₁≈Γ₂ L.⟨ eᵀ , eᵀ₁ ⟩ (L.Kˢ eˢ eˢ₁) step
+redex-≈ {l⊑A = l⊑A} {{v₁}} {{v₂}} (L.is≈ᴾ Ms₁≈Ms₂ Γ₁≈Γ₂ (L.Kᵀˢ G.⟨ eᵀ , eˢ ⟩ G.⟨ eᵀ₁ , eˢ₁ ⟩)) (Step step)
+  = redex⟼ {l⊑A = l⊑A} v₁ v₂ Ms₁≈Ms₂ Γ₁≈Γ₂ L.⟨ eᵀ , eᵀ₁ ⟩ (L.Kˢ eˢ eˢ₁) step
 redex-≈ (L.is≈ᴾ Ms₁≈Ms₂ Γ₁≈Γ₂ (L.Kᵀˢ G.∙ᴸ G.∙ᴸ)) (SS.Step x) = SS.Step SS.Hole
 
 --------------------------------------------------------------------------------
