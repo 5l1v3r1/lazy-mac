@@ -28,8 +28,8 @@ import Concurrent.Semantics as CS
 open CS 𝓛 𝓢
 -- open import Concurrent.Semantics 𝓛 𝓢 public
 
-open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
-open import Sequential.PINI 𝓛 A as P₂ using (stepᴸ ; stepᴴ-≅ᴴ ; stepᴴ-≅ᴹ ; stepᴴ)
+-- open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
+-- open import Sequential.PINI 𝓛 A as P₂ using (stepᴸ ; stepᴴ-≅ᴴ ; stepᴴ-≅ᴹ ; stepᴴ)
 
 open import Data.Nat as N
 --------------------------------------------------------------------------------
@@ -38,7 +38,7 @@ open Scheduler.Security.NIˢ 𝓛 A 𝓝 renaming (State to Stateˢ)
 open import Scheduler.Base 𝓛
 
 open import Concurrent.Erasure A 𝓝
-open import Concurrent.Lemmas A 𝓝
+-- open import Concurrent.Lemmas A 𝓝
 
 import Concurrent.LowEq
 module L₁ = Concurrent.LowEq A 𝓝

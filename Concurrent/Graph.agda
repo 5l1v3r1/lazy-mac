@@ -8,7 +8,7 @@ import Types as T
 open T 𝓛
 
 open import Sequential.Calculus 𝓛
-import Sequential.Graph 𝓛 A as G
+import Sequential.Security.Graph 𝓛 A as G
 
 import Concurrent.Calculus as C
 open C 𝓛 𝓢
@@ -16,19 +16,6 @@ open import Concurrent.Erasure A 𝓝
 
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
-
--- data Eraseᵀ {l : Label} : Thread l -> Thread l -> Set where
---   ⟨_,_⟩ : ∀ {τ π} {t t' : Term π τ} {S S' : Stack _ _ _ _}
---           -> G.Eraseᵀ t t' -> G.Eraseˢ S S' -> Eraseᵀ ⟨ t , S ⟩ ⟨ t' , S' ⟩
-
-
--- lift-εᵀ : ∀ {l} (t : Thread l) -> Eraseᵀ t (εᵀ t)
--- lift-εᵀ C.⟨ t , S ⟩ = ⟨ (G.lift-εᵀ t) , (G.lift-εˢ S) ⟩
-
--- unlift-εᵀ : ∀ {l} {t t' : Thread l} -> Eraseᵀ t t' -> t' ≡ εᵀ t
--- unlift-εᵀ ⟨ e₁ , e₂ ⟩ rewrite G.unlift-εᵀ e₁ | G.unlift-εˢ e₂ = refl
-
---------------------------------------------------------------------------------
 
 data EraseMapᵀ {l} (l⊑A : l ⊑ A) : Pool l -> Pool l -> Set where
   [] : EraseMapᵀ l⊑A [] []

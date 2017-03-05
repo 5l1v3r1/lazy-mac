@@ -11,6 +11,8 @@ open import Data.Nat renaming ( _≟_ to  _≟ᴺ_ )
 
 open import Data.Product
 open import Function
+open import Data.Empty
+open import Relation.Nullary
 
 -- The basic Term π τ is a term that has type τ in the context π
 data Term (π : Context) : Ty -> Set where
@@ -231,19 +233,6 @@ data Memberᴴ {l π τ} (mt : Maybe (Term π τ)) : ∀ {π'} -> τ ∈⟨ l �
 
 _↦_∈ᴴ_ : ∀ {l τ} {π π' : Context} -> τ ∈⟨ l ⟩ᴿ π' -> Term π τ -> Heap l π' -> Set
 ⟪ x ⟫ ↦ t ∈ᴴ Δ = Memberᴴ (just t) (⟪ ∈ᴿ-∈ x ⟫) Δ
-
---------------------------------------------------------------------------------
-
-open import Data.List.All
-open import Data.Empty
-open import Relation.Nullary
-
-Unique : Label -> List Label -> Set
-Unique l₁ ls = All (λ l₂ → ¬ (l₁ ≡ l₂)) ls
-
-∈-not-unique : ∀ {l ls} -> l ∈ ls -> Unique l ls -> ⊥
-∈-not-unique here (px ∷ q) = ⊥-elim (px refl)
-∈-not-unique (there p) (px ∷ q) = ∈-not-unique p q
 
 --------------------------------------------------------------------------------
 

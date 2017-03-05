@@ -7,30 +7,12 @@ module Concurrent.LowEq {𝓛 : L.Lattice} {𝓢 : S.Scheduler 𝓛} (A : L.Labe
 open import Relation.Nullary
 open import Types 𝓛
 
+open import Sequential.Calculus 𝓛 hiding (Ms ; Γ)
 open import Sequential.Semantics 𝓛
 
-open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ)
--- For some reason hiding the clashing name _≈ᴾ⟨_⟩_ does not work :-(
-open import Sequential.LowEq 𝓛 A as LE using (_map-≅ᴴ_ ; map-⌞_⌟ᴴ ; _map-≈ᴴ_ ; map-⌜_⌝ᴴ ; _map-≅ᴹ_ ; map-⌞_⌟ᴹ ; _map-≈ᴹ_ ; map-⌜_⌝ᴹ ; ⟨_,_⟩ ; Kˢ ; Kᵀˢ ; _≈ᵀˢ⟨_⟩_)
-open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-≅ᴹ)
-
---------------------------------------------------------------------------------
--- Temporarily side-step bug #2245
-import Concurrent.Calculus as C
-open C 𝓛 𝓢
--- open import Concurrent.Calculus 𝓛 𝓢
-
-import Concurrent.Semantics as CS
-open CS 𝓛 𝓢
--- open import Concurrent.Semantics 𝓛 𝓢 public
-
-import Sequential.Calculus as SC hiding (Ms ; Γ)
-open SC 𝓛
-
+open import Concurrent.Calculus 𝓛 𝓢
 open import Concurrent.Erasure A 𝓝
 open import Concurrent.Graph A 𝓝
-
---------------------------------------------------------------------------------
 
 open Scheduler.Security.NIˢ 𝓛 A 𝓝 renaming (State to Stateˢ)
 open import Relation.Binary.PropositionalEquality
@@ -38,33 +20,6 @@ open import Data.Empty
 
 open import Data.Product using (_×_)
 import Data.Product as P
-
-
--- _≌ᵀ_ : ∀ {l} -> Thread l -> Thread l -> Set
--- t₁ ≌ᵀ t₂ = εᵀ t₁ ≡ εᵀ t₂
-
--- _≡ᵀ_ : ∀ {l} -> Thread l -> Thread l -> Set
--- _≡ᵀ_ = _≡_
-
--- data _≈ᵀ_ {l : Label} (t₁ t₂ : Thread l) : Set where
---   Kᵀ : ∀ {tᴱ : Thread l} -> Eraseᵀ t₁ tᴱ -> Eraseᵀ t₂ tᴱ -> t₁ ≈ᵀ t₂
-
--- ⌞_⌟ᵀ : ∀ {l} {t₁ t₂ : Thread l} -> t₁ ≈ᵀ t₂ -> t₁ ≌ᵀ t₂
--- ⌞ Kᵀ e₁ e₂ ⌟ᵀ rewrite unlift-εᵀ e₁ | unlift-εᵀ e₂ = refl
-
--- ⌜_⌝ᵀ : ∀ {l} {t₁ t₂ : Thread l} -> t₁ ≌ᵀ t₂ -> t₁ ≈ᵀ t₂
--- ⌜_⌝ᵀ {t₁ = t₁} {t₂} eq with lift-εᵀ t₁ | lift-εᵀ t₂
--- ... | e₁ | e₂ rewrite eq = Kᵀ e₁ e₂
-
-
---Don't know why Agda rejects this ...
--- lift-≈ᵀ : ∀ {π l τ} {t₁ t₂ : Term π τ} {S₁ S₂ : Stack l π τ _} -> t₁ LE.≈ᵀ t₂ -> S₁ LE.≈ˢ S₂ -> ⟨ t₁ , S₁ ⟩ ≈ᵀ ⟨ t₂ , S₂ ⟩
--- lift-≈ᵀ {t₁ = t₁} {t₂} {S₁} {S₂} t₁≈t₂ S₁≈S₂ = ⌜ aux {t₁ = t₁} {t₂} {S₁} {S₂} (LE.⌞ t₁≈t₂ ⌟ᵀ) LE.⌞ S₁≈S₂ ⌟ˢ ⌝ᵀ
---   where aux : ∀ {π l τ} {t₁ t₂ : Term π τ} {S₁ S₂ : Stack l π τ _} -> t₁ LE.≅ᵀ t₂ -> S₁ LE.≅ˢ S₂ -> ⟨ t₁ , S₁ ⟩ ≌ᵀ ⟨ t₂ , S₂ ⟩
---         aux eq₁ eq₂ rewrite eq₁ | eq₂ = refl
-
--- lift-≈ᵀ : ∀ {π l τ} {t₁ t₂ : Term π τ} {S₁ S₂ : Stack l π τ _} -> t₁ LE.≈ᵀ t₂ -> S₁ LE.≈ˢ S₂ -> ⟨ t₁ , S₁ ⟩ ≈ᵀ ⟨ t₂ , S₂ ⟩
--- lift-≈ᵀ ⟨ e₁ , e₂ ⟩ (Kˢ e₁' e₂') = Kᵀ ⟨ e₁ , e₁' ⟩ ⟨ e₂ , e₂' ⟩
 
 --------------------------------------------------------------------------------
 
@@ -85,7 +40,9 @@ data _≈ᴾ⟨_⟩_ {l : Label} (T₁ : Pool l) (x : Dec (l ⊑ A)) (T₂ : Poo
 ext-≈ᴾ : ∀ {l} {x : Dec (l ⊑ A)} {T₁ T₂ : Pool l} -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> (y : Dec (l ⊑ A)) -> T₁ ≈ᴾ⟨ y ⟩ T₂
 ext-≈ᴾ (Kᴾ e₁ e₂) y = Kᴾ (ext-εᴾ e₁ y) (ext-εᴾ e₂ y)
 
-cons≈ᴾ : ∀ {l} {t₁ t₂ : Thread l} {x : Dec (l ⊑ A)} {T₁ T₂ : Pool l} -> t₁ LE.≈ᵀˢ⟨ x ⟩ t₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> (t₁ ◅ T₁) ≈ᴾ⟨ x ⟩ (t₂ ◅ T₂)
+open import Sequential.Security.LowEq 𝓛 A hiding (_≈ᴾ⟨_⟩_ ; _≅ᴾ_ ; refl-≈ᴾ ; sym-≈ᴾ ; trans-≈ᴾ ; _≈ˢ_ ; ⌞_⌟ᴾ)
+
+cons≈ᴾ : ∀ {l} {t₁ t₂ : Thread l} {x : Dec (l ⊑ A)} {T₁ T₂ : Pool l} -> t₁ ≈ᵀˢ⟨ x ⟩ t₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> (t₁ ◅ T₁) ≈ᴾ⟨ x ⟩ (t₂ ◅ T₂)
 cons≈ᴾ (Kᵀˢ e₁ e₂)  (Kᴾ (Mapᵀ x) (Mapᵀ x₁)) = Kᴾ (Mapᵀ (e₁ ◅ x)) (Mapᵀ (e₂ ◅ x₁))
 cons≈ᴾ eq₁ (Kᴾ ∙ ∙) = Kᴾ ∙ ∙
 
@@ -191,24 +148,24 @@ open import Function
 open import Data.Product
 
 memberᴾ-≈ : ∀ {ls L} {T₁ : Pool L} {P₁ P₂ : Pools ls} -> (x : Dec (L ⊑ A)) -> L ↦ T₁ ∈ᴾ P₁ -> P₁ map-≈ᴾ P₂ -> ∃ (λ T₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂ × L ↦ T₂ ∈ᴾ P₂)
-memberᴾ-≈ x C.here (K-mapᴾ (e₁ ◅ e₂) (e₃ ◅ e₄)) = _ , ext-≈ᴾ (Kᴾ e₁ e₃) x , here
-memberᴾ-≈ x (C.there L∈P) (K-mapᴾ (x₁ ◅ x₂) (x₃ ◅ x₄)) = P.map id (P.map id there) (memberᴾ-≈ x L∈P (K-mapᴾ x₂ x₄))
+memberᴾ-≈ x here (K-mapᴾ (e₁ ◅ e₂) (e₃ ◅ e₄)) = _ , ext-≈ᴾ (Kᴾ e₁ e₃) x , here
+memberᴾ-≈ x (there L∈P) (K-mapᴾ (x₁ ◅ x₂) (x₃ ◅ x₄)) = P.map id (P.map id there) (memberᴾ-≈ x L∈P (K-mapᴾ x₂ x₄))
 
 memberᵀ-≈ : ∀ {n L} {T₁ T₂ : Pool L} {t₁ : Thread L} -> (L⊑A : L ⊑ A) -> n ↦ t₁ ∈ᵀ T₁ -> T₁ ≈ᴾ⟨ yes L⊑A ⟩ T₂
               -> ∃ (λ t₂ → (t₁ ≈ᵀˢ⟨ yes L⊑A ⟩ t₂) × n ↦ t₂ ∈ᵀ T₂)
-memberᵀ-≈ L⊑A C.here (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) = _ , (Kᵀˢ e e') , here
-memberᵀ-≈ L⊑A (C.there n∈T) (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) = P.map id (P.map id there) (memberᵀ-≈ L⊑A n∈T (Kᴾ (Mapᵀ e₁) (Mapᵀ e₁')))
+memberᵀ-≈ L⊑A here (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) = _ , (Kᵀˢ e e') , here
+memberᵀ-≈ L⊑A (there n∈T) (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) = P.map id (P.map id there) (memberᵀ-≈ L⊑A n∈T (Kᴾ (Mapᵀ e₁) (Mapᵀ e₁')))
 
 updateᵀ-≈ : ∀ {n L} {T₁ T₁' T₂ : Pool L} {t₁ t₂ : Thread L} -> (L⊑A : L ⊑ A) -> T₁' ≔ T₁ [ n ↦ t₁ ]ᵀ ->
             T₁ ≈ᴾ⟨ yes L⊑A ⟩ T₂ -> t₁ ≈ᵀˢ⟨ yes L⊑A ⟩ t₂ -> ∃ (λ T₂' → T₁' ≈ᴾ⟨ yes L⊑A ⟩ T₂'  × T₂' ≔ T₂ [ n ↦ t₂ ]ᵀ)
-updateᵀ-≈ L⊑A C.here (Kᴾ (Mapᵀ (_ ◅ e₁)) (Mapᵀ (_ ◅ e₁'))) (Kᵀˢ e e') = _ , (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) , here
-updateᵀ-≈ L⊑A (C.there u) (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) eq₂
+updateᵀ-≈ L⊑A here (Kᴾ (Mapᵀ (_ ◅ e₁)) (Mapᵀ (_ ◅ e₁'))) (Kᵀˢ e e') = _ , (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) , here
+updateᵀ-≈ L⊑A (there u) (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) eq₂
   = P.map (_◅_ _) (P.map (cons≈ᴾ (Kᵀˢ e e')) there) (updateᵀ-≈ L⊑A u (Kᴾ (Mapᵀ e₁) (Mapᵀ e₁')) eq₂)
 
 updateᴾ-≈ : ∀ {l ls} {P₁ P₂ P₁' : Pools ls} {T₁ T₂ : Pool l}  (x : Dec (l ⊑ A)) -> P₁' ≔ P₁ [ l ↦ T₁ ]ᴾ ->
              P₁ map-≈ᴾ P₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> ∃ (λ P₂' → P₁' map-≈ᴾ P₂' × P₂' ≔ P₂ [ l ↦ T₂ ]ᴾ)
-updateᴾ-≈ {l} x C.here (K-mapᴾ (_ ◅ e₁) (_ ◅ e₁')) (Kᴾ e e') = _ , K-mapᴾ (ext-εᴾ e (l ⊑? A) ◅ e₁) (ext-εᴾ e' (l ⊑? A) ◅ e₁') , here
-updateᴾ-≈ x (C.there u₁) (K-mapᴾ (e ◅ e₁) (e' ◅ e₁')) eq₂ = P.map (_◅_ _) (P.map (cons-map-≈ᵀ (Kᴾ e e')) there) (updateᴾ-≈ x u₁ (K-mapᴾ e₁ e₁') eq₂)
+updateᴾ-≈ {l} x here (K-mapᴾ (_ ◅ e₁) (_ ◅ e₁')) (Kᴾ e e') = _ , K-mapᴾ (ext-εᴾ e (l ⊑? A) ◅ e₁) (ext-εᴾ e' (l ⊑? A) ◅ e₁') , here
+updateᴾ-≈ x (there u₁) (K-mapᴾ (e ◅ e₁) (e' ◅ e₁')) eq₂ = P.map (_◅_ _) (P.map (cons-map-≈ᵀ (Kᴾ e e')) there) (updateᴾ-≈ x u₁ (K-mapᴾ e₁ e₁') eq₂)
 
 lengthᵀ-≈ : ∀ {l} {T₁ T₂ : Pool l} -> (l⊑A : l ⊑ A) -> T₁ ≈ᴾ⟨ yes l⊑A ⟩ T₂ -> lengthᵀ T₁ ≡ lengthᵀ T₂
 lengthᵀ-≈ {_} {T₁} {T₂} l⊑A T₁≈T₂ rewrite lengthᵀ-ε-≡ l⊑A T₁ | lengthᵀ-ε-≡ l⊑A T₂ | ⌞ T₁≈T₂ ⌟ᴾ = refl

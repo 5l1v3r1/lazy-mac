@@ -24,6 +24,9 @@ done-ε l⊑A = doneᴱ (lift-εᵀˢ (yes l⊑A) _)
 ¬done-ε : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> ¬ (IsDoneTS Ts) -> ¬ (IsDoneTS (εᵀˢ (yes l⊑A) Ts))
 ¬done-ε l⊑A = ¬doneᴱ (lift-εᵀˢ (yes l⊑A) _)
 
+¬fork-ε : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> ¬ (IsForkTS Ts) -> ¬ (IsForkTS (εᵀˢ (yes l⊑A) Ts))
+¬fork-ε l⊑A = ¬forkTSᴱ (lift-εᵀˢ (yes l⊑A) _)
+
 ¬redex-ε : ∀ {l ls τ} {p : Program l ls τ} {{pᵛ : validᴾ p}} (l⊑A : l ⊑ A) -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ (ε₁ᴾ (yes l⊑A) p))
 ¬redex-ε l⊑A = ¬redexᴱ (lift-εᴾ (yes l⊑A) _)
 

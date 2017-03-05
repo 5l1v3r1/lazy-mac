@@ -10,8 +10,7 @@ open import Types 𝓛
 import Sequential.Semantics as S₁
 open S₁ 𝓛
 
-open import Sequential.Erasure 𝓛 A as SE hiding (εᵀ ; εᴾ ; εˢ ; map-εᵀ)
-open import Sequential.PINI 𝓛 A using (stepᴸ ; stepᴴ-≅ᴹ)
+open import Sequential.Security.Erasure 𝓛 A using (εᵀˢ ; εᵀˢ-ext-≡ ; map-εᴹ ; map-εᴴ)
 
 --------------------------------------------------------------------------------
 -- Temporarily side-step bug #2245

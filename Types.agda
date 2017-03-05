@@ -84,3 +84,19 @@ open import Relation.Nullary
 -- Could not find this in the standard library.
 contrapositive : ∀ {A B : Set} -> (A -> B) ->  ¬ B -> ¬ A
 contrapositive a⇒b ¬b a = ¬b (a⇒b a)
+
+--------------------------------------------------------------------------------
+
+open import Data.List.All
+open import Data.Empty
+open import Relation.Nullary
+open import Relation.Binary.PropositionalEquality
+
+Unique : Label -> List Label -> Set
+Unique l₁ ls = All (λ l₂ → ¬ (l₁ ≡ l₂)) ls
+
+∈-not-unique : ∀ {l ls} -> l ∈ ls -> Unique l ls -> ⊥
+∈-not-unique here (px ∷ q) = ⊥-elim (px refl)
+∈-not-unique (there p) (px ∷ q) = ∈-not-unique p q
+
+--------------------------------------------------------------------------------
