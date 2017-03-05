@@ -200,19 +200,3 @@ sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.deepDup (G.Var τ∈π) , eˢ �
 ... | _ , (Mapᵀ _ eᴴˡ) , l∈Γ with updateᴱ L⊑A eᴴˢ (G.Mapᵀ L⊑A ((just (deepDupᵀᴱ eᵀ)) G.∷ eᴴˡ)) uᴱ'
 ... | _ , uᴱ = Step (DeepDup₂ {L⊑l = l⊑L} τ∈π L∈Γ t∈Δ l∈Γ uᴱ)
 sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.∙ᴸ) S₁.Hole = S₁.Step S₁.Hole
-
---------------------------------------------------------------------------------
-
-open import Sequential.Security.Simulation 𝓛 A
-
-redex⁻ᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {{pⱽ : validᴾ p}} {l⊑A : l ⊑ A}  -> Eraseᴾ (yes l⊑A) p p' -> Redexᴾ p' -> Redexᴾ p
-redex⁻ᴱ {{pⱽ}} {l⊑A} e (S₁.Step step) = sim⟼ l⊑A pⱽ e step
-
-redexᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) p p' -> Redexᴾ p -> Redexᴾ p'
-redexᴱ {l⊑A = l⊑A} e (S₁.Step step) rewrite unlift-εᴾ e = Step (ε₁ᴾ-sim (yes l⊑A) step)
-
-¬redexᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} {{pⱽ : validᴾ p}} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
-¬redexᴱ {{pⱽ}} e = contrapositive (redex⁻ᴱ e)
-
-¬redex⁻ᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p') -> ¬ (Redexᴾ p)
-¬redex⁻ᴱ e = contrapositive (redexᴱ e)

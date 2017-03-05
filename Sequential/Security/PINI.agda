@@ -20,12 +20,14 @@ open import Data.Empty
 
 open import Sequential.Security.Graph 𝓛 A
 open import Sequential.Security.LowEq 𝓛 A
+open import Sequential.Security.Simulation 𝓛 A
 
 pini : ∀ {l ls τ} {p₁ p₁' p₂ p₂' : Program l ls τ} -> p₁ ≅ᴾ p₂ -> p₁ ⟼ p₁' -> p₂ ⟼ p₂' -> p₁' ≅ᴾ p₂'
 pini eq s₁ s₂ = aux eq (εᴾ-sim s₁) (εᴾ-sim s₂)
   where aux : ∀ {l ls τ} {p₁ p₁' p₂ p₂' : Program l ls τ} -> p₁ ≡ p₂ -> p₁ ⟼ p₁' -> p₂ ⟼ p₂' -> p₁' ≡ p₂'
         aux refl x y = determinismᴾ x y
 
+-- TODO is it needed?
 -- Simulation of low-step (shows that we maintain the program structure)
 stepᴸ : ∀ {ls τ l Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {Ts₁ Ts₂ : TS∙ l τ}
              -> (l⊑A : l ⊑ A) -> ⟨ Ms₁ , Γ₁ , Ts₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , Ts₂ ⟩ ->

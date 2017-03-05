@@ -388,8 +388,12 @@ ext-εᵀˢ {x = no ¬p} {no ¬p₁} ∙ = ∙
 
 --------------------------------------------------------------------------------
 
-data Eraseᴾ {l ls τ} (x : Dec (l ⊑ A)) (p₁ p₂ : Program l ls τ) : Set where
-  ⟨_,_,_⟩ : (eᴹˢ : EraseMapᴹ (Ms p₁) (Ms p₂)) (eᴴˢ : EraseMapᴴ (Γ p₁) (Γ p₂)) (eᵀˢ : Eraseᵀˢ x (TS p₁) (TS p₂)) -> Eraseᴾ x p₁ p₂
+record Eraseᴾ {l ls τ} (x : Dec (l ⊑ A)) (p₁ p₂ : Program l ls τ) : Set where
+  constructor ⟨_,_,_⟩
+  field
+    eᴹˢ : EraseMapᴹ (Ms p₁) (Ms p₂)
+    eᴴˢ : EraseMapᴴ (Γ p₁) (Γ p₂)
+    eᵀˢ : Eraseᵀˢ x (TS p₁) (TS p₂)
 
 lift-εᴾ : ∀ {l ls τ} -> (x : Dec (l ⊑ A)) (p : Program l ls τ) -> Eraseᴾ x p (ε₁ᴾ x p)
 lift-εᴾ x ⟨ Ms , Γ , TS ⟩ = ⟨ lift-map-εᴹ Ms , (lift-map-εᴴ Γ) , lift-εᵀˢ x TS ⟩
@@ -454,8 +458,37 @@ forkᴱ (fork p h⊑A e) (S.Fork .p t) = S.Fork p _
 forkᴱ (fork' p h⋤A e) (S.Fork .p t) = S.Fork∙ p _
 forkᴱ (fork∙ p e) (S.Fork∙ .p t) = S.Fork∙ p _
 
+¬forkᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> ¬ (IsFork t) -> ¬ (IsFork t')
+¬forkᴱ e = contrapositive (fork⁻ᴱ e)
+
+¬fork⁻ᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> ¬ (IsFork t') -> ¬ (IsFork t)
+¬fork⁻ᴱ e = contrapositive (forkᴱ e)
+
+--------------------------------------------------------------------------------
+
 import Sequential.Semantics as S₁
 open S₁ 𝓛
 
+forkTSᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> IsForkTS Ts₁ -> IsForkTS Ts₂
+forkTSᴱ ⟨ eᵀ , eˢ ⟩ (S₁.isForkTS x) = S₁.isForkTS (forkᴱ eᵀ x)
+
+forkTS⁻ᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> IsForkTS Ts₂ -> IsForkTS Ts₁
+forkTS⁻ᴱ ⟨ eᵀ , eˢ ⟩ (S₁.isForkTS x) = S₁.isForkTS (fork⁻ᴱ eᵀ x)
+
+¬forkTSᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> ¬ (IsForkTS Ts₁) -> ¬ (IsForkTS Ts₂)
+¬forkTSᴱ e = contrapositive (forkTS⁻ᴱ e)
+
+¬forkTS⁻ᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> ¬ (IsForkTS Ts₂) -> ¬ (IsForkTS Ts₁)
+¬forkTS⁻ᴱ e = contrapositive (forkTSᴱ e)
+
+doneᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> IsDoneTS Ts₁ -> IsDoneTS Ts₂
+doneᴱ ⟨ eᵀ , [] ⟩ (S₁.isDoneTS isVal) = S₁.isDoneTS (valᴱ eᵀ isVal)
+
 done⁻ᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> IsDoneTS Ts₂ -> IsDoneTS Ts₁
 done⁻ᴱ ⟨ eᵀ , [] ⟩ (S₁.isDoneTS isVal) = S₁.isDoneTS (val⁻ᴱ eᵀ isVal)
+
+¬doneᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> ¬ (IsDoneTS Ts₁) -> ¬ (IsDoneTS Ts₂)
+¬doneᴱ e = contrapositive (done⁻ᴱ e)
+
+¬done⁻ᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> ¬ (IsDoneTS Ts₂) -> ¬ (IsDoneTS Ts₁)
+¬done⁻ᴱ e = contrapositive (doneᴱ e)

@@ -248,7 +248,6 @@ import Sequential.Valid as V
 open V 𝓛
 
 open import Sequential.Security.Simulation 𝓛 A
-open import Sequential.Security.Lemmas 𝓛 A
 
 val-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> Value t₁ -> Value t₂
 val-≈ ⟨ e₁ , e₂ ⟩ val = val⁻ᴱ e₂ (valᴱ e₁ val)
@@ -263,7 +262,7 @@ var-≈ ⟨ G.Var τ∈π , G.Var .τ∈π ⟩ (SC.Var .τ∈π) = SC.Var τ∈�
 ¬var-≈ eq = contrapositive (var-≈ (sym-≈ᵀ eq))
 
 done-≈ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ (yes l⊑A) ⟩ Ts₂ -> IsDoneTS Ts₁ -> IsDoneTS Ts₂
-done-≈ (Kᵀˢ G.⟨ x₃ , G.[] ⟩ G.⟨ x₁ , G.[] ⟩) (SS.isDoneTS isVal) = isDoneTS (val-≈ ⟨ x₃ , x₁ ⟩ isVal)
+done-≈ (Kᵀˢ e₁ e₂) don = done⁻ᴱ e₂ (doneᴱ e₁ don)
 
 fork-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> (IsFork t₁) -> (IsFork t₂)
 fork-≈ ⟨ e₁ , e₂ ⟩ isFork = fork⁻ᴱ e₂ (forkᴱ e₁ isFork)
@@ -273,8 +272,8 @@ forkTS-≈ (Kᵀˢ G.⟨ eᵀ₁ , eˢ₁ ⟩ G.⟨ eᵀ , eˢ ⟩) (SS.isForkTS
 
 redex-≈ : ∀ {l ls τ} {l⊑A : l ⊑ A} {p₁ p₂ : Program l ls τ} {{v₂ : validᴾ p₂}} ->
             p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Redexᴾ p₁  -> Redexᴾ p₂
-redex-≈ {l⊑A = l⊑A} {p₁} {p₂} {{v₂}} p₁≈p₂ (SS.Step step) with lift-εᴾ (yes l⊑A) p₂ | ε₁ᴾ-sim (yes l⊑A) step
-... | e₂ | stepᴱ rewrite ⌞ p₁≈p₂ ⌟ᴾ | unlift-εᴾ e₂ = sim⟼ l⊑A v₂ e₂ stepᴱ
+redex-≈ {l⊑A = l⊑A} {p₁} {p₂} {{v₂}} p₁≈p₂ redex₁ with lift-εᴾ (yes l⊑A) p₁ | lift-εᴾ (yes l⊑A) p₂
+... | e₁ | e₂ rewrite ⌞ p₁≈p₂ ⌟ᴾ = redex⁻ᴱ e₂ (redexᴱ e₁ redex₁)
 
 --------------------------------------------------------------------------------
 
@@ -292,10 +291,6 @@ redex-≈ {l⊑A = l⊑A} {p₁} {p₂} {{v₂}} p₁≈p₂ (SS.Step step) with
 ¬redex-≈ : ∀ {l ls τ} {l⊑A : l ⊑ A} {p₁ p₂ : Program l ls τ} {{v₁ : validᴾ p₁}} {{v₂ : validᴾ p₂}} ->
              p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> ¬ (Redexᴾ p₁)  -> ¬ (Redexᴾ p₂)
 ¬redex-≈ p₁≈p₂ = contrapositive (redex-≈ (sym-≈ᴾ p₁≈p₂))
-
--- we get low-equivalence using pini
--- postulate redex-≈ : ∀ {l ls τ} {p₁ p₁' p₂ : Program l ls τ} -> (l⊑A : l ⊑ A) -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> p₁ ⟼ p₁' ->
---             ∃ (λ p₂' -> (p₁' ≈ᴾ⟨ yes l⊑A ⟩ p₂') × (p₂ ⟼ p₂'))
 
 open _≈ᴾ⟨_⟩_
 
