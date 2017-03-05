@@ -237,3 +237,70 @@ sym-≈ᴾ eq = ⌜ sym ⌞ eq ⌟ᴾ ⌝ᴾ
 
 trans-≈ᴾ : ∀ {l ls τ} {p₁ p₂ p₃ : Program l ls τ} {x : Dec (l ⊑ A)} -> p₁ ≈ᴾ⟨ x ⟩ p₂ -> p₂ ≈ᴾ⟨ x ⟩ p₃ -> p₁ ≈ᴾ⟨ x ⟩ p₃
 trans-≈ᴾ eq₁ eq₂ = ⌜ trans ⌞ eq₁ ⌟ᴾ ⌞ eq₂ ⌟ᴾ ⌝ᴾ
+
+--------------------------------------------------------------------------------
+-- Lemmas about visible ≈ terms and programs
+
+import Sequential.Semantics as SS
+open SS 𝓛
+
+import Sequential.Valid as V
+open V 𝓛
+
+open import Sequential.Security.Simulation 𝓛 A
+open import Sequential.Security.Lemmas 𝓛 A
+
+val-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> Value t₁ -> Value t₂
+val-≈ ⟨ e₁ , e₂ ⟩ val = val⁻ᴱ e₂ (valᴱ e₁ val)
+
+¬val-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> ¬ (Value t₁) -> ¬ (Value t₂)
+¬val-≈ eq = contrapositive (val-≈ (sym-≈ᵀ eq))
+
+var-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> IsVar t₁ -> IsVar t₂
+var-≈ ⟨ G.Var τ∈π , G.Var .τ∈π ⟩ (SC.Var .τ∈π) = SC.Var τ∈π
+
+¬var-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> ¬ (IsVar t₁) -> ¬ (IsVar t₂)
+¬var-≈ eq = contrapositive (var-≈ (sym-≈ᵀ eq))
+
+done-≈ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ (yes l⊑A) ⟩ Ts₂ -> IsDoneTS Ts₁ -> IsDoneTS Ts₂
+done-≈ (Kᵀˢ G.⟨ x₃ , G.[] ⟩ G.⟨ x₁ , G.[] ⟩) (SS.isDoneTS isVal) = isDoneTS (val-≈ ⟨ x₃ , x₁ ⟩ isVal)
+
+fork-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> (IsFork t₁) -> (IsFork t₂)
+fork-≈ ⟨ e₁ , e₂ ⟩ isFork = fork⁻ᴱ e₂ (forkᴱ e₁ isFork)
+
+forkTS-≈ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> (IsForkTS Ts₁) -> (IsForkTS Ts₂)
+forkTS-≈ (Kᵀˢ G.⟨ eᵀ₁ , eˢ₁ ⟩ G.⟨ eᵀ , eˢ ⟩) (SS.isForkTS isFork) = SS.isForkTS (fork-≈ ⟨ eᵀ₁ , eᵀ ⟩ isFork)
+
+redex-≈ : ∀ {l ls τ} {l⊑A : l ⊑ A} {p₁ p₂ : Program l ls τ} {{v₂ : validᴾ p₂}} ->
+            p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Redexᴾ p₁  -> Redexᴾ p₂
+redex-≈ {l⊑A = l⊑A} {p₁} {p₂} {{v₂}} p₁≈p₂ (SS.Step step) with lift-εᴾ (yes l⊑A) p₂ | ε₁ᴾ-sim (yes l⊑A) step
+... | e₂ | stepᴱ rewrite ⌞ p₁≈p₂ ⌟ᴾ | unlift-εᴾ e₂ = sim⟼ l⊑A v₂ e₂ stepᴱ
+
+--------------------------------------------------------------------------------
+
+-- Stuck ≈
+
+¬fork-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> ¬ (IsFork t₁) -> ¬ (IsFork t₂)
+¬fork-≈ t₁≈t₂ = contrapositive (fork-≈ (sym-≈ᵀ t₁≈t₂))
+
+¬IsForkTS-≈ : ∀ {τ l} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> ¬ (IsForkTS Ts₁) -> ¬ (IsForkTS Ts₂)
+¬IsForkTS-≈ Ts₁≈Ts₂ = contrapositive (forkTS-≈ (sym-≈ᵀˢ Ts₁≈Ts₂))
+
+¬done-≈ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> ¬ (IsDoneTS Ts₁) -> ¬ (IsDoneTS Ts₂)
+¬done-≈ Ts₁≈Ts₂  = contrapositive (done-≈ (sym-≈ᵀˢ Ts₁≈Ts₂))
+
+¬redex-≈ : ∀ {l ls τ} {l⊑A : l ⊑ A} {p₁ p₂ : Program l ls τ} {{v₁ : validᴾ p₁}} {{v₂ : validᴾ p₂}} ->
+             p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> ¬ (Redexᴾ p₁)  -> ¬ (Redexᴾ p₂)
+¬redex-≈ p₁≈p₂ = contrapositive (redex-≈ (sym-≈ᴾ p₁≈p₂))
+
+-- we get low-equivalence using pini
+-- postulate redex-≈ : ∀ {l ls τ} {p₁ p₁' p₂ : Program l ls τ} -> (l⊑A : l ⊑ A) -> p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> p₁ ⟼ p₁' ->
+--             ∃ (λ p₂' -> (p₁' ≈ᴾ⟨ yes l⊑A ⟩ p₂') × (p₂ ⟼ p₂'))
+
+open _≈ᴾ⟨_⟩_
+
+open import Data.Product
+
+stuck-≈ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} {l⊑A : l ⊑ A} {{v₁ : validᴾ p₁}} {{v₂ : validᴾ p₂}} ->
+            p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Stuckᴾ p₁ -> Stuckᴾ p₂
+stuck-≈ p₁≈p₂ (¬done , ¬redex , ¬fork) = ¬done-≈ (Ts₁≈Ts₂ p₁≈p₂) ¬done , ¬redex-≈ p₁≈p₂ ¬redex  , ¬IsForkTS-≈ (Ts₁≈Ts₂ p₁≈p₂) ¬fork

@@ -57,11 +57,11 @@ sim⇝ l⊑A eᴱ (G.App eᵀ eᵀ₁) eˢ (S₁.App₁ {τ₁ = τ₁} {π = π
 sim⇝ l⊑A eᴱ (G.Abs eᵀ) (G.Var α∈π G.∷ eˢ) (S₁.App₂ .α∈π) = Step (S₁.App₂ α∈π) (mkᴱ eᴱ (substᴱ (lift-εᵀ (Var α∈π)) eᵀ)  eˢ)
 sim⇝ l⊑A eᴱ (G.Var ⟪ τ∈π ⟫) eˢ (S₁.Var₁ ⟪ .τ∈π ⟫ t∈Δ' ¬val' rᴱ') with memberᴴ ⟪ τ∈π ⟫ eᴱ t∈Δ'
 ... | t , eᵀ , t∈Δ with updateᴴ ⟪ ∈-∈ᴿ τ∈π ⟫ nothing eᴱ rᴱ'
-... | Γ₂ , e₂ᴱ , rᴱ = Step (Var₁ ⟪ τ∈π ⟫ t∈Δ (¬valᴱ eᵀ ¬val') rᴱ) (mkᴱ e₂ᴱ eᵀ ((G.# T.⟪ τ∈π ⟫) G.∷ eˢ))
+... | Γ₂ , e₂ᴱ , rᴱ = Step (Var₁ ⟪ τ∈π ⟫ t∈Δ (¬val⁻ᴱ eᵀ ¬val') rᴱ) (mkᴱ e₂ᴱ eᵀ ((G.# T.⟪ τ∈π ⟫) G.∷ eˢ))
 sim⇝ l⊑A eᴱ (G.Var τ∈π) eˢ (S₁.Var₁' .τ∈π v∈Δ' val') with memberᴴ τ∈π eᴱ v∈Δ'
-... | v , eᵀ , v∈Δ = Step (Var₁' τ∈π v∈Δ (valᴱ eᵀ val' )) (mkᴱ eᴱ eᵀ eˢ )
+... | v , eᵀ , v∈Δ = Step (Var₁' τ∈π v∈Δ (val⁻ᴱ eᵀ val' )) (mkᴱ eᴱ eᵀ eˢ )
 sim⇝ l⊑A eᴱ eᵀ (G.# ⟪ τ∈π ⟫ G.∷ eˢ) (S₁.Var₂ ⟪ .τ∈π ⟫ val' u'ᴱ) with updateᴴ ⟪ ∈-∈ᴿ τ∈π ⟫ (just eᵀ) eᴱ u'ᴱ
-... | Δ₂ , e₂ᴱ , uᴱ = Step (Var₂ ⟪ τ∈π ⟫ (valᴱ eᵀ val') uᴱ) (mkᴱ e₂ᴱ eᵀ eˢ )
+... | Δ₂ , e₂ᴱ , uᴱ = Step (Var₂ ⟪ τ∈π ⟫ (val⁻ᴱ eᵀ val') uᴱ) (mkᴱ e₂ᴱ eᵀ eˢ )
 sim⇝ l⊑A eᴱ (G.If eᵀ Then eᵀ₁ Else eᵀ₂) eˢ S₁.If = Step S₁.If (mkᴱ eᴱ eᵀ  ((G.Then eᵀ₁ Else eᵀ₂) G.∷ eˢ ))
 sim⇝ l⊑A eᴱ G.True ((G.Then x Else x₁) G.∷ eˢ) S₁.IfTrue = Step S₁.IfTrue (mkᴱ eᴱ x eˢ)
 sim⇝ l⊑A eᴱ G.False ((G.Then x Else x₁) G.∷ eˢ) S₁.IfFalse = Step S₁.IfFalse (mkᴱ eᴱ x eˢ )
@@ -77,9 +77,9 @@ sim⇝ l⊑A eᴱ (G.Res∙ x) (G.unlabel p G.∷ eˢ) (S₁.Unlabel₂ .p) = �
 sim⇝ l⊑A eᴱ (G.unId eᵀ) eˢ S₁.UnId₁ = Step S₁.UnId₁ (mkᴱ eᴱ eᵀ (G.unId G.∷ eˢ ))
 sim⇝ l⊑A eᴱ (G.Id eᵀ) (G.unId G.∷ eˢ) S₁.UnId₂ = Step S₁.UnId₂ (mkᴱ eᴱ eᵀ eˢ )
 sim⇝ l⊑A G.∙ G.∙ G.∙ S₁.Hole₂ = Step S₁.Hole₂ (mkᴱ G.∙ G.∙ G.∙ )
-sim⇝ l⊑A eᴱ (G.new l⊑h h⊑A eᵀ) eˢ (S₁.New₁ ¬var) = Step (New₁ (¬varᴱ eᵀ ¬var)) (mkᴱ (G.just eᵀ G.∷ eᴱ) (G.new l⊑h h⊑A (G.Var T.⟪ _ ⟫)) (wkenᴱˢ _ eˢ ))
-sim⇝ l⊑A eᴱ (G.new' l⊑h h⋤A eᵀ) eˢ (S₁.New∙₁ ¬var) = Step (New₁ (¬varᴱ eᵀ ¬var)) (mkᴱ (G.just eᵀ G.∷ eᴱ) (G.new' l⊑h h⋤A (G.Var T.⟪ _ ⟫)) (wkenᴱˢ _ eˢ ))
-sim⇝ l⊑A eᴱ (G.new∙ l⊑h eᵀ) eˢ (S₁.New∙₁ ¬var) = Step (New∙₁ (¬varᴱ eᵀ ¬var)) (mkᴱ (G.just eᵀ G.∷ eᴱ) (G.new∙ l⊑h (G.Var T.⟪ _ ⟫)) (wkenᴱˢ _ eˢ ))
+sim⇝ l⊑A eᴱ (G.new l⊑h h⊑A eᵀ) eˢ (S₁.New₁ ¬var) = Step (New₁ (¬var⁻ᴱ eᵀ ¬var)) (mkᴱ (G.just eᵀ G.∷ eᴱ) (G.new l⊑h h⊑A (G.Var T.⟪ _ ⟫)) (wkenᴱˢ _ eˢ ))
+sim⇝ l⊑A eᴱ (G.new' l⊑h h⋤A eᵀ) eˢ (S₁.New∙₁ ¬var) = Step (New₁ (¬var⁻ᴱ eᵀ ¬var)) (mkᴱ (G.just eᵀ G.∷ eᴱ) (G.new' l⊑h h⋤A (G.Var T.⟪ _ ⟫)) (wkenᴱˢ _ eˢ ))
+sim⇝ l⊑A eᴱ (G.new∙ l⊑h eᵀ) eˢ (S₁.New∙₁ ¬var) = Step (New∙₁ (¬var⁻ᴱ eᵀ ¬var)) (mkᴱ (G.just eᵀ G.∷ eᴱ) (G.new∙ l⊑h (G.Var T.⟪ _ ⟫)) (wkenᴱˢ _ eˢ ))
 sim⇝ l⊑A eᴱ (G.write l⊑H h⊑A eᵀ eᵀ₁) eˢ S₁.Write₁ = Step Write₁ (mkᴱ (G.just eᵀ₁ G.∷ eᴱ) (wkenᴱ eᵀ (drop refl-⊆)) (write l⊑H h⊑A ⟪ _ ⟫ ∷ wkenᴱˢ _ eˢ ))
 sim⇝ l⊑A eᴱ (G.write' l⊑H h⋤A eᵀ eᵀ₁) eˢ S₁.Write∙₁ = Step Write₁ (mkᴱ (G.just eᵀ₁ G.∷ eᴱ) (wkenᴱ eᵀ (drop refl-⊆)) ((G.write' l⊑H h⋤A ⟪ _ ⟫) G.∷ wkenᴱˢ _ eˢ) )
 sim⇝ l⊑A eᴱ (G.write∙ l⊑H eᵀ eᵀ₁) eˢ S₁.Write∙₁ = Step Write∙₁ (mkᴱ (G.just eᵀ₁ G.∷ eᴱ) (wkenᴱ eᵀ (drop refl-⊆)) ((write∙ l⊑H ⟪ _ ⟫) G.∷ wkenᴱˢ _ eˢ) )
@@ -166,23 +166,23 @@ sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.Res x #[ n ]ᴰ , G.write l⊑H
 ... | MS , uˢ = S₁.Step (Writeᴰ₂ H∈Ms uᴹ uˢ)
 sim⟼ L⊑A (proj₁ , proj₂ , (l∈ls , n , V.is#[ .n ] , validAddr) , proj₇) (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.Res x eᵀ , G.write' l⊑H H⋤A τ∈π G.∷ eˢ ⟩) S₁.Write∙₂
   with mk-∈ˢ l∈ls proj₁
-... | H∈Ms , vᴹ with updateᴹ-valid S.∥ l⊑H , τ∈π ∥ vᴹ validAddr
+... | H∈Ms , vᴹ with updateᴹ-valid S.∥ l⊑H , τ∈π ∥ validAddr
 ... | _ , uᴹ with updataˢ-valid l∈ls
 ... | _ , uˢ = Step (Write₂ H∈Ms uᴹ uˢ)
 sim⟼ L⊑A (proj₁ , proj₂ , (l∈ls , n , V.is#[ .n ]ᴰ , validAddr) , proj₇) (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.Res x eᵀ , G.write' l⊑H H⋤A τ∈π G.∷ eˢ ⟩) S₁.Write∙₂
   with mk-∈ˢ l∈ls proj₁
-... | H∈Ms , vᴹ with updateᴹ-valid S.∥ l⊑H , τ∈π ∥ vᴹ validAddr
+... | H∈Ms , vᴹ with updateᴹ-valid S.∥ l⊑H , τ∈π ∥ validAddr
 ... | _ , uᴹ with updataˢ-valid l∈ls
 ... | _ , uˢ = Step (Writeᴰ₂ H∈Ms uᴹ uˢ)
 sim⟼ L⊑A (proj₁ , proj₂ , proj₃ , () , proj₄) (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.Res x eᵀ , G.write∙ l⊑H ._ G.∷ eˢ ⟩) S₁.Write∙₂
 sim⟼ L⊑A (proj₁ , proj₂ , (l∈ls , n , V.is#[ .n ] , validAddr) , proj₇) (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.Res∙ x , G.write' l⊑H H⋤A τ∈π G.∷ eˢ ⟩) S₁.Write∙₂
   with mk-∈ˢ l∈ls proj₁
-... | H∈Ms , vᴹ with updateᴹ-valid S.∥ l⊑H , τ∈π ∥ vᴹ validAddr
+... | H∈Ms , vᴹ with updateᴹ-valid S.∥ l⊑H , τ∈π ∥ validAddr
 ... | _ , uᴹ with updataˢ-valid l∈ls
 ... | _ , uˢ = Step (Write₂ H∈Ms uᴹ uˢ)
 sim⟼ L⊑A (proj₁ , proj₂ , (l∈ls , n , V.is#[ .n ]ᴰ , validAddr) , proj₇) (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.Res∙ x , G.write' l⊑H H⋤A τ∈π G.∷ eˢ ⟩) S₁.Write∙₂
   with mk-∈ˢ l∈ls proj₁
-... | H∈Ms , vᴹ with updateᴹ-valid S.∥ l⊑H , τ∈π ∥ vᴹ validAddr
+... | H∈Ms , vᴹ with updateᴹ-valid S.∥ l⊑H , τ∈π ∥ validAddr
 ... | _ , uᴹ with updataˢ-valid l∈ls
 ... | _ , uˢ = Step (Writeᴰ₂ H∈Ms uᴹ uˢ)
 sim⟼ L⊑A (proj₁ , proj₂ , proj₃ , () , proj₄) (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.Res∙ x , G.write∙ l⊑H τ∈π G.∷ eˢ ⟩) S₁.Write∙₂
@@ -192,7 +192,7 @@ sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.Res x G.#[ n ]ᴰ , G.read ._ G
 ... | M , eᴹ , H∈Ms = S₁.Step (Readᴰ₂ H∈Ms (memberᴹ eᴹ n∈M'))
 sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.deepDup eᵀ , eˢ ⟩) (S₁.DeepDup₁ ¬var l∈Γ' uᴱ') with memberᴱ L⊑A eᴴˢ l∈Γ'
 ... | _ , (Mapᵀ _ eᴴ) , l∈Γ with updateᴱ L⊑A eᴴˢ (G.Mapᵀ L⊑A ((just eᵀ) G.∷ eᴴ)) uᴱ'
-... | _ , uᴱ = S₁.Step (DeepDup₁ (¬varᴱ eᵀ ¬var) l∈Γ uᴱ)
+... | _ , uᴱ = S₁.Step (DeepDup₁ (¬var⁻ᴱ eᵀ ¬var) l∈Γ uᴱ)
 sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.deepDup (G.Var τ∈π) , eˢ ⟩) (S₁.DeepDup₂ {L⊑l = l⊑L} .τ∈π L∈Γ' t∈Δ' l∈Γ' uᴱ') with memberᴱ (trans-⊑ l⊑L L⊑A) eᴴˢ L∈Γ'
 ... | _ , (Mapᵀ _ eᴴ) , L∈Γ with memberᴴ τ∈π eᴴ t∈Δ'
 ... | _ , eᵀ , t∈Δ with memberᴱ L⊑A eᴴˢ l∈Γ'
@@ -200,5 +200,13 @@ sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.deepDup (G.Var τ∈π) , eˢ �
 ... | _ , uᴱ = Step (DeepDup₂ {L⊑l = l⊑L} τ∈π L∈Γ t∈Δ l∈Γ uᴱ)
 sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.∙ᴸ) S₁.Hole = S₁.Step S₁.Hole
 
-simᴾ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} {{pⱽ : validᴾ p}} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
-simᴾ {{pⱽ}} e ¬redex (Step step-ε) = ⊥-elim (¬redex (sim⟼ _ pⱽ e step-ε))
+open import Sequential.Security.Simulation 𝓛 A
+
+redex⁻ᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {{pⱽ : validᴾ p}} {l⊑A : l ⊑ A}  -> Eraseᴾ (yes l⊑A) p p' -> Redexᴾ p' -> Redexᴾ p
+redex⁻ᴱ {{pⱽ}} {l⊑A} e (S₁.Step step) = sim⟼ l⊑A pⱽ e step
+
+redexᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) p p' -> Redexᴾ p -> Redexᴾ p'
+redexᴱ {l⊑A = l⊑A} e (S₁.Step step) rewrite unlift-εᴾ e = Step (ε₁ᴾ-sim (yes l⊑A) step)
+
+¬redexᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} {{pⱽ : validᴾ p}} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
+¬redexᴱ {{pⱽ}} e = contrapositive (redex⁻ᴱ e)

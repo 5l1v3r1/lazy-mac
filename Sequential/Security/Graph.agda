@@ -418,44 +418,63 @@ deepDupᵀᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Eraseᵀ (de
 deepDupᵀᴱ {t = t} e with lift-εᵀ (deepDupᵀ t)
 ... | e' rewrite unlift-εᵀ e = e'
 
-¬valᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> ¬ (Value t') -> ¬ (Value t)
-¬valᴱ （） ¬val S.（） = ¬val S.（）
-¬valᴱ True ¬val S.True = ¬val S.True
-¬valᴱ False ¬val S.False = ¬val S.False
-¬valᴱ (Abs x) ¬val (S.Abs t) = ¬val (S.Abs _)
-¬valᴱ (Id x) ¬val (S.Id t) = ¬val (S.Id _)
-¬valᴱ (Mac x) ¬val (S.Mac t) = ¬val (S.Mac _)
-¬valᴱ (Res x x₁) ¬val (S.Res t) = ¬val (S.Res _)
-¬valᴱ (Res∙ x) ¬val (S.Res t) = ¬val (S.Res _)
-¬valᴱ #[ n ] ¬val S.#[ .n ] = ¬val S.#[ n ]
-¬valᴱ #[ n ]ᴰ ¬val S.#[ .n ]ᴰ = ¬val S.#[ n ]ᴰ
+-- TODO use contrapositive
+¬val⁻ᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> ¬ (Value t') -> ¬ (Value t)
+¬val⁻ᴱ （） ¬val S.（） = ¬val S.（）
+¬val⁻ᴱ True ¬val S.True = ¬val S.True
+¬val⁻ᴱ False ¬val S.False = ¬val S.False
+¬val⁻ᴱ (Abs x) ¬val (S.Abs t) = ¬val (S.Abs _)
+¬val⁻ᴱ (Id x) ¬val (S.Id t) = ¬val (S.Id _)
+¬val⁻ᴱ (Mac x) ¬val (S.Mac t) = ¬val (S.Mac _)
+¬val⁻ᴱ (Res x x₁) ¬val (S.Res t) = ¬val (S.Res _)
+¬val⁻ᴱ (Res∙ x) ¬val (S.Res t) = ¬val (S.Res _)
+¬val⁻ᴱ #[ n ] ¬val S.#[ .n ] = ¬val S.#[ n ]
+¬val⁻ᴱ #[ n ]ᴰ ¬val S.#[ .n ]ᴰ = ¬val S.#[ n ]ᴰ
 
-¬varᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> ¬ (IsVar t') -> ¬ (IsVar t)
-¬varᴱ (Var τ∈π) ¬var (S.Var .τ∈π) = ¬var (S.Var τ∈π)
+¬var⁻ᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> ¬ (IsVar t') -> ¬ (IsVar t)
+¬var⁻ᴱ (Var τ∈π) ¬var (S.Var .τ∈π) = ¬var (S.Var τ∈π)
 
-valᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Value t' -> Value t
-valᴱ （） S.（） = S.（）
-valᴱ True S.True = S.True
-valᴱ False S.False = S.False
-valᴱ (Abs e) (S.Abs t₁) = S.Abs _
-valᴱ (Id e) (S.Id t₁) = S.Id _
-valᴱ (Mac e) (S.Mac t₁) = S.Mac _
-valᴱ (Res x e) (S.Res t₁) = S.Res _
-valᴱ (Res∙ x) (S.Res .S.∙) = S.Res _
-valᴱ #[ n ] S.#[ .n ] = S.#[ n ]
-valᴱ #[ n ]ᴰ S.#[ .n ]ᴰ = S.#[ n ]ᴰ
+val⁻ᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Value t' -> Value t
+val⁻ᴱ （） S.（） = S.（）
+val⁻ᴱ True S.True = S.True
+val⁻ᴱ False S.False = S.False
+val⁻ᴱ (Abs e) (S.Abs t₁) = S.Abs _
+val⁻ᴱ (Id e) (S.Id t₁) = S.Id _
+val⁻ᴱ (Mac e) (S.Mac t₁) = S.Mac _
+val⁻ᴱ (Res x e) (S.Res t₁) = S.Res _
+val⁻ᴱ (Res∙ x) (S.Res .S.∙) = S.Res _
+val⁻ᴱ #[ n ] S.#[ .n ] = S.#[ n ]
+val⁻ᴱ #[ n ]ᴰ S.#[ .n ]ᴰ = S.#[ n ]ᴰ
 
-val₁ᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Value t -> Value t'
-val₁ᴱ e val with εᵀ-Val val
+valᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> Value t -> Value t'
+valᴱ e val with εᵀ-Val val
 ... | val' rewrite unlift-εᵀ e = val'
 
-forkᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> IsFork t' -> IsFork t
-forkᴱ (fork p h⊑A e) (S.Fork .p t₁) = S.Fork p _
-forkᴱ (fork' p h⋤A e) (S.Fork∙ .p t₁) = S.Fork p _
-forkᴱ (fork∙ p e) (S.Fork∙ .p t₁) = S.Fork∙ p _
+fork⁻ᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> IsFork t' -> IsFork t
+fork⁻ᴱ (fork p h⊑A e) (S.Fork .p t₁) = S.Fork p _
+fork⁻ᴱ (fork' p h⋤A e) (S.Fork∙ .p t₁) = S.Fork p _
+fork⁻ᴱ (fork∙ p e) (S.Fork∙ .p t₁) = S.Fork∙ p _
+
+forkᴱ : ∀ {π τ} {t t' : Term π τ} -> Eraseᵀ t t' -> IsFork t -> IsFork t'
+forkᴱ (fork p h⊑A e) (S.Fork .p t) = S.Fork p _
+forkᴱ (fork' p h⋤A e) (S.Fork .p t) = S.Fork∙ p _
+forkᴱ (fork∙ p e) (S.Fork∙ .p t) = S.Fork∙ p _
 
 import Sequential.Semantics as S₁
 open S₁ 𝓛
 
-doneᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> IsDoneTS Ts₂ -> IsDoneTS Ts₁
-doneᴱ ⟨ eᵀ , [] ⟩ (S₁.isDoneTS isVal) = S₁.isDoneTS (valᴱ eᵀ isVal)
+open import Sequential.Valid 𝓛
+open import Sequential.Security.Lemmas 𝓛 A
+
+
+done⁻ᴱ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Eraseᵀˢ (yes l⊑A) Ts₁ Ts₂ -> IsDoneTS Ts₂ -> IsDoneTS Ts₁
+done⁻ᴱ ⟨ eᵀ , [] ⟩ (S₁.isDoneTS isVal) = S₁.isDoneTS (val⁻ᴱ eᵀ isVal)
+
+redex⁻ᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {{pⱽ : validᴾ p}} {l⊑A : l ⊑ A}  -> Eraseᴾ (yes l⊑A) p p' -> Redexᴾ p' -> Redexᴾ p
+redex⁻ᴱ {{pⱽ}} {l⊑A} e (S₁.Step step) = sim⟼ l⊑A pⱽ e step
+
+redexᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) p p' -> Redexᴾ p -> Redexᴾ p'
+redexᴱ {l⊑A = l⊑A} e (S₁.Step step) rewrite unlift-εᴾ e = Step (ε₁ᴾ-sim (yes l⊑A) step)
+
+¬redexᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} {{pⱽ : validᴾ p}} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
+¬redexᴱ {{pⱽ}} e = contrapositive (redex⁻ᴱ e)

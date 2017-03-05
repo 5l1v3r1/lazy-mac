@@ -140,36 +140,37 @@ open import Data.Empty
 εᵀ¬Var {t = deepDup t} ¬var ()
 εᵀ¬Var {t = ∙} ¬var ()
 
-εᵀ¬Fork : ∀ {π τ} {t : Term π τ} -> ¬ (IsFork t) -> ¬ (IsFork (εᵀ t))
-εᵀ¬Fork {t = （）} ¬fork ()
-εᵀ¬Fork {t = True} ¬fork ()
-εᵀ¬Fork {t = False} ¬fork ()
-εᵀ¬Fork {t = Id t} ¬fork ()
-εᵀ¬Fork {t = unId t} ¬fork ()
-εᵀ¬Fork {t = Var τ∈π} ¬fork ()
-εᵀ¬Fork {t = Abs t} ¬fork ()
-εᵀ¬Fork {t = App t t₁} ¬fork ()
-εᵀ¬Fork {t = If t Then t₁ Else t₂} ¬fork ()
-εᵀ¬Fork {t = Return l t} ¬fork ()
-εᵀ¬Fork {t = t >>= t₁} ¬fork ()
-εᵀ¬Fork {t = Mac l t} ¬fork ()
-εᵀ¬Fork {t = Res l t} ¬fork ()
-εᵀ¬Fork {t = label l⊑h t} ¬fork ()
-εᵀ¬Fork {t = label∙ l⊑h t} ¬fork ()
-εᵀ¬Fork {t = unlabel l⊑h t} ¬fork ()
-εᵀ¬Fork {t = read x t} ¬fork ()
-εᵀ¬Fork {t = write {h = h} x t t₁} ¬fork a with h ⊑? A
-εᵀ¬Fork {t = write x t t₁} ¬fork () | yes p
-εᵀ¬Fork {t = write x t t₁} ¬fork () | no _
-εᵀ¬Fork {t = write∙ x t t₁} ¬fork ()
-εᵀ¬Fork {t = new x t} ¬fork ()
-εᵀ¬Fork {t = new∙ x t} ¬fork ()
-εᵀ¬Fork {t = #[ x ]} ¬fork ()
-εᵀ¬Fork {t = #[ x ]ᴰ} ¬fork ()
-εᵀ¬Fork {t = fork l⊑h t} ¬fork x = ¬fork (Fork l⊑h t)
-εᵀ¬Fork {t = fork∙ l⊑h t} ¬fork x = ¬fork (Fork∙ l⊑h t)
-εᵀ¬Fork {t = deepDup t} ¬fork ()
-εᵀ¬Fork {t = ∙} ¬fork ()
+-- TODO remove
+-- εᵀ¬Fork : ∀ {π τ} {t : Term π τ} -> ¬ (IsFork t) -> ¬ (IsFork (εᵀ t))
+-- εᵀ¬Fork {t = （）} ¬fork ()
+-- εᵀ¬Fork {t = True} ¬fork ()
+-- εᵀ¬Fork {t = False} ¬fork ()
+-- εᵀ¬Fork {t = Id t} ¬fork ()
+-- εᵀ¬Fork {t = unId t} ¬fork ()
+-- εᵀ¬Fork {t = Var τ∈π} ¬fork ()
+-- εᵀ¬Fork {t = Abs t} ¬fork ()
+-- εᵀ¬Fork {t = App t t₁} ¬fork ()
+-- εᵀ¬Fork {t = If t Then t₁ Else t₂} ¬fork ()
+-- εᵀ¬Fork {t = Return l t} ¬fork ()
+-- εᵀ¬Fork {t = t >>= t₁} ¬fork ()
+-- εᵀ¬Fork {t = Mac l t} ¬fork ()
+-- εᵀ¬Fork {t = Res l t} ¬fork ()
+-- εᵀ¬Fork {t = label l⊑h t} ¬fork ()
+-- εᵀ¬Fork {t = label∙ l⊑h t} ¬fork ()
+-- εᵀ¬Fork {t = unlabel l⊑h t} ¬fork ()
+-- εᵀ¬Fork {t = read x t} ¬fork ()
+-- εᵀ¬Fork {t = write {h = h} x t t₁} ¬fork a with h ⊑? A
+-- εᵀ¬Fork {t = write x t t₁} ¬fork () | yes p
+-- εᵀ¬Fork {t = write x t t₁} ¬fork () | no _
+-- εᵀ¬Fork {t = write∙ x t t₁} ¬fork ()
+-- εᵀ¬Fork {t = new x t} ¬fork ()
+-- εᵀ¬Fork {t = new∙ x t} ¬fork ()
+-- εᵀ¬Fork {t = #[ x ]} ¬fork ()
+-- εᵀ¬Fork {t = #[ x ]ᴰ} ¬fork ()
+-- εᵀ¬Fork {t = fork l⊑h t} ¬fork x = ¬fork (Fork l⊑h t)
+-- εᵀ¬Fork {t = fork∙ l⊑h t} ¬fork x = ¬fork (Fork∙ l⊑h t)
+-- εᵀ¬Fork {t = deepDup t} ¬fork ()
+-- εᵀ¬Fork {t = ∙} ¬fork ()
 
 open import Data.Maybe as M
 open import Function
@@ -433,9 +434,10 @@ map-εᴹ (M ∷ Ms) = (εᴹ (_ ⊑? A) M) ∷ (map-εᴹ Ms)
 εᵀˢ (yes _) ∙ = ∙
 εᵀˢ (no _) _ = ∙
 
-εᵀˢ¬IsForkTS : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> ¬ (IsForkTS Ts) -> ¬ (IsForkTS (εᵀˢ (yes l⊑A) Ts))
-εᵀˢ¬IsForkTS {Ts = ⟨ t , S ⟩} l⊑A ¬fork (isForkTS fork-ε) = εᵀ¬Fork (¬IsForkTs¬IsFork ¬fork) fork-ε
-εᵀˢ¬IsForkTS {Ts = ∙} l⊑A ¬fork ()
+-- TODO remove
+-- εᵀˢ¬IsForkTS : ∀ {l τ} {Ts : TS∙ l τ} -> (l⊑A : l ⊑ A) -> ¬ (IsForkTS Ts) -> ¬ (IsForkTS (εᵀˢ (yes l⊑A) Ts))
+-- εᵀˢ¬IsForkTS {Ts = ⟨ t , S ⟩} l⊑A ¬fork (isForkTS fork-ε) = εᵀ¬Fork (¬IsForkTs¬IsFork ¬fork) fork-ε
+-- εᵀˢ¬IsForkTS {Ts = ∙} l⊑A ¬fork ()
 
 εᵀˢ-ext-≡ : ∀ {l τ} -> (x y : Dec (l ⊑ A)) (Ts : TS∙ l τ) -> εᵀˢ x Ts ≡ εᵀˢ y Ts
 εᵀˢ-ext-≡ (yes p) (yes p₁) ⟨ t , S ⟩ = refl
