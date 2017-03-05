@@ -9,7 +9,7 @@ open T 𝓛
 import Sequential.Calculus as S renaming (⟨_,_,_⟩ to mkP ; ⟨_,_⟩ to mkTS)
 open S 𝓛 hiding (wkenˢ ; wkenᴴ ; wkenᶜ)
 
-open import Data.Nat using (_≤_ ; _<_ ; s≤s ; z≤n ; decTotalOrder)
+open import Data.Nat
 open import Data.Empty
 open import Data.Product as P
 open import Data.Maybe

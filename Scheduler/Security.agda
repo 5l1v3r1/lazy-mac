@@ -42,6 +42,7 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
       align : ∀ {Σ₁ Σ₂} -> (eq : Σ₁ ≈ˢ Σ₂) -> Σ₁ ≈ˢ-⟨ offset₁ eq , offset₂ eq ⟩ Σ₂
       forget : ∀ {Σ₁ Σ₂ n m} -> Σ₁ ≈ˢ-⟨ n , m ⟩ Σ₂ -> Σ₁ ≈ˢ Σ₂
 
+
       -- The Thread Id in a fork should not affect the state
       id-≈ˢ : ∀ {Σ₁ Σ₂ L m₁ n H} -> (m₂ : ℕ) (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ S.⟪ L , n , (Fork H m₁ L⊑H) ⟫
               -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ S.⟪ L , n , (Fork H m₂ L⊑H) ⟫ × Σ₂ ≈ˢ Σ₂')
@@ -60,6 +61,9 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
 
       triangleˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁ n₂} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , suc n₂ ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
                  ∃ (λ H → ∃ (λ m → H ⋤ A × ∀ (e : Event H) → ∃ (λ Σ₂' → Σ₁ ≈ˢ-⟨ n₁ , n₂ ⟩ Σ₂' ×  Σ₂ ⟶ Σ₂' ↑ ⟪ H , m , e ⟫ )))
+
+      -- Splitting square and triangle in two separate lemmas for convenience
+      redex-≈ˢ : ∀ {L i n e Σ₁ Σ₂ Σ₁'} -> L ⊑ A -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ -> Σ₁ ≈ˢ-⟨ i , 0 ⟩ Σ₂ -> ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e ⟫)
 
     refl-≈ˢ : ∀ {Σ} -> Σ ≈ˢ Σ
     refl-≈ˢ = ⌜ refl ⌝

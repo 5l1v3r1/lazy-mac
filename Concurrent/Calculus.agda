@@ -4,6 +4,7 @@ import Scheduler as S
 module Concurrent.Calculus (𝓛 : L.Lattice) (𝓢 : S.Scheduler 𝓛) where
 
 open import Types 𝓛
+open import Data.Nat
 open import Sequential.Calculus 𝓛 hiding (Ms ; Γ)
 open S.Scheduler 𝓛 𝓢 renaming (State to Stateˢ)
 

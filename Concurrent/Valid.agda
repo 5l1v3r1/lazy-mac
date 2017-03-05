@@ -34,7 +34,7 @@ map-validᴾ : ∀ {ls ls'} -> Memories ls -> Pools ls' -> Set
 map-validᴾ Ms C.[] = ⊤
 map-validᴾ Ms (T C.◅ Ps) = validᴾ Ms T × map-validᴾ Ms Ps
 
-valid-Idᵀ : ∀ {ls} -> Label -> S.ℕ -> Pools ls -> Set
+valid-Idᵀ : ∀ {ls} -> Label -> ℕ -> Pools ls -> Set
 valid-Idᵀ {ls} l n Ps = P.Σ (l ∈ ls) (λ l∈ls -> n ≤ lengthᴾ (lookupᴾ l∈ls Ps))
 
 validᴳ : ∀ {ls} -> Global ls -> Set

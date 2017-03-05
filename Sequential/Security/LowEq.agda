@@ -180,7 +180,7 @@ _≅ᵀˢ⟨_⟩_ : ∀ {l τ} -> TS∙ l τ -> Dec (l ⊑ A) -> TS∙ l τ -> S
 Ts₁  ≅ᵀˢ⟨ x ⟩ Ts₂ = εᵀˢ x Ts₁ ≡ εᵀˢ x Ts₂
 
 data _≈ᵀˢ⟨_⟩_ {l τ} (Ts₁ : TS∙ l τ) (x : Dec (l ⊑ A)) (Ts₂ : TS∙ l τ) : Set where
-  Kᵀˢ : ∀ {Tsᴱ : TS∙ l τ} -> Eraseᵀˢ x Ts₁ Tsᴱ -> Eraseᵀˢ x Ts₂ Tsᴱ -> Ts₁ ≈ᵀˢ⟨ x ⟩ Ts₂
+  Kᵀˢ : ∀ {Tsᴱ : TS∙ l τ} -> (e₁ : Eraseᵀˢ x Ts₁ Tsᴱ) (e₂ : Eraseᵀˢ x Ts₂ Tsᴱ) -> Ts₁ ≈ᵀˢ⟨ x ⟩ Ts₂
 
 ⌞_⌟ᵀˢ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} {x : Dec (l ⊑ A)} -> Ts₁ ≈ᵀˢ⟨ x ⟩ Ts₂ -> Ts₁ ≅ᵀˢ⟨ x ⟩ Ts₂
 ⌞ Kᵀˢ e₁ e₂ ⌟ᵀˢ rewrite unlift-εᵀˢ e₁ | unlift-εᵀˢ e₂ = refl
@@ -198,6 +198,9 @@ sym-≈ᵀˢ Ts₁≈Ts₂ = ⌜ sym ⌞ Ts₁≈Ts₂ ⌟ᵀˢ ⌝ᵀˢ
 
 trans-≈ᵀˢ : ∀ {l τ} {Ts₁ Ts₂ Ts₃ : TS∙ l τ} {x : Dec (l ⊑ A)} -> Ts₁ ≈ᵀˢ⟨ x ⟩ Ts₂ -> Ts₂ ≈ᵀˢ⟨ x ⟩ Ts₃ -> Ts₁ ≈ᵀˢ⟨ x ⟩ Ts₃
 trans-≈ᵀˢ Ts₁≈Ts₂ Ts₂≈Ts₃ = ⌜ trans ⌞ Ts₁≈Ts₂ ⌟ᵀˢ ⌞ Ts₂≈Ts₃ ⌟ᵀˢ ⌝ᵀˢ
+
+ext-≈ᵀˢ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} {x y : Dec (l ⊑ A)} -> Ts₁ ≈ᵀˢ⟨ x ⟩ Ts₂ -> Ts₁ ≈ᵀˢ⟨ y ⟩ Ts₂
+ext-≈ᵀˢ (Kᵀˢ e₁ e₂) = Kᵀˢ (ext-εᵀˢ e₁) (ext-εᵀˢ e₂)
 
 --------------------------------------------------------------------------------
 
@@ -238,6 +241,12 @@ sym-≈ᴾ eq = ⌜ sym ⌞ eq ⌟ᴾ ⌝ᴾ
 trans-≈ᴾ : ∀ {l ls τ} {p₁ p₂ p₃ : Program l ls τ} {x : Dec (l ⊑ A)} -> p₁ ≈ᴾ⟨ x ⟩ p₂ -> p₂ ≈ᴾ⟨ x ⟩ p₃ -> p₁ ≈ᴾ⟨ x ⟩ p₃
 trans-≈ᴾ eq₁ eq₂ = ⌜ trans ⌞ eq₁ ⌟ᴾ ⌞ eq₂ ⌟ᴾ ⌝ᴾ
 
+ext-≈ᴾ : ∀ {l ls τ} {x y : Dec (l ⊑ A)} {p₁ p₂ : Program l ls τ} -> p₁ ≈ᴾ⟨ x ⟩ p₂ -> p₁ ≈ᴾ⟨ y ⟩ p₂
+ext-≈ᴾ ⟨ Ms₁≈Ms₂ , Γ₁≈Γ₂ , Ts₁≈Ts₂ ⟩ = ⟨ Ms₁≈Ms₂ , Γ₁≈Γ₂ , (ext-≈ᵀˢ Ts₁≈Ts₂) ⟩
+
+ext-≅ᴾ : ∀ {l ls τ} {x y : Dec (l ⊑ A)} {p₁ p₂ : Program l ls τ} -> p₁ ≅ᴾ⟨ x ⟩ p₂ -> p₁ ≅ᴾ⟨ y ⟩ p₂
+ext-≅ᴾ {x = x} {y = y} eq = ⌞_⌟ᴾ (ext-≈ᴾ {x = x} {y = y} ⌜ eq ⌝ᴾ)
+
 --------------------------------------------------------------------------------
 -- Lemmas about visible ≈ terms and programs
 
@@ -267,6 +276,22 @@ done-≈ (Kᵀˢ e₁ e₂) don = done⁻ᴱ e₂ (doneᴱ e₁ don)
 fork-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> (IsFork t₁) -> (IsFork t₂)
 fork-≈ ⟨ e₁ , e₂ ⟩ isFork = fork⁻ᴱ e₂ (forkᴱ e₁ isFork)
 
+-- Gives more information about two low-eq forks
+data Fork-≈ {π} : ∀ {τ} -> (t₁ t₂ : Term π τ) -> Set where
+  isFork-≈ : ∀ {l h} {t₁ t₂ : Term π (Mac h _)} {l⊑h : l ⊑ h} -> t₁ ≈ᵀ t₂ -> Fork-≈ (fork l⊑h t₁) (fork l⊑h t₂)
+
+fork-≈' : ∀ {π τ ls} {Ms₁ Ms₂ : Memories ls} {t₁ t₂ : Term π τ} {{v₁ : validᵀ Ms₁ t₁}} {{v₂ : validᵀ Ms₂ t₂}} -> t₁ ≈ᵀ t₂ -> IsFork t₁ -> Fork-≈ t₁ t₂
+fork-≈' {Ms₁ = Ms₁} {Ms₂ = Ms₂} {{v₁}} {{v₂}} eq x = aux v₁ v₂ x eq (fork-≈ eq x)
+  where import Sequential.Security.Graph.Base as B
+        open B 𝓛 A
+
+        aux : ∀ {π τ} {t₁ t₂ : Term π τ} -> validᵀ Ms₁ t₁ -> validᵀ Ms₂ t₂ -> IsFork t₁ -> t₁ ≈ᵀ t₂ -> IsFork t₂ -> Fork-≈ t₁ t₂
+        aux v₁ v₂ (SC.Fork p t) ⟨ B.fork .p h⊑A e₁ , B.fork .p h⊑A₁ e₂ ⟩ (SC.Fork .p t₁) = isFork-≈ ⟨ e₁ , e₂ ⟩
+        aux v₁ v₂ (SC.Fork p t) ⟨ B.fork' .p h⋤A e₁ , B.fork' .p h⋤A₁ e₂ ⟩ (SC.Fork .p t₁) = isFork-≈ ⟨ e₁ , e₂ ⟩
+        aux v₁ v₂ (SC.Fork p t) ⟨ B.fork' .p h⋤A e₁ , B.fork∙ .p e₂ ⟩ (SC.Fork∙ .p t₁) = ⊥-elim v₂
+        aux v₁ v₃ (SC.Fork∙ p t) eq f = ⊥-elim v₁
+
+
 forkTS-≈ : ∀ {l τ} {Ts₁ Ts₂ : TS∙ l τ} {l⊑A : l ⊑ A} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> (IsForkTS Ts₁) -> (IsForkTS Ts₂)
 forkTS-≈ (Kᵀˢ G.⟨ eᵀ₁ , eˢ₁ ⟩ G.⟨ eᵀ , eˢ ⟩) (SS.isForkTS isFork) = SS.isForkTS (fork-≈ ⟨ eᵀ₁ , eᵀ ⟩ isFork)
 
@@ -275,9 +300,11 @@ redex-≈ : ∀ {l ls τ} {l⊑A : l ⊑ A} {p₁ p₂ : Program l ls τ} {{v₂
 redex-≈ {l⊑A = l⊑A} {p₁} {p₂} {{v₂}} p₁≈p₂ redex₁ with lift-εᴾ (yes l⊑A) p₁ | lift-εᴾ (yes l⊑A) p₂
 ... | e₁ | e₂ rewrite ⌞ p₁≈p₂ ⌟ᴾ = redex⁻ᴱ e₂ (redexᴱ e₁ redex₁)
 
---------------------------------------------------------------------------------
+newᵀˢ-≈ : ∀ {l h π} {x : Dec (l ⊑ A)} {t₁ t₂ : Term π (Mac h （）)} -> t₁ ≈ᵀ t₂ -> ⟨ t₁ , [] ⟩ ≈ᵀˢ⟨ x ⟩ ⟨ t₂ , [] ⟩
+newᵀˢ-≈ {x = yes p} ⟨ e₁ , e₂ ⟩ = Kᵀˢ ⟨ e₁ , [] ⟩ ⟨ e₂ , [] ⟩
+newᵀˢ-≈ {x = no ¬p} ⟨ e₁ , e₂ ⟩ = Kᵀˢ ∙ ∙
 
--- Stuck ≈
+--------------------------------------------------------------------------------
 
 ¬fork-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> ¬ (IsFork t₁) -> ¬ (IsFork t₂)
 ¬fork-≈ t₁≈t₂ = contrapositive (fork-≈ (sym-≈ᵀ t₁≈t₂))
@@ -288,7 +315,7 @@ redex-≈ {l⊑A = l⊑A} {p₁} {p₂} {{v₂}} p₁≈p₂ redex₁ with lift-
 ¬done-≈ : ∀ {l τ} {l⊑A : l ⊑ A} {Ts₁ Ts₂ : TS∙ l τ} -> Ts₁ ≈ᵀˢ⟨ yes l⊑A ⟩ Ts₂ -> ¬ (IsDoneTS Ts₁) -> ¬ (IsDoneTS Ts₂)
 ¬done-≈ Ts₁≈Ts₂  = contrapositive (done-≈ (sym-≈ᵀˢ Ts₁≈Ts₂))
 
-¬redex-≈ : ∀ {l ls τ} {l⊑A : l ⊑ A} {p₁ p₂ : Program l ls τ} {{v₁ : validᴾ p₁}} {{v₂ : validᴾ p₂}} ->
+¬redex-≈ : ∀ {l ls τ} {l⊑A : l ⊑ A} {p₁ p₂ : Program l ls τ} {{v₁ : validᴾ p₁}} ->
              p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> ¬ (Redexᴾ p₁)  -> ¬ (Redexᴾ p₂)
 ¬redex-≈ p₁≈p₂ = contrapositive (redex-≈ (sym-≈ᴾ p₁≈p₂))
 
@@ -296,6 +323,8 @@ open _≈ᴾ⟨_⟩_
 
 open import Data.Product
 
-stuck-≈ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} {l⊑A : l ⊑ A} {{v₁ : validᴾ p₁}} {{v₂ : validᴾ p₂}} ->
+stuck-≈ : ∀ {l ls τ} {p₁ p₂ : Program l ls τ} {l⊑A : l ⊑ A} {{v₁ : validᴾ p₁}} ->
             p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> Stuckᴾ p₁ -> Stuckᴾ p₂
 stuck-≈ p₁≈p₂ (¬done , ¬redex , ¬fork) = ¬done-≈ (Ts₁≈Ts₂ p₁≈p₂) ¬done , ¬redex-≈ p₁≈p₂ ¬redex  , ¬IsForkTS-≈ (Ts₁≈Ts₂ p₁≈p₂) ¬fork
+
+--------------------------------------------------------------------------------

@@ -5,6 +5,8 @@ module Sequential.Security.Graph.Base (𝓛 : L.Lattice) (A : L.Label 𝓛) wher
 import Types as T
 open T 𝓛
 
+open import Data.Nat
+
 import Sequential.Calculus as S
 open S 𝓛
 open import Sequential.Security.Erasure 𝓛 A as SE hiding (memberᴴ ; updateᴴ ; memberᴱ)

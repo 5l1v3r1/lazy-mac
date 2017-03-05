@@ -3,6 +3,7 @@ import Scheduler as S
 
 module Concurrent.Semantics (𝓛 : L.Lattice) (𝓢 : S.Scheduler 𝓛) where
 
+open import Data.Nat
 open import Types 𝓛
 open S.Scheduler 𝓛 𝓢
 
@@ -135,3 +136,8 @@ data _↪⋆_ {ls : List Label} : Global ls -> Global ls -> Set where
 -- _++ˢ_ : ∀ {ls} {g₁ g₂ g₃ : Global ls} -> g₁ ↪⋆ g₂ -> g₂ ↪⋆ g₃ -> g₁ ↪⋆ g₃
 -- [] ++ˢ ss₂ = ss₂
 -- (s ∷ ss₁) ++ˢ ss₂ = s ∷ (ss₁ ++ˢ ss₂)
+
+--------------------------------------------------------------------------------
+
+data Redexᴳ {ls} (x : Label × ℕ) (g : Global ls) : Set where
+  Step : ∀ {g'} -> x ⊢ g ↪ g' -> Redexᴳ x g

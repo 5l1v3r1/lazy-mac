@@ -27,7 +27,9 @@ pini eq s₁ s₂ = aux eq (εᴾ-sim s₁) (εᴾ-sim s₂)
   where aux : ∀ {l ls τ} {p₁ p₁' p₂ p₂' : Program l ls τ} -> p₁ ≡ p₂ -> p₁ ⟼ p₁' -> p₂ ⟼ p₂' -> p₁' ≡ p₂'
         aux refl x y = determinismᴾ x y
 
--- TODO is it needed?
+pini' : ∀ {l ls τ} {p₁ p₁' p₂ p₂' : Program l ls τ} (x : Dec (l ⊑ A)) -> p₁ ≅ᴾ⟨ x ⟩ p₂ -> p₁ ⟼ p₁' -> p₂ ⟼ p₂' -> p₁' ≅ᴾ⟨ x ⟩ p₂'
+pini' x eq step₁ step₂ = ext-≅ᴾ {x = _ ⊑? A} {y = x} (pini (ext-≅ᴾ {x = x} {y = _ ⊑? A} eq) step₁ step₂)
+
 -- Simulation of low-step (shows that we maintain the program structure)
 stepᴸ : ∀ {ls τ l Ms₁ Ms₂} {Γ₁ Γ₂ : Heaps ls} {Ts₁ Ts₂ : TS∙ l τ}
              -> (l⊑A : l ⊑ A) -> ⟨ Ms₁ , Γ₁ , Ts₁ ⟩ ⟼ ⟨ Ms₂ , Γ₂ , Ts₂ ⟩ ->

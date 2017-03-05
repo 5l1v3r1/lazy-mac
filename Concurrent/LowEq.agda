@@ -40,7 +40,7 @@ data _≈ᴾ⟨_⟩_ {l : Label} (T₁ : Pool l) (x : Dec (l ⊑ A)) (T₂ : Poo
 ext-≈ᴾ : ∀ {l} {x : Dec (l ⊑ A)} {T₁ T₂ : Pool l} -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> (y : Dec (l ⊑ A)) -> T₁ ≈ᴾ⟨ y ⟩ T₂
 ext-≈ᴾ (Kᴾ e₁ e₂) y = Kᴾ (ext-εᴾ e₁ y) (ext-εᴾ e₂ y)
 
-open import Sequential.Security.LowEq 𝓛 A hiding (_≈ᴾ⟨_⟩_ ; _≅ᴾ_ ; refl-≈ᴾ ; sym-≈ᴾ ; trans-≈ᴾ ; _≈ˢ_ ; ⌞_⌟ᴾ)
+open import Sequential.Security.LowEq 𝓛 A hiding (_≈ᴾ⟨_⟩_ ; _≅ᴾ_ ; refl-≈ᴾ ; sym-≈ᴾ ; trans-≈ᴾ ; _≈ˢ_ ; ⌞_⌟ᴾ ; ext-≈ᴾ)
 
 cons≈ᴾ : ∀ {l} {t₁ t₂ : Thread l} {x : Dec (l ⊑ A)} {T₁ T₂ : Pool l} -> t₁ ≈ᵀˢ⟨ x ⟩ t₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> (t₁ ◅ T₁) ≈ᴾ⟨ x ⟩ (t₂ ◅ T₂)
 cons≈ᴾ (Kᵀˢ e₁ e₂)  (Kᴾ (Mapᵀ x) (Mapᵀ x₁)) = Kᴾ (Mapᵀ (e₁ ◅ x)) (Mapᵀ (e₂ ◅ x₁))
@@ -127,11 +127,16 @@ trans-≈ᴳ x y = ⌜ trans ⌞ x ⌟ᴳ ⌞ y ⌟ᴳ ⌝ᴳ
 
 --------------------------------------------------------------------------------
 
--- Lifts annotations in the scheduler to configurations
-data _≈ᴳ-⟨_,_⟩_ {ls} (g₁ : Global ls) (n₁ : ℕ) (n₂ : ℕ) (g₂ : Global ls) : Set where
-  ⟨_,_,_,_⟩ : (Σ₁≈Σ₂ : (Σ g₁) ≈ˢ-⟨ n₁ , n₂ ⟩ (Σ g₂)) (Ms₁≈Ms₂ : (Ms g₁) map-≈ᴹ (Ms g₂))
-              (Γ₁≈Γ₂ : (Γ g₁) map-≈ᴴ (Γ g₂)) (P₁≈P₂ : (P g₁) map-≈ᴾ (P g₂)) -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂
+open import Data.Nat
 
+-- Lifts annotations in the scheduler to configurations
+record _≈ᴳ-⟨_,_⟩_ {ls} (g₁ : Global ls) (n₁ : ℕ) (n₂ : ℕ) (g₂ : Global ls) : Set where
+  constructor ⟨_,_,_,_⟩
+  field
+      Σ₁≈Σ₂′ : (Σ g₁) ≈ˢ-⟨ n₁ , n₂ ⟩ (Σ g₂)
+      Ms₁≈Ms₂′ : (Ms g₁) map-≈ᴹ (Ms g₂)
+      Γ₁≈Γ₂′ : (Γ g₁) map-≈ᴴ (Γ g₂)
+      Ps₁≈Ps₂′ : (P g₁) map-≈ᴾ (P g₂)
 
 alignᴳ : ∀ {ls} {g₁ g₂ : Global ls} -> (g₁≈g₂ : g₁ ≈ᴳ g₂) -> g₁ ≈ᴳ-⟨ offset₁ (Σ₁≈Σ₂ g₁≈g₂) , offset₂ (Σ₁≈Σ₂ g₁≈g₂) ⟩ g₂
 alignᴳ ⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = ⟨ (align Σ₁≈Σ₂) , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
@@ -151,21 +156,34 @@ memberᴾ-≈ : ∀ {ls L} {T₁ : Pool L} {P₁ P₂ : Pools ls} -> (x : Dec (L
 memberᴾ-≈ x here (K-mapᴾ (e₁ ◅ e₂) (e₃ ◅ e₄)) = _ , ext-≈ᴾ (Kᴾ e₁ e₃) x , here
 memberᴾ-≈ x (there L∈P) (K-mapᴾ (x₁ ◅ x₂) (x₃ ◅ x₄)) = P.map id (P.map id there) (memberᴾ-≈ x L∈P (K-mapᴾ x₂ x₄))
 
-memberᵀ-≈ : ∀ {n L} {T₁ T₂ : Pool L} {t₁ : Thread L} -> (L⊑A : L ⊑ A) -> n ↦ t₁ ∈ᵀ T₁ -> T₁ ≈ᴾ⟨ yes L⊑A ⟩ T₂
+memberᵀ-≈ : ∀ {n L} {T₁ T₂ : Pool L} {t₁ : Thread L} {L⊑A : L ⊑ A} -> n ↦ t₁ ∈ᵀ T₁ -> T₁ ≈ᴾ⟨ yes L⊑A ⟩ T₂
               -> ∃ (λ t₂ → (t₁ ≈ᵀˢ⟨ yes L⊑A ⟩ t₂) × n ↦ t₂ ∈ᵀ T₂)
-memberᵀ-≈ L⊑A here (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) = _ , (Kᵀˢ e e') , here
-memberᵀ-≈ L⊑A (there n∈T) (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) = P.map id (P.map id there) (memberᵀ-≈ L⊑A n∈T (Kᴾ (Mapᵀ e₁) (Mapᵀ e₁')))
+memberᵀ-≈ here (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) = _ , (Kᵀˢ e e') , here
+memberᵀ-≈ (there n∈T) (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) = P.map id (P.map id there) (memberᵀ-≈ n∈T (Kᴾ (Mapᵀ e₁) (Mapᵀ e₁')))
 
-updateᵀ-≈ : ∀ {n L} {T₁ T₁' T₂ : Pool L} {t₁ t₂ : Thread L} -> (L⊑A : L ⊑ A) -> T₁' ≔ T₁ [ n ↦ t₁ ]ᵀ ->
-            T₁ ≈ᴾ⟨ yes L⊑A ⟩ T₂ -> t₁ ≈ᵀˢ⟨ yes L⊑A ⟩ t₂ -> ∃ (λ T₂' → T₁' ≈ᴾ⟨ yes L⊑A ⟩ T₂'  × T₂' ≔ T₂ [ n ↦ t₂ ]ᵀ)
-updateᵀ-≈ L⊑A here (Kᴾ (Mapᵀ (_ ◅ e₁)) (Mapᵀ (_ ◅ e₁'))) (Kᵀˢ e e') = _ , (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) , here
-updateᵀ-≈ L⊑A (there u) (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) eq₂
-  = P.map (_◅_ _) (P.map (cons≈ᴾ (Kᵀˢ e e')) there) (updateᵀ-≈ L⊑A u (Kᴾ (Mapᵀ e₁) (Mapᵀ e₁')) eq₂)
+updateᵀ-≈ : ∀ {n L} {T₁ T₁' T₂ : Pool L} {t₁ t₂ : Thread L} {L⊑A : L ⊑ A}  ->
+            T₁ ≈ᴾ⟨ yes L⊑A ⟩ T₂ -> t₁ ≈ᵀˢ⟨ yes L⊑A ⟩ t₂ -> T₁' ≔ T₁ [ n ↦ t₁ ]ᵀ
+            -> ∃ (λ T₂' → T₁' ≈ᴾ⟨ yes L⊑A ⟩ T₂'  × T₂' ≔ T₂ [ n ↦ t₂ ]ᵀ)
+updateᵀ-≈ (Kᴾ (Mapᵀ (_ ◅ e₁)) (Mapᵀ (_ ◅ e₁'))) (Kᵀˢ e e') here = _ , (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) , here
+updateᵀ-≈ (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁'))) eq₂ (there u)
+  = P.map (_◅_ _) (P.map (cons≈ᴾ (Kᵀˢ e e')) there) (updateᵀ-≈ (Kᴾ (Mapᵀ e₁) (Mapᵀ e₁')) eq₂ u)
 
-updateᴾ-≈ : ∀ {l ls} {P₁ P₂ P₁' : Pools ls} {T₁ T₂ : Pool l}  (x : Dec (l ⊑ A)) -> P₁' ≔ P₁ [ l ↦ T₁ ]ᴾ ->
-             P₁ map-≈ᴾ P₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> ∃ (λ P₂' → P₁' map-≈ᴾ P₂' × P₂' ≔ P₂ [ l ↦ T₂ ]ᴾ)
-updateᴾ-≈ {l} x here (K-mapᴾ (_ ◅ e₁) (_ ◅ e₁')) (Kᴾ e e') = _ , K-mapᴾ (ext-εᴾ e (l ⊑? A) ◅ e₁) (ext-εᴾ e' (l ⊑? A) ◅ e₁') , here
-updateᴾ-≈ x (there u₁) (K-mapᴾ (e ◅ e₁) (e' ◅ e₁')) eq₂ = P.map (_◅_ _) (P.map (cons-map-≈ᵀ (Kᴾ e e')) there) (updateᴾ-≈ x u₁ (K-mapᴾ e₁ e₁') eq₂)
+updateᴾ-≈ : ∀ {l ls} {P₁ P₂ P₁' : Pools ls} {T₁ T₂ : Pool l} {x : Dec (l ⊑ A)} ->
+             P₁ map-≈ᴾ P₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂  ->  P₁' ≔ P₁ [ l ↦ T₁ ]ᴾ -> ∃ (λ P₂' → P₁' map-≈ᴾ P₂' × P₂' ≔ P₂ [ l ↦ T₂ ]ᴾ)
+updateᴾ-≈ {l} (K-mapᴾ (_ ◅ e₁) (_ ◅ e₁')) (Kᴾ e e') here = _ , K-mapᴾ (ext-εᴾ e (l ⊑? A) ◅ e₁) (ext-εᴾ e' (l ⊑? A) ◅ e₁') , here
+updateᴾ-≈ (K-mapᴾ (e ◅ e₁) (e' ◅ e₁')) eq₂ (there u₁)  = P.map (_◅_ _) (P.map (cons-map-≈ᵀ (Kᴾ e e')) there) (updateᴾ-≈  (K-mapᴾ e₁ e₁') eq₂ u₁)
+
+-- In the fork case we need to produce a low-eq proof
+-- updateᵀ-≈ : ∀ {n L} {T₁ T₁' T₂ : Pool L} {t₁ t₂ : Thread L} {L⊑A : L ⊑ A} -> T₁' ≔ T₁ [ n ↦ t₁ ]ᵀ ->
+--             T₁ ≈ᴾ⟨ yes L⊑A ⟩ T₂ -> ∃ (λ T₂' → T₂' ≔ T₂ [ n ↦ t₂ ]ᵀ)
+-- updateᵀ-≈ here (Kᴾ (Mapᵀ (_ ◅ e₁)) (Mapᵀ (_ ◅ e₁'))) = _ , here
+-- updateᵀ-≈ (there u) (Kᴾ (Mapᵀ (e ◅ e₁)) (Mapᵀ (e' ◅ e₁')))
+--   = P.map (_◅_ _) there (updateᵀ-≈ u (Kᴾ (Mapᵀ e₁) (Mapᵀ e₁')))
+
+-- updateᴾ-≈ : ∀ {l ls} {P₁ P₂ P₁' : Pools ls} {T₁ T₂ : Pool l} -> P₁' ≔ P₁ [ l ↦ T₁ ]ᴾ ->
+--              P₁ map-≈ᴾ P₂ -> ∃ (λ P₂' → P₂' ≔ P₂ [ l ↦ T₂ ]ᴾ)
+-- updateᴾ-≈ {l} here (K-mapᴾ (_ ◅ e₁) (_ ◅ e₁')) = _  , here
+-- updateᴾ-≈ (there u₁) (K-mapᴾ (e ◅ e₁) (e' ◅ e₁')) = P.map (_◅_ _) there (updateᴾ-≈ u₁ (K-mapᴾ e₁ e₁'))
 
 lengthᵀ-≈ : ∀ {l} {T₁ T₂ : Pool l} -> (l⊑A : l ⊑ A) -> T₁ ≈ᴾ⟨ yes l⊑A ⟩ T₂ -> lengthᵀ T₁ ≡ lengthᵀ T₂
 lengthᵀ-≈ {_} {T₁} {T₂} l⊑A T₁≈T₂ rewrite lengthᵀ-ε-≡ l⊑A T₁ | lengthᵀ-ε-≡ l⊑A T₂ | ⌞ T₁≈T₂ ⌟ᴾ = refl
@@ -176,3 +194,5 @@ newᵀ-≈ (Kᴾ (Mapᵀ (x₁ ◅ x)) (Mapᵀ (x₂ ◅ x₃))) t₁≈t₂ wit
 ... | Kᴾ (Mapᵀ e₁) (Mapᵀ e₂) = Kᴾ (Mapᵀ (x₁ ◅ e₁)) (Mapᵀ (x₂ ◅ e₂))
 newᵀ-≈ (Kᴾ (Mapᵀ ∙) (Mapᵀ ∙)) t₁≈t₂ = Kᴾ (Mapᵀ ∙) (Mapᵀ ∙)
 newᵀ-≈ (Kᴾ ∙ ∙) t₁≈t₂ = Kᴾ ∙ ∙
+
+--------------------------------------------------------------------------------

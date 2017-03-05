@@ -14,7 +14,7 @@ open import Sequential.Security 𝓛 A
 
 
 open import Concurrent.Calculus 𝓛 𝓢
-open import Concurrent.Semantics 𝓛 𝓢 public
+open import Concurrent.Semantics 𝓛 𝓢
 open import Concurrent.Erasure A 𝓝
 open import Concurrent.LowEq A 𝓝
 open import Concurrent.Valid 𝓛 𝓢 as V hiding (memberᴾ)
