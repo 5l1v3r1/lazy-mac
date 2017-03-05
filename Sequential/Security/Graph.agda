@@ -228,7 +228,7 @@ unlift-εᶜ (read L⊑H) = refl
 
 data Eraseˢ {l π} : ∀ {τ₁ τ₂} -> Stack l π τ₁ τ₂ -> Stack l π τ₁ τ₂ -> Set where
   [] : ∀ {τ} -> Eraseˢ ([] {τ = τ}) []
-  _∷_ : ∀ {τ₁ τ₂ τ₃} {C₁ C₂ : Cont l π τ₁ τ₂} {S₁ S₂ : Stack l π τ₂ τ₃} -> Eraseᶜ C₁ C₂ -> Eraseˢ S₁ S₂ -> Eraseˢ (C₁ ∷ S₁) (C₂ ∷ S₂)
+  _∷_ : ∀ {τ₁ τ₂ τ₃} {C₁ C₂ : Cont l π τ₁ τ₂} {S₁ S₂ : Stack l π τ₂ τ₃} (eᶜ : Eraseᶜ C₁ C₂)(eˢ : Eraseˢ S₁ S₂) -> Eraseˢ (C₁ ∷ S₁) (C₂ ∷ S₂)
   ∙ : ∀ {τ} -> Eraseˢ (∙ {τ = τ}) ∙
 
 lift-εˢ : ∀ {l π τ₁ τ₂} -> (S : Stack l π τ₁ τ₂) -> Eraseˢ S (εˢ S)

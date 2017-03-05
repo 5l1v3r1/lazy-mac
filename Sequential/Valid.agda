@@ -565,7 +565,6 @@ valid⟼ (Msⱽ , Γⱽ , ()) SS.Hole
 
 --------------------------------------------------------------------------------
 
--- TODO: don't need validᴹ M anyomre
 updateᴹ-valid : ∀ {l τ n} {M : Memory l} -> (c : Cell l τ) -> ValidAddr M n τ -> ∃ (λ M' -> M' ≔ M [ n ↦ c ]ᴹ)
 updateᴹ-valid {M = S.[]} c ()
 updateᴹ-valid {M = cᴸ S.∷ M} c here = _ , here

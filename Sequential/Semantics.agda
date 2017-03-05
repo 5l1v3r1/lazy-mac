@@ -106,7 +106,7 @@ data _⟼_ {l ls} : ∀ {τ} -> Program l ls τ -> Program l ls τ -> Set where
            {S₁ : Stack l π₁ τ₁ τ₃} {S₂ : Stack l π₂ τ₂ τ₃} {Δ₁ : Heap l π₁} {Δ₂ : Heap l π₂}
          -> (l∈Γ : l ↦ ⟨ Δ₁ ⟩ ∈ᴱ Γ)
          -> (step : ⟨ Δ₁ , t₁ , S₁ ⟩ ⇝ ⟨ Δ₂ , t₂ , S₂ ⟩)
-         -> (uᴹ : Γ' ≔ Γ [ l ↦  ⟨ Δ₂ ⟩ ]ᴱ)
+         -> (uᴱ : Γ' ≔ Γ [ l ↦  ⟨ Δ₂ ⟩ ]ᴱ)
          -> ⟨ Ms , Γ , ⟨ t₁ , S₁ ⟩ ⟩ ⟼ ⟨ Ms , Γ' , ⟨ t₂ , S₂ ⟩ ⟩
 
    -- We have to write the term in the memory segment labeled as the reference (H)
@@ -186,6 +186,9 @@ data IsDoneTS {l τ} : TS∙ l τ -> Set where
 
 Doneᴾ : ∀ {l ls τ} -> Program l ls τ -> Set
 Doneᴾ p = IsDoneTS (TS p)
+
+data Redexˢ {l τ} (s : State l τ) : Set where
+  Step : ∀ {s'} -> s ⇝ s' -> Redexˢ s
 
 data Redexᴾ {l ls τ} (p : Program l ls τ) : Set where
   Step : ∀ {p'} -> p ⟼ p' -> Redexᴾ p

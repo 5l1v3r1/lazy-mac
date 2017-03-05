@@ -68,3 +68,8 @@ Concurrent/Lemmas.agda~
 Concurrent/Valid.agdai
 Concurrent/Valid.agda~
 Concurrent/#.agda#
+Sequential/#Erasure.agda#
+Sequential/#Graph.agda#
+Sequential/#LowEq.agda#
+Sequential/#Valid.agda#
+Sequential/.#Valid.agda
