@@ -73,3 +73,8 @@ Sequential/#Graph.agda#
 Sequential/#LowEq.agda#
 Sequential/#Valid.agda#
 Sequential/.#Valid.agda
+Sequential/Security/Graph.agda~
+Sequential/Security/Graph/Base.agdai
+Sequential/Security/Graph/Base.agda~
+Sequential/Security/Graph/Lemmas.agdai
+Sequential/Security/Graph/Lemmas.agda~

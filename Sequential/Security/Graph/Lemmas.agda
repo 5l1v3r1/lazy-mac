@@ -1,6 +1,6 @@
 import Lattice as L
 
-module Sequential.Security.Lemmas (𝓛 : L.Lattice) (A : L.Label 𝓛) where
+module Sequential.Security.Graph.Lemmas (𝓛 : L.Lattice) (A : L.Label 𝓛) where
 
 import Types as T
 open T 𝓛
@@ -16,7 +16,7 @@ open S₁ 𝓛
 
 open import Data.Nat as N
 
-import Sequential.Security.Graph as G renaming (⟨_,_,_⟩ to mkᴱ)
+import Sequential.Security.Graph.Base as G renaming (⟨_,_,_⟩ to mkᴱ)
 open G 𝓛 A
 
 open import Data.Empty
@@ -37,7 +37,6 @@ memberᴴ ⟪ τ∈π ⟫ = aux ⟪ ∈ᴿ-∈ τ∈π ⟫
         aux T.⟪ T.there τ∈π₁ ⟫ (x ∷ eᴱ) (S.there t∈Δ') = P.map id (P.map id there) (aux ⟪ τ∈π₁ ⟫ eᴱ t∈Δ')
         aux T.⟪ T.there τ∈π₁ ⟫ ∙ ()
 
--- TODO rename to updateᴴ ?
 updateᴴ : ∀ {l π π' τ} {Δ₁ Δ₁' Δ₂' : Heap l π} {mt mt' : Maybe (Term π' τ)} -> (τ∈π : τ ∈⟨ l ⟩ π)
           -> Eraseᴹᵀ mt mt' -> EraseMapᵀ Δ₁ Δ₁' -> Updateᴴ mt' τ∈π Δ₁' Δ₂' -> ∃ (λ Δ₂ → EraseMapᵀ Δ₂ Δ₂' × Updateᴴ mt τ∈π Δ₁ Δ₂)
 updateᴴ .(T.⟪ T.here ⟫) eᴹ (x G.∷ eᴱ) S.here = _ , ((eᴹ G.∷ eᴱ) , here)
@@ -84,6 +83,8 @@ sim⇝ l⊑A eᴱ (G.write l⊑H h⊑A eᵀ eᵀ₁) eˢ S₁.Write₁ = Step Wr
 sim⇝ l⊑A eᴱ (G.write' l⊑H h⋤A eᵀ eᵀ₁) eˢ S₁.Write∙₁ = Step Write₁ (mkᴱ (G.just eᵀ₁ G.∷ eᴱ) (wkenᴱ eᵀ (drop refl-⊆)) ((G.write' l⊑H h⋤A ⟪ _ ⟫) G.∷ wkenᴱˢ _ eˢ) )
 sim⇝ l⊑A eᴱ (G.write∙ l⊑H eᵀ eᵀ₁) eˢ S₁.Write∙₁ = Step Write∙₁ (mkᴱ (G.just eᵀ₁ G.∷ eᴱ) (wkenᴱ eᵀ (drop refl-⊆)) ((write∙ l⊑H ⟪ _ ⟫) G.∷ wkenᴱˢ _ eˢ) )
 sim⇝ l⊑A eᴱ (G.read L⊑l eᵀ) eˢ S₁.Read₁ = Step S₁.Read₁ (mkᴱ eᴱ eᵀ (G.read L⊑l G.∷ eˢ ))
+
+--------------------------------------------------------------------------------
 
 memberᴱ : ∀ {h π ls} {Δ' : Heap h π} {Γ Γ' : Heaps ls} (h⊑A : h ⊑ A) ->
           EraseMapᴴ Γ Γ' -> h ↦ ⟨ Δ' ⟩ ∈ᴱ Γ' -> Σ (Heap h π) (λ Δ -> Eraseᴴ (yes h⊑A) (⟨ Δ ⟩) (⟨ Δ' ⟩) × h ↦ ⟨ Δ ⟩ ∈ᴱ Γ)
@@ -200,6 +201,8 @@ sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.⟨ G.deepDup (G.Var τ∈π) , eˢ �
 ... | _ , uᴱ = Step (DeepDup₂ {L⊑l = l⊑L} τ∈π L∈Γ t∈Δ l∈Γ uᴱ)
 sim⟼ L⊑A v₁ (G.mkᴱ eᴹˢ eᴴˢ G.∙ᴸ) S₁.Hole = S₁.Step S₁.Hole
 
+--------------------------------------------------------------------------------
+
 open import Sequential.Security.Simulation 𝓛 A
 
 redex⁻ᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {{pⱽ : validᴾ p}} {l⊑A : l ⊑ A}  -> Eraseᴾ (yes l⊑A) p p' -> Redexᴾ p' -> Redexᴾ p
@@ -210,3 +213,6 @@ redexᴱ {l⊑A = l⊑A} e (S₁.Step step) rewrite unlift-εᴾ e = Step (ε₁
 
 ¬redexᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} {{pⱽ : validᴾ p}} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p) -> ¬ (Redexᴾ p')
 ¬redexᴱ {{pⱽ}} e = contrapositive (redex⁻ᴱ e)
+
+¬redex⁻ᴱ : ∀ {l ls τ} {p p' : Program l ls τ} {l⊑A : l ⊑ A} -> Eraseᴾ (yes l⊑A) p p' -> ¬ (Redexᴾ p') -> ¬ (Redexᴾ p)
+¬redex⁻ᴱ e = contrapositive (redexᴱ e)
