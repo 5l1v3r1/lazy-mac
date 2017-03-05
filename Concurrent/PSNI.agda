@@ -66,28 +66,6 @@ open import Data.Nat
 open import Function
 
 
--- This is consistent with the fact that our lists are truly mappings
--- they are not defined so becuase they are inconvinient to reason with
-postulate _∈ᴸ_ : (l : Label) (ls : List Label) -> l ∈ ls  -- TODO probably can be added to the lattice
-
--- TODO maybe not needed
-lookupᴾ : ∀ {l ls} -> l ∈ ls -> (P : Pools ls) -> ∃ (λ T → l ↦ T ∈ᴾ P)
-lookupᴾ here (T C.◅ P) = T , here
-lookupᴾ (there q) (T' C.◅ P) = P.map id there (lookupᴾ q P)
-
--- The scheduler gives me only valid thread id
-postulate lookupᵀ : ∀ {l} -> (n : ℕ) (T : Pool l) -> ∃ (λ t → n ↦ t ∈ᵀ T)
-
--- TODO move to Semantics
-postulate stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Stateᴾ p
-
-secureStack : ∀ {π l l' τ} -> Stack l π (Mac l' τ) (Mac l τ) -> l' ≡ l
-secureStack [] = refl
-secureStack (# τ∈π ∷ S) = secureStack S
-secureStack (Bind x ∷ S) = refl
-secureStack ∙ = refl
-
-
 open import Sequential.Security.Graph 𝓛 A
 
 open import Concurrent.Lemmas A 𝓝
@@ -156,15 +134,12 @@ open import Concurrent.Lemmas A 𝓝
 
 
 
+
+
 -- εᴳ-simᴸ▵ : ∀ {L H n m n₁ n₂ ls T₂ Ts₂} {g₁ g₁' g₂ : Global ls} -> L ⊑ A -> (L , n)  ⊢ g₁ ↪ g₁' -> g₁ ≈ᴳ-⟨ n₁ , N.suc n₂ ⟩ g₂ ->
 --               H ⋤ A -> H ↦ T₂ ∈ᴾ (C.P g₂) -> m ↦ Ts₂ ∈ᵀ T₂ -> Stateᴾ (mkᴾ (C.Ms g₂) (C.Γ g₂) Ts₂) ->
 --              ((e : Event H) → ∃ (λ Σ₂' →  C.Σ g₁ ≈ˢ-⟨ n₁ , n₂ ⟩ Σ₂' × (C.Σ g₂) ⟶ Σ₂' ↑ S.⟪ H , m , e ⟫)) ->
 --              g₂ ↪⋆-≈ᴳ g₁'
-
-εᴳ-simᴸ⋆ : ∀ {L n n₁ ls} {g₁ g₁' g₂ : Global ls} {{v₁ : validᴳ g₁}} {{v₂ : validᴳ g₂}} (n₂ : ℕ) -> L ⊑ A -> (L , n)  ⊢ g₁ ↪ g₁' -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> g₂ ↪⋆-≈ᴳ g₁'
-
-
-
 
 -- εᴳ-simᴸ▵ {n₂ = n₂} L⊑A step L₁.⟨ Σ₁≈Σ₂ , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ H⋤A H∈P₂ Ts∈T₂ (isD don) nextˢ with nextˢ Done
 -- ... | Σ₂' , Σ₂≈Σ₂' , sch' with εᴳ-simᴸ⋆ n₂ L⊑A step L₁.⟨ Σ₂≈Σ₂' , MS₁≈MS₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
@@ -203,6 +178,9 @@ squareᴸ l⊑A g₁≈g₂ step₁ step₂ = ⌜ aux ⌞ g₁≈g₂ ⌟ᴳ (ε
   where aux : ∀ {ls n l} {g₁ g₁' g₂ g₂' : Global ls} -> g₁ ≡ g₂ -> (l , n) ⊢ g₁ ↪ g₁' -> (l , n) ⊢ g₂ ↪ g₂' -> g₁' ≡ g₂'
         aux refl x y = determinismᶜ x y
 
+
+εᴳ-simᴸ⋆ : ∀ {L n n₁ ls} {g₁ g₁' g₂ : Global ls} {{v₁ : validᴳ g₁}} {{v₂ : validᴳ g₂}} (n₂ : ℕ) ->
+             L ⊑ A -> (L , n)  ⊢ g₁ ↪ g₁' -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> g₂ ↪⋆-≈ᴳ g₁'
 εᴳ-simᴸ⋆ N.zero L⊑A step g₁≈g₂ with redexᴳ-≈ L⊑A g₁≈g₂ step
 ... | CS.Step step' = Cᴳ _ (squareᴸ L⊑A (forgetᴳ g₁≈g₂) step step') (step' ∷ [])
 

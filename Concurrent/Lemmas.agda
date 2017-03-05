@@ -1,15 +1,16 @@
 import Lattice as L₁
-import Scheduler as S
+import Scheduler as S₁
 open import Scheduler.Security
 
-module Concurrent.Lemmas {𝓛 : L₁.Lattice} {𝓢 : S.Scheduler 𝓛} (A : L₁.Label 𝓛) (𝓝 : NIˢ 𝓛 A 𝓢) where
+module Concurrent.Lemmas {𝓛 : L₁.Lattice} {𝓢 : S₁.Scheduler 𝓛} (A : L₁.Label 𝓛) (𝓝 : NIˢ 𝓛 A 𝓢) where
 
 open import Data.Nat as N
 open import Relation.Nullary
 open import Types 𝓛
 
 open import Sequential.Calculus 𝓛 renaming (⟨_,_,_⟩ to mkᴾ ; ⟨_,_⟩ to mkᵀ) hiding (Ms ; Γ)
-open import Sequential.Semantics 𝓛
+import Sequential.Semantics as S
+open S 𝓛
 open import Sequential.Security.Graph 𝓛 A renaming (⟨_,_⟩ to Eᵗ)
 open import Sequential.Security.LowEq 𝓛 A renaming (⟨_,_,_⟩ to is≈ᴾ ; ⟨_,_⟩ to is≈ᵗ)
 open _≈ᴾ⟨_⟩_
@@ -17,13 +18,14 @@ open import Sequential.Security.PINI 𝓛 A
 
 import Concurrent.LowEq as L hiding (⌜_⌝ᴾ ; ⌞_⌟ᴾ) renaming ( ⟨_,_,_,_⟩ to is≈ᴳ) --  ; Σ₁≈Σ₂′ to Σ₁≈Σ₂ ; Ms₁≈Ms₂′ to Ms₁≈Ms₂ ; Γ₁≈Γ₂′ to Γ₁≈Γ₂ ; P₁≈P₂′ to P₁≈P₂)
 open L A 𝓝
-open import Concurrent.Calculus 𝓛 𝓢 renaming (⟨_,_,_,_⟩ to mkᴳ)
+open import Concurrent.Calculus 𝓛 𝓢 as C renaming (⟨_,_,_,_⟩ to mkᴳ)
 
 import Concurrent.Semantics as CS
 open CS 𝓛 𝓢
 
 open import Concurrent.Valid 𝓛 𝓢 as V hiding (memberᴾ)
 
+open import Scheduler.Base 𝓛
 open Scheduler.Security.NIˢ 𝓛 A 𝓝 renaming (State to Stateˢ)
 
 open import Data.Product
@@ -63,3 +65,46 @@ postulate redexᴳ-≈ : ∀ {l i n ls} {g₁ g₂ g₁' : Global ls} {{v₁ : v
 -- ... | _ , P₁≈P₂' , l∈P₂  with memberᵀ-≈ t∈T P₁≈P₂'
 -- ... | _ , T₁≈T₂ , t∈T₂ with redex-≈ˢ l⊑A sch Σ₁≈Σ₂
 -- ... | _ , sch' = CS.Step (done l∈P₂ t∈T₂ (done-≈ T₁≈T₂ don) sch')
+
+
+postulate _∈ᴸ_ : (l : Label) (ls : List Label) -> l ∈ ls  -- TODO probably can be added to the lattice
+
+-- The scheduler gives me only valid thread id
+postulate lookupᵀ : ∀ {l} -> (n : ℕ) (T : Pool l) -> ∃ (λ t → n ↦ t ∈ᵀ T)
+
+-- TODO move to Semantics
+postulate stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Stateᴾ p
+
+open import Relation.Binary.PropositionalEquality
+
+secureStack : ∀ {π l l' τ} -> Stack l π (Mac l' τ) (Mac l τ) -> l' ≡ l
+secureStack [] = refl
+secureStack (# τ∈π ∷ S) = secureStack S
+secureStack (Bind x ∷ S) = refl
+secureStack ∙ = refl
+
+εᴳ-simᴸ▵ : ∀ {l n ls T Ts} {g : Global ls} {{v : validᴳ g}} ->
+              l ↦ T ∈ᴾ (P g) -> n ↦ Ts ∈ᵀ T -> Stateᴾ (mkᴾ (Ms g) (Γ g) Ts) ->
+              (∀ (e : Event _) → ∃ (λ Σ' →  (C.Σ g) ⟶ Σ' ↑ S₁.⟪ l  , n , e ⟫ )) ->
+                Redexᴳ (l , n) g
+εᴳ-simᴸ▵ l∈Ps t∈T (S.isD x) nextˢ = CS.Step (done l∈Ps t∈T x (proj₂ (nextˢ Done)))
+εᴳ-simᴸ▵ l∈Ps t∈T (S.isR (S.Step {p' = p'} x)) nextˢ with C.updateᵀ t∈T (TS p')
+... | T' , uᵀ  with C.updateᴾ l∈Ps T'
+... | Ps' , uᴾ = Step (step-∅ l∈Ps t∈T (Redex-¬IsForkTS (Step x)) x (proj₂ (nextˢ Step)) uᵀ uᴾ)
+εᴳ-simᴸ▵ l∈Ps t∈T (S.isS x) nextˢ = Step (skip l∈Ps t∈T x (proj₂ (nextˢ Skip)))
+εᴳ-simᴸ▵ l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork {h = H} l⊑h t))) nextˢ
+  rewrite secureStack S with C.updateᵀ t∈T (mkᵀ (Return _ _) S)
+... | T' , uᵀ with C.updateᴾ l∈Ps T'
+... | Ps' , u₁ᴾ with lookupᴾ {!!} Ps' | lookup-∈ᴾ {!!} Ps'
+... | Tᴴ | H∈Ps  with  C.updateᴾ H∈Ps (Tᴴ ▻ mkᵀ t [])
+... | Ps'' , u₂ᴾ with nextˢ (Fork H (lengthᴾ Tᴴ) l⊑h)
+... | _ , sch' = CS.Step (fork l∈Ps t∈T uᵀ u₁ᴾ H∈Ps sch' u₂ᴾ)
+εᴳ-simᴸ▵ {{v}} l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork∙ p t))) nextˢ
+  rewrite secureStack S = ⊥-elim (proj₁ (V.memberᴾ (memberᴾˢ (proj₂ (proj₂ v)) l∈Ps) t∈T))
+
+-- TODO take only scheduler staff ?
+redexᴳ-≈ᴴ : ∀ {ls L i j n} {g₁ g₂ g₁' : Global ls} {{v₁ : validᴳ g₁}} {{v₂ : validᴳ g₂}} ->
+                      L ⊑ A -> g₁ ≈ᴳ-⟨ i , suc j ⟩ g₂ -> ( L , n ) ⊢ g₁ ↪ g₁' -> ∃ (λ x → Redexᴳ x g₂)
+redexᴳ-≈ᴴ {ls} {g₂ = g₂} L⊑A g₁≈g₂ step with redex-≈▵ˢ L⊑A (get≈ˢ g₁≈g₂) (getSchStep step)
+... | (H , m) , nextˢ with lookupᵀ m (lookupᴾ (H ∈ᴸ ls) (P g₂))
+... | Ts₂ , t∈T₂ = (H , m) , (εᴳ-simᴸ▵ (lookup-∈ᴾ (H ∈ᴸ ls) (P g₂)) t∈T₂ (stateᴾ (mkᴾ (Ms g₂) (Γ g₂) Ts₂)) nextˢ)

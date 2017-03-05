@@ -241,8 +241,6 @@ data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
 ⊥-doneForks : ∀ {l τ} {Ts : TS∙ l τ} -> IsDoneTS Ts -> ¬ (IsForkTS Ts)
 ⊥-doneForks  (isDoneTS ()) (isForkTS (Fork p t))
 ⊥-doneForks (isDoneTS ()) (isForkTS (Fork∙ p t))
--- ⊥-doneForks {p = ⟨ Ms , Γ , ⟨ ._ , .[] ⟩ ⟩} (isDoneTS ()) (isForkTS (Fork∙ p t))
--- ⊥-doneForks {p = ⟨ Ms , Γ , ∙ ⟩} () _
 
 --------------------------------------------------------------------------------
 

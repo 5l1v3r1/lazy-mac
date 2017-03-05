@@ -65,6 +65,10 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
       -- Splitting square and triangle in two separate lemmas for convenience
       redex-≈ˢ : ∀ {L i n e Σ₁ Σ₂ Σ₁'} -> L ⊑ A -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ -> Σ₁ ≈ˢ-⟨ i , 0 ⟩ Σ₂ -> ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e ⟫)
 
+      redex-≈▵ˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁ n₂} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , suc n₂ ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
+                  ∃ (λ x → ∀ (e : Event _) → ∃ (λ Σ₂' →  Σ₂ ⟶ Σ₂' ↑ ⟪ proj₁ x , proj₂ x , e ⟫ ))
+
+
     refl-≈ˢ : ∀ {Σ} -> Σ ≈ˢ Σ
     refl-≈ˢ = ⌜ refl ⌝
 
