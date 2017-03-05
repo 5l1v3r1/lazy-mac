@@ -238,9 +238,11 @@ data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
 ⊥-stuckDone : ∀ {l ls τ} {p : Program l ls τ} -> Stuckᴾ p -> ¬ (Doneᴾ p)
 ⊥-stuckDone stuck don = proj₁ stuck don
 
-⊥-doneForks : ∀ {l ls π τ₁ τ₂} {Ms : Memories ls} {Γ : Heaps ls} {t : Term π τ₁} {S : Stack l _ _ τ₂} -> Doneᴾ ⟨ Ms , Γ , ⟨ t , S ⟩ ⟩ -> ¬ (IsFork t)
-⊥-doneForks (isDoneTS ()) (Fork p t)
-⊥-doneForks (isDoneTS ()) (Fork∙ p t)
+⊥-doneForks : ∀ {l τ} {Ts : TS∙ l τ} -> IsDoneTS Ts -> ¬ (IsForkTS Ts)
+⊥-doneForks  (isDoneTS ()) (isForkTS (Fork p t))
+⊥-doneForks (isDoneTS ()) (isForkTS (Fork∙ p t))
+-- ⊥-doneForks {p = ⟨ Ms , Γ , ⟨ ._ , .[] ⟩ ⟩} (isDoneTS ()) (isForkTS (Fork∙ p t))
+-- ⊥-doneForks {p = ⟨ Ms , Γ , ∙ ⟩} () _
 
 --------------------------------------------------------------------------------
 

@@ -3,6 +3,8 @@ import Scheduler as S
 
 module Concurrent.Determinism (𝓛 : L.Lattice) (𝓢 : S.Scheduler 𝓛) where
 
+open import Types 𝓛
+
 open import Sequential.Calculus 𝓛
 open import Sequential.Semantics 𝓛
 open import Sequential.Determinism 𝓛
@@ -55,10 +57,10 @@ determinismᶜ (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) (CS.step-∅ 
 ... | refl rewrite determinismˢ sch sch₁ | updateᵀ-≡ uᵀ uᵀ₁ | updateᴾ-≡ uᴾ uᴾ₁ = refl
 determinismᶜ (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) (CS.fork l∈P₁ t∈T₁ uᵀ₁ u₁ᴾ H∈P₂ sch₁ u₂ᴾ)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
-... | refl = ⊥-elim (¬fork (Fork _ _))
+... | refl = ⊥-elim (¬fork (isForkTS (Fork _ _)))
 determinismᶜ (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) (CS.fork∙ l∈P₁ t∈T₁ uᵀ₁ u₁ᴾ sch₁)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
-... | refl = ⊥-elim (¬fork (Fork∙ _ _))
+... | refl = ⊥-elim (¬fork (isForkTS (Fork∙ _ _)))
 determinismᶜ (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) (CS.skip l∈P₁ t∈T₁ stuck sch₁)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
 ... | refl = ⊥-elim (⊥-stuckSteps stuck (Step step))
@@ -67,7 +69,7 @@ determinismᶜ (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) (CS.done l∈
 ... | refl = ⊥-elim (⊥-doneSteps don (Step step))
 determinismᶜ (CS.fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) (CS.step-∅ l∈P₁ t∈T₁ ¬fork step₁ sch₁ uᵀ₁ uᴾ)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
-... | refl = ⊥-elim (¬fork (Fork _ _))
+... | refl = ⊥-elim (¬fork (isForkTS (Fork _ _)))
 determinismᶜ (CS.fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) (CS.fork l∈P₁ t∈T₁ uᵀ₁ u₁ᴾ₁ H∈P₃ sch₁ u₂ᴾ₁)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
 ... | refl rewrite updateᵀ-≡ uᵀ uᵀ₁ | updateᴾ-≡ u₁ᴾ u₁ᴾ₁ | memberᴾ-≡ H∈P₂ H∈P₃ | updateᴾ-≡ u₂ᴾ u₂ᴾ₁ | determinismˢ sch sch₁ = refl
@@ -79,10 +81,10 @@ determinismᶜ (CS.fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) (CS.skip 
 ... | refl = ⊥-elim (⊥-stuckForks stuck (Fork _ _))
 determinismᶜ (CS.fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) (CS.done l∈P₁ t∈T₁ don sch₁)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
-... | refl = ⊥-elim (⊥-doneForks don (Fork _ _))
+... | refl = ⊥-elim (⊥-doneForks don (isForkTS (Fork _ _)))
 determinismᶜ (CS.fork∙ l∈P t∈T uᵀ u₁ᴾ sch) (CS.step-∅ l∈P₁ t∈T₁ ¬fork step₁ sch₁ uᵀ₁ uᴾ)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
-... | refl = ⊥-elim (¬fork (Fork∙ _ _))
+... | refl = ⊥-elim (¬fork (isForkTS (Fork∙ _ _)))
 determinismᶜ (CS.fork∙ l∈P t∈T uᵀ u₁ᴾ sch) (CS.fork l∈P₁ t∈T₁ uᵀ₁ u₁ᴾ₁ H∈P₂ sch₁ u₂ᴾ)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
 ... | ()
@@ -94,7 +96,7 @@ determinismᶜ (CS.fork∙ l∈P t∈T uᵀ u₁ᴾ sch) (CS.skip l∈P₁ t∈T
 ... | refl = ⊥-elim (⊥-stuckForks stuck (Fork∙ _ _))
 determinismᶜ (CS.fork∙ l∈P t∈T uᵀ u₁ᴾ sch) (CS.done l∈P₁ t∈T₁ don sch₁)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
-... | refl = ⊥-elim (⊥-doneForks don (Fork∙ _ _))
+... | refl = ⊥-elim (⊥-doneForks don (isForkTS (Fork∙ _ _)))
 determinismᶜ (CS.skip l∈P t∈T stuck sch) (CS.step-∅ l∈P₁ t∈T₁ ¬fork step sch₁ uᵀ uᴾ)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
 ... | refl = ⊥-elim (⊥-stuckSteps stuck (Step step))
@@ -114,10 +116,10 @@ determinismᶜ (CS.done l∈P t∈T don sch) (CS.step-∅ l∈P₁ t∈T₁ ¬fo
 ... | refl = ⊥-elim (⊥-doneSteps don (Step step))
 determinismᶜ (CS.done l∈P t∈T don sch) (CS.fork l∈P₁ t∈T₁ uᵀ u₁ᴾ H∈P₂ sch₁ u₂ᴾ)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
-... | refl = ⊥-elim (⊥-doneForks don (Fork _ _))
+... | refl = ⊥-elim (⊥-doneForks don (isForkTS (Fork _ _)))
 determinismᶜ (CS.done l∈P t∈T don sch) (CS.fork∙ l∈P₁ t∈T₁ uᵀ u₁ᴾ sch₁)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
-... | refl = ⊥-elim (⊥-doneForks don (Fork∙ _ _))
+... | refl = ⊥-elim (⊥-doneForks don (isForkTS (Fork∙ _ _)))
 determinismᶜ (CS.done l∈P t∈T don sch) (CS.skip l∈P₁ t∈T₁ stuck sch₁)
   rewrite memberᴾ-≡ l∈P l∈P₁ with memberᵀ-≡ t∈T t∈T₁
 ... | refl = ⊥-elim (⊥-stuckDone stuck don)
