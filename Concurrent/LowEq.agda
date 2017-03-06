@@ -40,7 +40,7 @@ data _≈ᴾ⟨_⟩_ {l : Label} (T₁ : Pool l) (x : Dec (l ⊑ A)) (T₂ : Poo
 ext-≈ᴾ : ∀ {l} {x : Dec (l ⊑ A)} {T₁ T₂ : Pool l} -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> (y : Dec (l ⊑ A)) -> T₁ ≈ᴾ⟨ y ⟩ T₂
 ext-≈ᴾ (Kᴾ e₁ e₂) y = Kᴾ (ext-εᴾ e₁ y) (ext-εᴾ e₂ y)
 
-open import Sequential.Security.LowEq 𝓛 A hiding (_≈ᴾ⟨_⟩_ ; _≅ᴾ_ ; refl-≈ᴾ ; sym-≈ᴾ ; trans-≈ᴾ ; _≈ˢ_ ; ⌞_⌟ᴾ ; ext-≈ᴾ)
+open import Sequential.Security.LowEq 𝓛 A hiding (_≈ᴾ⟨_⟩_ ; _≅ᴾ_ ; refl-≈ᴾ ; sym-≈ᴾ ; trans-≈ᴾ ; _≈ˢ_ ; ⌞_⌟ᴾ ; ext-≈ᴾ )
 
 cons≈ᴾ : ∀ {l} {t₁ t₂ : Thread l} {x : Dec (l ⊑ A)} {T₁ T₂ : Pool l} -> t₁ ≈ᵀˢ⟨ x ⟩ t₂ -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> (t₁ ◅ T₁) ≈ᴾ⟨ x ⟩ (t₂ ◅ T₂)
 cons≈ᴾ (Kᵀˢ e₁ e₂)  (Kᴾ (Mapᵀ x) (Mapᵀ x₁)) = Kᴾ (Mapᵀ (e₁ ◅ x)) (Mapᵀ (e₂ ◅ x₁))
@@ -206,5 +206,14 @@ newᵀ-≈ (Kᴾ (Mapᵀ (x₁ ◅ x)) (Mapᵀ (x₂ ◅ x₃))) t₁≈t₂ wit
 ... | Kᴾ (Mapᵀ e₁) (Mapᵀ e₂) = Kᴾ (Mapᵀ (x₁ ◅ e₁)) (Mapᵀ (x₂ ◅ e₂))
 newᵀ-≈ (Kᴾ (Mapᵀ ∙) (Mapᵀ ∙)) t₁≈t₂ = Kᴾ (Mapᵀ ∙) (Mapᵀ ∙)
 newᵀ-≈ (Kᴾ ∙ ∙) t₁≈t₂ = Kᴾ ∙ ∙
+
+
+open import Scheduler.Base 𝓛
+open import Scheduler.Security 𝓛 A as S₁
+
+forkᴱ-≈  : ∀ {l h} {T₁ T₂ : Pool h} {l⊑A : l ⊑ A} {l⊑h : l ⊑ h} ->
+             (x : Dec (h ⊑ A)) -> T₁ ≈ᴾ⟨ x ⟩ T₂ -> ( Fork h (lengthᵀ T₁) l⊑h ) S₁.≈ᴱ⟨ yes l⊑A ⟩ ( Fork h (lengthᵀ T₂) l⊑h )
+forkᴱ-≈ (yes p) T₁≈T₂ rewrite lengthᵀ-≈ p T₁≈T₂ = S₁.Forkᴸ p
+forkᴱ-≈ (no ¬p) eq = S₁.Forkᴴ ¬p
 
 --------------------------------------------------------------------------------

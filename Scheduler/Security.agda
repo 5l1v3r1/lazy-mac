@@ -22,6 +22,16 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
   εᴹ : ∀ {l} -> Message l -> Message l
   εᴹ ⟪ l , n , e ⟫ = ⟪ l , n , εᴱ e ⟫
 
+  -- Low-equivalence for events
+  -- To prove that it corresponds to εᴹ, we need to extend ℕ with • and use it to
+  -- overwrite the id of high threads forked from low contexts
+  data _≈ᴱ⟨_⟩_ {l} : Event l -> Dec (l ⊑ A) -> Event l -> Set where
+    Step : ∀ {l⊑A : l ⊑ A} -> Step ≈ᴱ⟨ yes l⊑A ⟩ Step
+    Skip : ∀ {l⊑A : l ⊑ A} -> Skip ≈ᴱ⟨ yes l⊑A ⟩ Skip
+    Done : ∀ {l⊑A : l ⊑ A} -> Done ≈ᴱ⟨ yes l⊑A ⟩ Done
+    Forkᴸ : ∀ {h n} {l⊑A : l ⊑ A} {l⊑h : l ⊑ h} -> (h⊑A : h ⊑ A) -> Fork h n l⊑h ≈ᴱ⟨ yes l⊑A ⟩ Fork h n l⊑h
+    Forkᴴ : ∀ {h n₁ n₂} {l⊑A : l ⊑ A} {l⊑h : l ⊑ h} -> (h⋤A : h ⋤ A) -> Fork h n₁ l⊑h ≈ᴱ⟨ yes l⊑A ⟩ Fork h n₂ l⊑h
+    ∙ : ∀ {e₁ e₂ : Event l} {l⋤A : l ⋤ A} -> e₁ ≈ᴱ⟨ no l⋤A ⟩ e₂
 
   record NIˢ (𝓢 : S.Scheduler 𝓛) : Set₁ where
     open Scheduler 𝓢 public
@@ -63,7 +73,8 @@ module Scheduler.Security (𝓛 : Lattice) (A : Label 𝓛) where
                  ∃ (λ H → ∃ (λ m → H ⋤ A × ∀ (e : Event H) → ∃ (λ Σ₂' → Σ₁ ≈ˢ-⟨ n₁ , n₂ ⟩ Σ₂' ×  Σ₂ ⟶ Σ₂' ↑ ⟪ H , m , e ⟫ )))
 
       -- Splitting square and triangle in two separate lemmas for convenience
-      redex-≈ˢ : ∀ {L i n e Σ₁ Σ₂ Σ₁'} -> L ⊑ A -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ -> Σ₁ ≈ˢ-⟨ i , 0 ⟩ Σ₂ -> ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e ⟫)
+      redex-≈ˢ : ∀ {L i n e₁ e₂ Σ₁ Σ₂ Σ₁'} -> (L⊑A : L ⊑ A) -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e₁ ⟫ -> Σ₁ ≈ˢ-⟨ i , 0 ⟩ Σ₂ ->
+                      e₁ ≈ᴱ⟨ yes L⊑A ⟩ e₂ -> ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e₂ ⟫)
 
       redex-≈▵ˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁ n₂} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , suc n₂ ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
                   ∃ (λ x → ∀ (e : Event _) → ∃ (λ Σ₂' →  Σ₂ ⟶ Σ₂' ↑ ⟪ proj₁ x , proj₂ x , e ⟫ ))
