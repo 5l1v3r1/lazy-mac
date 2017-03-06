@@ -127,8 +127,3 @@ lookupᴾ (there l∈ls) (T ◅ Ps) = lookupᴾ l∈ls Ps
 lookup-∈ᴾ : ∀ {l ls} -> (l∈ls : l ∈ ls) (Ps : Pools ls) -> l ↦ lookupᴾ l∈ls Ps ∈ᴾ Ps
 lookup-∈ᴾ here (T ◅ Ps) = here
 lookup-∈ᴾ (there l∈ls) (T ◅ Ps) = there (lookup-∈ᴾ l∈ls Ps)
-
-lengthᴾ : ∀ {l} -> Pool l -> ℕ
-lengthᴾ [] = 0
-lengthᴾ (t ◅ P) = suc (lengthᴾ P)
-lengthᴾ ∙ = 0

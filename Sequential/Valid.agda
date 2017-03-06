@@ -48,7 +48,7 @@ validᵀ {ls} {π = π} Ms (S.new {h = H} x t) = H ∈ ls × validᵀ Ms t
 validᵀ Ms (S.new∙ x t) = ⊥
 validᵀ Ms S.#[ x ] = ⊤
 validᵀ Ms S.#[ x ]ᴰ = ⊤
-validᵀ Ms (S.fork l⊑h t) = validᵀ Ms t
+validᵀ {ls} Ms (S.fork {h = H} l⊑h t) = H ∈ ls × validᵀ Ms t
 validᵀ Ms (S.fork∙ l⊑h t) = ⊥
 validᵀ Ms (S.deepDup t) = validᵀ Ms t
 validᵀ Ms S.∙ = ⊥
@@ -190,7 +190,7 @@ wkenᵀ Ms₁⊆Ms₂ (S.new x t) (h∈ls , ok₃) = L₁.wken-∈ (⊆ˢ-⊆ Ms
 wkenᵀ Ms₁⊆Ms₂ (S.new∙ x t) ()
 wkenᵀ Ms₁⊆Ms₂ S.#[ x ] ok = T.tt
 wkenᵀ Ms₁⊆Ms₂ S.#[ x ]ᴰ ok = T.tt
-wkenᵀ Ms₁⊆Ms₂ (S.fork l⊑h t) ok = wkenᵀ Ms₁⊆Ms₂ t ok
+wkenᵀ Ms₁⊆Ms₂ (S.fork l⊑h t) (h∈ls , ok) = L₁.wken-∈ (⊆ˢ-⊆ Ms₁⊆Ms₂) h∈ls , wkenᵀ Ms₁⊆Ms₂ t ok
 wkenᵀ Ms₁⊆Ms₂ (S.fork∙ l⊑h t) ()
 wkenᵀ Ms₁⊆Ms₂ (S.deepDup t) ok = wkenᵀ Ms₁⊆Ms₂ t ok
 wkenᵀ Ms₁⊆Ms₂ S.∙ ()
@@ -326,7 +326,7 @@ valid-wkenᵀ {{t = S.new x t}} (l∈ls , v) π₁⊆π₂ = l∈ls , valid-wken
 valid-wkenᵀ {{t = S.new∙ x t}} () π₁⊆π₂
 valid-wkenᵀ {{t = S.#[ x ]}} v π₁⊆π₂ = T.tt
 valid-wkenᵀ {{t = S.#[ x ]ᴰ}} v π₁⊆π₂ = T.tt
-valid-wkenᵀ {{t = S.fork l⊑h t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
+valid-wkenᵀ {{t = S.fork l⊑h t}} (h∈ls , v) π₁⊆π₂ = h∈ls , valid-wkenᵀ v π₁⊆π₂
 valid-wkenᵀ {{t = S.fork∙ l⊑h t}} () π₁⊆π₂
 valid-wkenᵀ {{t = S.deepDup t}} v π₁⊆π₂ = valid-wkenᵀ v π₁⊆π₂
 valid-wkenᵀ {{t = S.∙}} () π₁⊆π₂
@@ -389,7 +389,7 @@ valid-subst {π} {Ms = Ms} {t₁'} {t₂'} = aux [] π t₁' t₂'
         aux π₁ π₂ t₁ (S.new∙ x t₂) v₁ ()
         aux π₁ π₂ t₁ S.#[ x ] v₁ v₂ = tt
         aux π₁ π₂ t₁ S.#[ x ]ᴰ v₁ v₂ = tt
-        aux π₁ π₂ t₁ (S.fork l⊑h t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
+        aux π₁ π₂ t₁ (S.fork l⊑h t₂) v₁ (h∈ls , v₂) = h∈ls , aux π₁ π₂ t₁ t₂ v₁ v₂
         aux π₁ π₂ t₁ (S.fork∙ l⊑h t₂) v₁ ()
         aux π₁ π₂ t₁ (S.deepDup t₂) v₁ v₂ = aux π₁ π₂ t₁ t₂ v₁ v₂
         aux π₁ π₂ t₁ S.∙ v₁ ()
@@ -431,7 +431,7 @@ valid-deepDupᵀ {{t}} {Ms} v = aux [] t v
         aux vs (S.new∙ x t₁) ()
         aux vs S.#[ x ] v₁ = T.tt
         aux vs S.#[ x ]ᴰ v₁ = T.tt
-        aux vs (S.fork l⊑h t₁) v₁ = aux vs t₁ v₁
+        aux vs (S.fork l⊑h t₁) (h∈ls , v₁) = h∈ls , aux vs t₁ v₁
         aux vs (S.fork∙ l⊑h t₁) ()
         aux vs (S.deepDup t₁) v₁ = v₁
         aux vs S.∙ ()

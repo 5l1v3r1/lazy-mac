@@ -35,7 +35,7 @@ map-validᴾ Ms C.[] = ⊤
 map-validᴾ Ms (T C.◅ Ps) = validᴾ Ms T × map-validᴾ Ms Ps
 
 valid-Idᵀ : ∀ {ls} -> Label -> ℕ -> Pools ls -> Set
-valid-Idᵀ {ls} l n Ps = P.Σ (l ∈ ls) (λ l∈ls -> n ≤ lengthᴾ (lookupᴾ l∈ls Ps))
+valid-Idᵀ {ls} l n Ps = P.Σ (l ∈ ls) (λ l∈ls -> n ≤ lengthᵀ (lookupᴾ l∈ls Ps))
 
 validᴳ : ∀ {ls} -> Global ls -> Set
 validᴳ (mkᴳ Σ Ms Γ Ps) = map-validᴹ Ms × map-validᴴ Ms Γ × map-validᴾ Ms Ps
@@ -79,7 +79,7 @@ valid↪ (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) (MSⱽ , Γⱽ , Ps
 ... | Msⱽ' , Γⱽ' , tⱽ' | Ms₁⊆Ms₂ = Msⱽ' , (Γⱽ' , updateᴾˢ (wkenᴾˢ Ms₁⊆Ms₂ Psᵛ) (updateᴾ (wkenᴾ Ms₁⊆Ms₂  P₁ⱽ) tⱽ' uᵀ) uᴾ)
 valid↪ (CS.fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) (MSⱽ , Γⱽ , Psᵛ) with memberᴾˢ Psᵛ l∈P
 ... | P₁ⱽ with memberᴾ P₁ⱽ t∈T
-... | tᴴⱽ , Sⱽ  with updateᴾˢ Psᵛ (updateᴾ P₁ⱽ (T.tt , Sⱽ) uᵀ) u₁ᴾ
+... | (h∈ls , tᴴⱽ) , Sⱽ  with updateᴾˢ Psᵛ (updateᴾ P₁ⱽ (T.tt , Sⱽ) uᵀ) u₁ᴾ
 ... | Psᵛ' = MSⱽ , Γⱽ , updateᴾˢ Psᵛ' (valid-▻ (memberᴾˢ Psᵛ' H∈P₂) (tᴴⱽ , tt)) u₂ᴾ
 valid↪ (CS.fork∙ l∈P t∈T uᵀ uᴾ sch) (MSⱽ , Γⱽ , Psᵛ) with memberᴾ (memberᴾˢ Psᵛ l∈P) t∈T
 valid↪ (CS.fork∙ l∈P t∈T uᵀ uᴾ sch) (MSⱽ , Γⱽ , Psᵛ) | () , proj₂

@@ -5,14 +5,14 @@ open import Scheduler.Security
 
 module Concurrent.PSNI {𝓛 : L.Lattice} {𝓢 : S.Scheduler 𝓛} (A : L.Label 𝓛) (𝓝 : NIˢ 𝓛 A 𝓢) where
 
-open import Data.Product
+open import Data.Product as P
 open import Data.Nat
 open import Types 𝓛
 
 open import Relation.Nullary
 open import Relation.Binary.PropositionalEquality
 
-open import Concurrent.Calculus 𝓛 𝓢 hiding (lookupᴾ)
+open import Concurrent.Calculus 𝓛 𝓢 as C hiding (lookupᴾ)
 open import Concurrent.Semantics 𝓛 𝓢
 open import Concurrent.Simulation A 𝓝
 open import Concurrent.Lemmas A 𝓝
@@ -67,3 +67,5 @@ psni : ∀ {l n ls} {g₁ g₁' g₂ : Global ls} {{v₁ : validᴳ g₁}} {{v�
          -> g₁ ≅ᴳ g₂ -> (l , n)  ⊢ g₁ ↪ g₁' -> ∃ (λ g₂' → g₂ ↪⋆ g₂' × g₁' ≅ᴳ g₂')
 psni {l} eq s with εᴳ-sim⋆ (l ⊑? A) s ⌜ eq ⌝ᴳ
 psni eq s | Cᴳ g₂' g₁'≈ᴳg₂'  g₂↪⋆g₂' = g₂' , (g₂↪⋆g₂' , ⌞ g₁'≈ᴳg₂' ⌟ᴳ)
+
+--------------------------------------------------------------------------------

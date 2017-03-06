@@ -67,14 +67,6 @@ redexᴳ-≈ l⊑A (L.is≈ᴳ Σ₁≈Σ₂ Ms₁≈Ms₂ Γ₁≈Γ₂ Ps₁�
 ... | _ , T₁≈T₂ , t∈T₂ with redex-≈ˢ l⊑A sch Σ₁≈Σ₂ Done
 ... | _ , sch' = CS.Step (done l∈P₂ t∈T₂ (done-≈ T₁≈T₂ don) sch')
 
-postulate _∈ᴸ_ : (l : Label) (ls : List Label) -> l ∈ ls  -- TODO probably can be added to the lattice
-
--- The scheduler gives me only valid thread id
-postulate lookupᵀ : ∀ {l} -> (n : ℕ) (T : Pool l) -> ∃ (λ t → n ↦ t ∈ᵀ T)
-
--- TODO move to Semantics
-postulate stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Stateᴾ p
-
 open import Relation.Binary.PropositionalEquality
 
 secureStack : ∀ {π l l' τ} -> Stack l π (Mac l' τ) (Mac l τ) -> l' ≡ l
@@ -83,28 +75,49 @@ secureStack (# τ∈π ∷ S) = secureStack S
 secureStack (Bind x ∷ S) = refl
 secureStack ∙ = refl
 
-postulate εᴳ-simᴸ▵ : ∀ {l n ls T Ts} {g : Global ls} {{v : validᴳ g}} ->
+εᴳ-simᴸ▵ : ∀ {l n ls T Ts} {g : Global ls} {{v : validᴳ g}} ->
               l ↦ T ∈ᴾ (P g) -> n ↦ Ts ∈ᵀ T -> Stateᴾ (mkᴾ (Ms g) (Γ g) Ts) ->
               (∀ (e : Event _) → ∃ (λ Σ' →  (C.Σ g) ⟶ Σ' ↑ S₁.⟪ l  , n , e ⟫ )) ->
                 Redexᴳ (l , n) g
--- εᴳ-simᴸ▵ l∈Ps t∈T (S.isD x) nextˢ = CS.Step (done l∈Ps t∈T x (proj₂ (nextˢ Done)))
--- εᴳ-simᴸ▵ l∈Ps t∈T (S.isR (S.Step {p' = p'} x)) nextˢ with C.updateᵀ t∈T (TS p')
--- ... | T' , uᵀ  with C.updateᴾ l∈Ps T'
--- ... | Ps' , uᴾ = Step (step-∅ l∈Ps t∈T (Redex-¬IsForkTS (Step x)) x (proj₂ (nextˢ Step)) uᵀ uᴾ)
--- εᴳ-simᴸ▵ l∈Ps t∈T (S.isS x) nextˢ = Step (skip l∈Ps t∈T x (proj₂ (nextˢ Skip)))
--- εᴳ-simᴸ▵ l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork {h = H} l⊑h t))) nextˢ
---   rewrite secureStack S with C.updateᵀ t∈T (mkᵀ (Return _ _) S)
--- ... | T' , uᵀ with C.updateᴾ l∈Ps T'
--- ... | Ps' , u₁ᴾ with lookupᴾ {!!} Ps' | lookup-∈ᴾ {!!} Ps'
--- ... | Tᴴ | H∈Ps  with  C.updateᴾ H∈Ps (Tᴴ ▻ mkᵀ t [])
--- ... | Ps'' , u₂ᴾ with nextˢ (Fork H (lengthᴾ Tᴴ) l⊑h)
--- ... | _ , sch' = CS.Step (fork l∈Ps t∈T uᵀ u₁ᴾ H∈Ps sch' u₂ᴾ)
--- εᴳ-simᴸ▵ {{v}} l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork∙ p t))) nextˢ
---   rewrite secureStack S = ⊥-elim (proj₁ (V.memberᴾ (memberᴾˢ (proj₂ (proj₂ v)) l∈Ps) t∈T))
+εᴳ-simᴸ▵ l∈Ps t∈T (S.isD x) nextˢ = CS.Step (done l∈Ps t∈T x (proj₂ (nextˢ Done)))
+εᴳ-simᴸ▵ l∈Ps t∈T (S.isR (S.Step {p' = p'} x)) nextˢ with C.updateᵀ t∈T (TS p')
+... | T' , uᵀ  with C.updateᴾ l∈Ps T'
+... | Ps' , uᴾ = Step (step-∅ l∈Ps t∈T (Redex-¬IsForkTS (Step x)) x (proj₂ (nextˢ Step)) uᵀ uᴾ)
+εᴳ-simᴸ▵ l∈Ps t∈T (S.isS x) nextˢ = Step (skip l∈Ps t∈T x (proj₂ (nextˢ Skip)))
+εᴳ-simᴸ▵ {{_ , _ , Psⱽ}} l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork {h = H} l⊑h t))) nextˢ
+  rewrite secureStack S with C.updateᵀ t∈T (mkᵀ (Return _ _) S)
+... | T' , uᵀ with C.updateᴾ l∈Ps T'
+... | Ps' , u₁ᴾ with proj₁ (V.memberᴾ (memberᴾˢ Psⱽ l∈Ps) t∈T)
+... | H∈ls , _ with lookupᴾ H∈ls Ps' | lookup-∈ᴾ H∈ls Ps'
+... | Tᴴ | H∈Ps  with  C.updateᴾ H∈Ps (Tᴴ ▻ mkᵀ t [])
+... | Ps'' , u₂ᴾ with nextˢ (Fork H (lengthᵀ Tᴴ) l⊑h)
+... | _ , sch' =  CS.Step (fork l∈Ps t∈T uᵀ u₁ᴾ H∈Ps sch' u₂ᴾ)
+εᴳ-simᴸ▵ {{v}} l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork∙ p t))) nextˢ
+  rewrite secureStack S = ⊥-elim (proj₁ (V.memberᴾ (memberᴾˢ (proj₂ (proj₂ v)) l∈Ps) t∈T))
 
--- TODO take only scheduler staff ?
-redexᴳ-≈ᴴ : ∀ {ls L i j n} {g₁ g₂ g₁' : Global ls} {{v₁ : validᴳ g₁}} {{v₂ : validᴳ g₂}} ->
+-- postulate _∈ᴸ_ : (l : Label) (ls : List Label) -> l ∈ ls  -- TODO probably can be added to the lattice
+
+-- -- The scheduler gives me only valid thread id
+-- postulate lookupᵀ : ∀ {l} -> (n : ℕ) (T : Pool l) -> ∃ (λ t → n ↦ t ∈ᵀ T)
+
+-- TODO move to Semantics
+postulate stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Stateᴾ p
+
+open import Coinduction
+open import Data.Product as P
+
+Valid-Id : ∀ {ls} Label -> ℕ -> Global ls -> Set
+Valid-Id {ls} l n g = P.Σ (l ∈ ls) (λ l∈ls → ∃ (λ T → l ↦ T ∈ᴾ (P g) × (∃ (λ Ts → n ↦ Ts ∈ᵀ T))))
+
+-- Only existing threads are scheduled
+data Correct {ls} (g₁ : Global ls) : Set where
+  isC : ∀ {l n e Σ₂} -> (C.Σ g₁ ⟶ Σ₂ ↑ S₁.⟪ l , n , e ⟫ ->
+    Valid-Id l n g₁ × (∀ {Ms₂ Γ₂ Ps₂} -> (l , n) ⊢ g₁ ↪ (mkᴳ Σ₂ Ms₂ Γ₂ Ps₂) -> ∞ (Correct (mkᴳ Σ₂ Ms₂ Γ₂ Ps₂)) )) -> Correct g₁
+
+redexᴳ-≈ᴴ : ∀ {ls L i j n} {g₁ g₂ g₁' : Global ls} {{c₁ : Correct g₁}} {{v₁ : validᴳ g₁}} {{v₂ : validᴳ g₂}} ->
                       L ⊑ A -> g₁ ≈ᴳ-⟨ i , suc j ⟩ g₂ -> ( L , n ) ⊢ g₁ ↪ g₁' -> ∃ (λ x → Redexᴳ x g₂)
-redexᴳ-≈ᴴ {ls} {g₂ = g₂} L⊑A g₁≈g₂ step with redex-≈▵ˢ L⊑A (Σ₁≈Σ₂′ g₁≈g₂) (getSchStep step)
-... | (H , m) , nextˢ with lookupᵀ m (lookupᴾ (H ∈ᴸ ls) (P g₂))
-... | Ts₂ , t∈T₂ = (H , m) , (εᴳ-simᴸ▵ (lookup-∈ᴾ (H ∈ᴸ ls) (P g₂)) t∈T₂ (stateᴾ (mkᴾ (Ms g₂) (Γ g₂) Ts₂)) nextˢ)
+redexᴳ-≈ᴴ {ls} {g₂ = g₂} {{isC k}} L⊑A g₁≈g₂ step with redex-≈▵ˢ L⊑A (Σ₁≈Σ₂′ g₁≈g₂) (getSchStep step)
+... | (H , m) , nextˢ with k {!!}
+... | vid , _ = {!!} -- with
+-- lookupᵀ m (lookupᴾ (H ∈ᴸ ls) (P g₂))
+-- ... | Ts₂ , t∈T₂ = (H , m) , (εᴳ-simᴸ▵ (lookup-∈ᴾ (H ∈ᴸ ls) (P g₂)) t∈T₂ (stateᴾ (mkᴾ (Ms g₂) (Γ g₂) Ts₂)) nextˢ)
