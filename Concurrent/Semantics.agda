@@ -38,7 +38,7 @@ data Stepᶜ (l : Label) (n : ℕ) {ls} : Global ls -> Global ls -> Set where
            (u₁ᴾ : P₂ ≔ P₁ [ l ↦ T₂ ]ᴾ )
            (H∈P₂ : H ↦ Tᴴ ∈ᴾ P₂)
            (sch : Σ₁ ⟶ Σ₂ ↑ ⟪ l , n , Fork H (lengthᵀ Tᴴ) l⊑H ⟫ )
-           (u₂ᴾ : P₃ ≔ P₂ [ H ↦ Tᴴ ▻ ⟨ tᴴ , [] ⟩ ]ᴾ ) ->  -- TODO must add deepDup!
+           (u₂ᴾ : P₃ ≔ P₂ [ H ↦ Tᴴ ▻ ⟨ deepDupᵀ tᴴ , [] ⟩ ]ᴾ ) ->
            Stepᶜ l n ⟨ Σ₁ , Ms , Γ , P₁ ⟩ ⟨ Σ₂ , Ms , Γ , P₃ ⟩
 
   fork∙ :  ∀ {H π S Ms Σ₁ Σ₂} {tᴴ : Term π (Mac H _)} {Γ : Heaps ls}

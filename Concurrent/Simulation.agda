@@ -28,9 +28,9 @@ open Scheduler.Security.NIˢ 𝓛 A 𝓝 renaming (State to Stateˢ)
 εᴳ-simᴸ l⊑A (fork {H = H} {tᴴ = tᴴ} {Tᴴ = Tᴴ} l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) with memberᵀ l⊑A t∈T | εˢ-simᴸ l⊑A sch
 ... | t∈T' | sch' with H ⊑? A
 ... | yes H⊑A rewrite lengthᵀ-ε-≡ H⊑A Tᴴ
-    = fork (memberᴾ l⊑A l∈P) t∈T' (updateᵀᴸ l⊑A uᵀ) (updateᴾᴸ l⊑A u₁ᴾ) (memberᴾ H⊑A H∈P₂) sch' (updateᴾ-▻ Tᴴ (mkᵀ tᴴ [] ) H⊑A u₂ᴾ)
+    = fork (memberᴾ l⊑A l∈P) t∈T' (updateᵀᴸ l⊑A uᵀ) (updateᴾᴸ l⊑A u₁ᴾ) (memberᴾ H⊑A H∈P₂) sch' (updateᴾ-▻ Tᴴ (mkᵀ (deepDupᵀ tᴴ) [] ) H⊑A u₂ᴾ)
 εᴳ-simᴸ l⊑A (fork {tᴴ = tᴴ} {P₂ = P₂} {Tᴴ = Tᴴ} l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) | t∈T' | sch' | no H⋤A
-  rewrite newᴾ∙ Tᴴ (mkᵀ tᴴ []) H⋤A u₂ᴾ = fork∙ {P₂ = map-εᴾ P₂} (memberᴾ l⊑A l∈P) t∈T' (updateᵀᴸ l⊑A uᵀ) (updateᴾᴸ l⊑A u₁ᴾ) sch'
+  rewrite newᴾ∙ Tᴴ (mkᵀ (deepDupᵀ tᴴ) []) H⋤A u₂ᴾ = fork∙ {P₂ = map-εᴾ P₂} (memberᴾ l⊑A l∈P) t∈T' (updateᵀᴸ l⊑A uᵀ) (updateᴾᴸ l⊑A u₁ᴾ) sch'
 εᴳ-simᴸ l⊑A (fork∙ l∈P t∈T uᵀ u₁ᴾ sch)
   = fork∙ (memberᴾ l⊑A l∈P) (memberᵀ l⊑A t∈T) (updateᵀᴸ l⊑A uᵀ) (updateᴾᴸ l⊑A u₁ᴾ) (εˢ-simᴸ l⊑A sch)
 εᴳ-simᴸ {{ Msⱽ , Γⱽ , Psⱽ }} l⊑A (skip l∈P t∈T stuck sch)

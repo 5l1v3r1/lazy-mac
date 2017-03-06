@@ -77,10 +77,10 @@ valid↪ (CS.step-∅ l∈P t∈T ¬fork step sch uᵀ uᴾ) (MSⱽ , Γⱽ , Ps
 ... | P₁ⱽ with memberᴾ P₁ⱽ t∈T
 ... | tⱽ with valid⟼ (MSⱽ , Γⱽ , tⱽ) step | ⟼-⊆ˢ step
 ... | Msⱽ' , Γⱽ' , tⱽ' | Ms₁⊆Ms₂ = Msⱽ' , (Γⱽ' , updateᴾˢ (wkenᴾˢ Ms₁⊆Ms₂ Psᵛ) (updateᴾ (wkenᴾ Ms₁⊆Ms₂  P₁ⱽ) tⱽ' uᵀ) uᴾ)
-valid↪ (CS.fork l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) (MSⱽ , Γⱽ , Psᵛ) with memberᴾˢ Psᵛ l∈P
+valid↪ (CS.fork {tᴴ = tᴴ} l∈P t∈T uᵀ u₁ᴾ H∈P₂ sch u₂ᴾ) (MSⱽ , Γⱽ , Psᵛ) with memberᴾˢ Psᵛ l∈P
 ... | P₁ⱽ with memberᴾ P₁ⱽ t∈T
 ... | (h∈ls , tᴴⱽ) , Sⱽ  with updateᴾˢ Psᵛ (updateᴾ P₁ⱽ (T.tt , Sⱽ) uᵀ) u₁ᴾ
-... | Psᵛ' = MSⱽ , Γⱽ , updateᴾˢ Psᵛ' (valid-▻ (memberᴾˢ Psᵛ' H∈P₂) (tᴴⱽ , tt)) u₂ᴾ
+... | Psᵛ' = MSⱽ , Γⱽ , updateᴾˢ Psᵛ' (valid-▻ (memberᴾˢ Psᵛ' H∈P₂) (valid-deepDupᵀ {{ tᴴ }}  tᴴⱽ , tt)) u₂ᴾ
 valid↪ (CS.fork∙ l∈P t∈T uᵀ uᴾ sch) (MSⱽ , Γⱽ , Psᵛ) with memberᴾ (memberᴾˢ Psᵛ l∈P) t∈T
 valid↪ (CS.fork∙ l∈P t∈T uᵀ uᴾ sch) (MSⱽ , Γⱽ , Psᵛ) | () , proj₂
 valid↪ (CS.skip l∈P t∈T stuck sch) (MSⱽ , Γⱽ , Psᵛ) = MSⱽ , Γⱽ , Psᵛ

@@ -52,7 +52,7 @@ redexᴳ-≈ {{Ms₁ⱽ , Γ₁ⱽ , Ps₁ⱽ}} {{Ms₂ⱽ , Γ₂ⱽ , Ps₂ⱽ
 ... | _ , P₁≈P₂ , uᵀ'  with updateᴾ-≈ Ps₁≈Ps₂ P₁≈P₂ u₁ᴾ
 ... | _ , Ps₁≈Ps₂' , u₁ᴾ' with memberᴾ-≈ (_ ⊑? A) H∈P Ps₁≈Ps₂'
 ... | _ , T₁≈T₂ , H∈P₂  with redex-≈ˢ l⊑A sch Σ₁≈Σ₂ (forkᴱ-≈ (_ ⊑? A) T₁≈T₂)
-... | _ , sch' with updateᴾ-≈ Ps₁≈Ps₂' (newᵀ-≈ T₁≈T₂ (newᵀˢ-≈ t₁ᴴ≈t₂ᴴ)) u₂ᴾ
+... | _ , sch' with updateᴾ-≈ Ps₁≈Ps₂' (newᵀ-≈ T₁≈T₂ (newᵀˢ-≈ (deepDupᵀ-≈ t₁ᴴ≈t₂ᴴ))) u₂ᴾ
 ... | _ , Ps₁≈Ps₂'' , u₂ᴾ'
   = Step (fork l∈P₂ t∈T₂ uᵀ' u₁ᴾ' H∈P₂ sch' u₂ᴾ')
 redexᴳ-≈ {{_ , _ , Psⱽ}} l⊑A g₁≈g₂ (CS.fork∙ l∈P t∈T uᵀ uᴾ sch) = ⊥-elim (proj₁ (V.memberᴾ (memberᴾˢ Psⱽ l∈P) t∈T))
@@ -89,7 +89,7 @@ secureStack ∙ = refl
 ... | T' , uᵀ with C.updateᴾ l∈Ps T'
 ... | Ps' , u₁ᴾ with proj₁ (V.memberᴾ (memberᴾˢ Psⱽ l∈Ps) t∈T)
 ... | H∈ls , _ with lookupᴾ H∈ls Ps' | lookup-∈ᴾ H∈ls Ps'
-... | Tᴴ | H∈Ps  with  C.updateᴾ H∈Ps (Tᴴ ▻ mkᵀ t [])
+... | Tᴴ | H∈Ps  with  C.updateᴾ H∈Ps (Tᴴ ▻ mkᵀ (deepDupᵀ t) [])
 ... | Ps'' , u₂ᴾ with nextˢ (Fork H (lengthᵀ Tᴴ) l⊑h)
 ... | _ , sch' =  CS.Step (fork l∈Ps t∈T uᵀ u₁ᴾ H∈Ps sch' u₂ᴾ)
 εᴳ-simᴸ▵ {{v}} l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork∙ p t))) nextˢ
