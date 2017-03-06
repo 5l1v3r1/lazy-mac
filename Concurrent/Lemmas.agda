@@ -83,28 +83,28 @@ secureStack (# τ∈π ∷ S) = secureStack S
 secureStack (Bind x ∷ S) = refl
 secureStack ∙ = refl
 
-εᴳ-simᴸ▵ : ∀ {l n ls T Ts} {g : Global ls} {{v : validᴳ g}} ->
+postulate εᴳ-simᴸ▵ : ∀ {l n ls T Ts} {g : Global ls} {{v : validᴳ g}} ->
               l ↦ T ∈ᴾ (P g) -> n ↦ Ts ∈ᵀ T -> Stateᴾ (mkᴾ (Ms g) (Γ g) Ts) ->
               (∀ (e : Event _) → ∃ (λ Σ' →  (C.Σ g) ⟶ Σ' ↑ S₁.⟪ l  , n , e ⟫ )) ->
                 Redexᴳ (l , n) g
-εᴳ-simᴸ▵ l∈Ps t∈T (S.isD x) nextˢ = CS.Step (done l∈Ps t∈T x (proj₂ (nextˢ Done)))
-εᴳ-simᴸ▵ l∈Ps t∈T (S.isR (S.Step {p' = p'} x)) nextˢ with C.updateᵀ t∈T (TS p')
-... | T' , uᵀ  with C.updateᴾ l∈Ps T'
-... | Ps' , uᴾ = Step (step-∅ l∈Ps t∈T (Redex-¬IsForkTS (Step x)) x (proj₂ (nextˢ Step)) uᵀ uᴾ)
-εᴳ-simᴸ▵ l∈Ps t∈T (S.isS x) nextˢ = Step (skip l∈Ps t∈T x (proj₂ (nextˢ Skip)))
-εᴳ-simᴸ▵ l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork {h = H} l⊑h t))) nextˢ
-  rewrite secureStack S with C.updateᵀ t∈T (mkᵀ (Return _ _) S)
-... | T' , uᵀ with C.updateᴾ l∈Ps T'
-... | Ps' , u₁ᴾ with lookupᴾ {!!} Ps' | lookup-∈ᴾ {!!} Ps'
-... | Tᴴ | H∈Ps  with  C.updateᴾ H∈Ps (Tᴴ ▻ mkᵀ t [])
-... | Ps'' , u₂ᴾ with nextˢ (Fork H (lengthᴾ Tᴴ) l⊑h)
-... | _ , sch' = CS.Step (fork l∈Ps t∈T uᵀ u₁ᴾ H∈Ps sch' u₂ᴾ)
-εᴳ-simᴸ▵ {{v}} l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork∙ p t))) nextˢ
-  rewrite secureStack S = ⊥-elim (proj₁ (V.memberᴾ (memberᴾˢ (proj₂ (proj₂ v)) l∈Ps) t∈T))
+-- εᴳ-simᴸ▵ l∈Ps t∈T (S.isD x) nextˢ = CS.Step (done l∈Ps t∈T x (proj₂ (nextˢ Done)))
+-- εᴳ-simᴸ▵ l∈Ps t∈T (S.isR (S.Step {p' = p'} x)) nextˢ with C.updateᵀ t∈T (TS p')
+-- ... | T' , uᵀ  with C.updateᴾ l∈Ps T'
+-- ... | Ps' , uᴾ = Step (step-∅ l∈Ps t∈T (Redex-¬IsForkTS (Step x)) x (proj₂ (nextˢ Step)) uᵀ uᴾ)
+-- εᴳ-simᴸ▵ l∈Ps t∈T (S.isS x) nextˢ = Step (skip l∈Ps t∈T x (proj₂ (nextˢ Skip)))
+-- εᴳ-simᴸ▵ l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork {h = H} l⊑h t))) nextˢ
+--   rewrite secureStack S with C.updateᵀ t∈T (mkᵀ (Return _ _) S)
+-- ... | T' , uᵀ with C.updateᴾ l∈Ps T'
+-- ... | Ps' , u₁ᴾ with lookupᴾ {!!} Ps' | lookup-∈ᴾ {!!} Ps'
+-- ... | Tᴴ | H∈Ps  with  C.updateᴾ H∈Ps (Tᴴ ▻ mkᵀ t [])
+-- ... | Ps'' , u₂ᴾ with nextˢ (Fork H (lengthᴾ Tᴴ) l⊑h)
+-- ... | _ , sch' = CS.Step (fork l∈Ps t∈T uᵀ u₁ᴾ H∈Ps sch' u₂ᴾ)
+-- εᴳ-simᴸ▵ {{v}} l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork∙ p t))) nextˢ
+--   rewrite secureStack S = ⊥-elim (proj₁ (V.memberᴾ (memberᴾˢ (proj₂ (proj₂ v)) l∈Ps) t∈T))
 
 -- TODO take only scheduler staff ?
 redexᴳ-≈ᴴ : ∀ {ls L i j n} {g₁ g₂ g₁' : Global ls} {{v₁ : validᴳ g₁}} {{v₂ : validᴳ g₂}} ->
                       L ⊑ A -> g₁ ≈ᴳ-⟨ i , suc j ⟩ g₂ -> ( L , n ) ⊢ g₁ ↪ g₁' -> ∃ (λ x → Redexᴳ x g₂)
-redexᴳ-≈ᴴ {ls} {g₂ = g₂} L⊑A g₁≈g₂ step with redex-≈▵ˢ L⊑A (get≈ˢ g₁≈g₂) (getSchStep step)
+redexᴳ-≈ᴴ {ls} {g₂ = g₂} L⊑A g₁≈g₂ step with redex-≈▵ˢ L⊑A (Σ₁≈Σ₂′ g₁≈g₂) (getSchStep step)
 ... | (H , m) , nextˢ with lookupᵀ m (lookupᴾ (H ∈ᴸ ls) (P g₂))
 ... | Ts₂ , t∈T₂ = (H , m) , (εᴳ-simᴸ▵ (lookup-∈ᴾ (H ∈ᴸ ls) (P g₂)) t∈T₂ (stateᴾ (mkᴾ (Ms g₂) (Γ g₂) Ts₂)) nextˢ)

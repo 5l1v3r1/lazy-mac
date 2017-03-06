@@ -144,8 +144,20 @@ alignᴳ ⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = �
 forgetᴳ : ∀ {ls n₁ n₂} {g₁ g₂ : Global ls} -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> g₁ ≈ᴳ g₂
 forgetᴳ ⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = ⟨ (forget Σ₁≈Σ₂) , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩
 
-get≈ˢ : ∀ {ls n₁ n₂} {g₁ g₂ : Global ls} -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> (Σ g₁) ≈ˢ-⟨ n₁ , n₂ ⟩ (Σ g₂)
-get≈ˢ ⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = Σ₁≈Σ₂
+open _≈ᴳ-⟨_,_⟩_ public
+
+-- TODO not needed
+-- get≈ˢ : ∀ {ls n₁ n₂} {g₁ g₂ : Global ls} -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> (Σ g₁) ≈ˢ-⟨ n₁ , n₂ ⟩ (Σ g₂)
+-- get≈ˢ ⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , P₁≈P₂ ⟩ = Σ₁≈Σ₂
+
+-- get≈ᴹ : ∀ {ls n₁ n₂} {g₁ g₂ : Global ls} -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> (Ms g₁) map-≈ᴹ (Ms g₂)
+-- get≈ᴹ ⟨ Σ₁≈Σ₂′ , Ms₁≈Ms₂′ , Γ₁≈Γ₂′ , Ps₁≈Ps₂′ ⟩ = Ms₁≈Ms₂′
+
+-- get≈ᴴ : ∀ {ls n₁ n₂} {g₁ g₂ : Global ls} -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> (Γ g₁) map-≈ᴴ (Γ g₂)
+-- get≈ᴴ ⟨ Σ₁≈Σ₂′ , Ms₁≈Ms₂′ , Γ₁≈Γ₂′ , Ps₁≈Ps₂′ ⟩ = Γ₁≈Γ₂′
+
+-- get≈ᴾ : ∀ {ls n₁ n₂} {g₁ g₂ : Global ls} -> g₁ ≈ᴳ-⟨ n₁ , n₂ ⟩ g₂ -> (P g₁) map-≈ᴾ (P g₂)
+-- get≈ᴾ ⟨ Σ₁≈Σ₂′ , Ms₁≈Ms₂′ , Γ₁≈Γ₂′ , Ps₁≈Ps₂′ ⟩ = Ps₁≈Ps₂′
 
 --------------------------------------------------------------------------------
 
