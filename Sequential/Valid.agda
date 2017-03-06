@@ -468,7 +468,6 @@ valid⇝ (Δⱽ , tⱽ , Sᵛ) (SS.Unlabel₂ p) = Δⱽ , tⱽ , proj₂ Sᵛ
 valid⇝ (Δⱽ , tⱽ , Sᵛ) SS.UnId₁ = Δⱽ , tⱽ , T.tt , Sᵛ
 valid⇝ (Δⱽ , tⱽ , Sᵛ) SS.UnId₂ = Δⱽ , tⱽ , proj₂ Sᵛ
 valid⇝ () SS.Hole₁
-valid⇝ (Δⱽ , () , Sᵛ) SS.Hole₂
 valid⇝ (Δⱽ , (l∈ls , tⱽ) , Sᵛ) (SS.New₁ ¬var) = (tⱽ , Δⱽ) , ((l∈ls , T.tt) , valid-wkenˢ Sᵛ _)
 valid⇝ (Δⱽ , () , Sᵛ) (SS.New∙₁ ¬var)
 valid⇝ (Δⱽ , (tⱽ₁ , tⱽ₂) , Sᵛ) SS.Write₁ = (tⱽ₂ , Δⱽ) , (valid-wkenᵀ tⱽ₁ _) , (T.tt , (valid-wkenˢ Sᵛ _))

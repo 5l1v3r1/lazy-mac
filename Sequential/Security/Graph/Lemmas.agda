@@ -75,7 +75,6 @@ sim⇝ l⊑A eᴱ (G.Res x eᵀ) (G.unlabel p G.∷ eˢ) (S₁.Unlabel₂ .p) = 
 sim⇝ l⊑A eᴱ (G.Res∙ x) (G.unlabel p G.∷ eˢ) (S₁.Unlabel₂ .p) = ⊥-elim (x (trans-⊑ p l⊑A))
 sim⇝ l⊑A eᴱ (G.unId eᵀ) eˢ S₁.UnId₁ = Step S₁.UnId₁ (mkᴱ eᴱ eᵀ (G.unId G.∷ eˢ ))
 sim⇝ l⊑A eᴱ (G.Id eᵀ) (G.unId G.∷ eˢ) S₁.UnId₂ = Step S₁.UnId₂ (mkᴱ eᴱ eᵀ eˢ )
-sim⇝ l⊑A G.∙ G.∙ G.∙ S₁.Hole₂ = Step S₁.Hole₂ (mkᴱ G.∙ G.∙ G.∙ )
 sim⇝ l⊑A eᴱ (G.new l⊑h h⊑A eᵀ) eˢ (S₁.New₁ ¬var) = Step (New₁ (¬var⁻ᴱ eᵀ ¬var)) (mkᴱ (G.just eᵀ G.∷ eᴱ) (G.new l⊑h h⊑A (G.Var T.⟪ _ ⟫)) (wkenᴱˢ _ eˢ ))
 sim⇝ l⊑A eᴱ (G.new' l⊑h h⋤A eᵀ) eˢ (S₁.New∙₁ ¬var) = Step (New₁ (¬var⁻ᴱ eᵀ ¬var)) (mkᴱ (G.just eᵀ G.∷ eᴱ) (G.new' l⊑h h⋤A (G.Var T.⟪ _ ⟫)) (wkenᴱˢ _ eˢ ))
 sim⇝ l⊑A eᴱ (G.new∙ l⊑h eᵀ) eˢ (S₁.New∙₁ ¬var) = Step (New∙₁ (¬var⁻ᴱ eᵀ ¬var)) (mkᴱ (G.just eᵀ G.∷ eᴱ) (G.new∙ l⊑h (G.Var T.⟪ _ ⟫)) (wkenᴱˢ _ eˢ ))

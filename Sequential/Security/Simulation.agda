@@ -51,7 +51,6 @@ open import Data.Empty
 ε-sim (yes y) Write₁ | no ¬p = Write∙₁
 ε-sim (yes y) Write∙₁ = Write∙₁
 ε-sim (yes y) Hole₁ = Hole₁
-ε-sim (yes y) Hole₂ = Hole₂
 
 open import Data.Product using (proj₁ ; proj₂)
 

@@ -80,8 +80,6 @@ data _⇝_ {l : Label} : ∀ {τ} -> State l τ -> State l τ -> Set where
 
  Hole₁ : ∀ {τ} -> ∙ {τ = τ} ⇝ ∙
 
- Hole₂ : ∀ {τ} {π} -> ⟨ ∙ {{π}} , ∙ {{τ}} , ∙ ⟩ ⇝ ⟨ ∙ {{π}} , ∙ , ∙ ⟩  -- TODO remove?
-
  New₁ : ∀ {τ τ' H} {π : Context} {Δ : Heap l π} {S : Stack l π _ τ'} {l⊑h : l ⊑ H} {t : Term π τ}
          -> (¬var : ¬ (IsVar t)) ->
          ⟨ Δ , new {π = π} l⊑h t , S ⟩ ⇝ ⟨ just t ∷ Δ , new l⊑h (Var {π = τ ∷ π} {l} ⟪ hereᴿ ⟫) , wkenˢ S (drop refl-⊆) ⟩
@@ -269,7 +267,6 @@ step-⊆ (Unlabel₁ p) = refl-⊆
 step-⊆ (Unlabel₂ p) = refl-⊆
 step-⊆ UnId₁ = refl-⊆
 step-⊆ UnId₂ = refl-⊆
-step-⊆ Hole₂ = refl-⊆
 step-⊆ (New₁ ¬var) = drop refl-⊆
 step-⊆ (New∙₁ ¬var) = drop refl-⊆
 step-⊆ Write₁ = drop refl-⊆

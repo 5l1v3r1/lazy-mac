@@ -319,6 +319,9 @@ newᵀˢ-≈ {x = no ¬p} ⟨ e₁ , e₂ ⟩ = Kᵀˢ ∙ ∙
              p₁ ≈ᴾ⟨ (yes l⊑A) ⟩ p₂ -> ¬ (Redexᴾ p₁)  -> ¬ (Redexᴾ p₂)
 ¬redex-≈ p₁≈p₂ = contrapositive (redex-≈ (sym-≈ᴾ p₁≈p₂))
 
+deepDupᵀ-≈ : ∀ {π τ} {t₁ t₂ : Term π τ} -> t₁ ≈ᵀ t₂ -> deepDupᵀ t₁ ≈ᵀ deepDupᵀ t₂
+deepDupᵀ-≈ ⟨ e₁ , e₂ ⟩ = ⟨ (deepDupᵀᴱ e₁) , (deepDupᵀᴱ e₂) ⟩
+
 open _≈ᴾ⟨_⟩_
 
 open import Data.Product

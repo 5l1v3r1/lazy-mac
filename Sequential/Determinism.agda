@@ -90,7 +90,6 @@ determinism Write∙₁ Write∙₁ = refl
 determinism Read₁ (Var₂ τ∈π () uᴱ)
 determinism Read₁ Read₁ = refl
 determinism Hole₁ Hole₁ = refl
-determinism Hole₂ Hole₂ = refl
 
 memberᴱ-≅ : ∀ {l ls π₁ π₂} {Γ : Heaps ls} {Δ₁ : Heap l π₁} {Δ₂ : Heap l π₂} ->
             l ↦ ⟨ Δ₁ ⟩ ∈ᴱ Γ -> l ↦ ⟨ Δ₂ ⟩ ∈ᴱ Γ -> Δ₁ ≅ Δ₂
