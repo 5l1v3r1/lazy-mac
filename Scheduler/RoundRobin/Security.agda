@@ -9,7 +9,8 @@ open L.Lattice 𝓛
 import Scheduler.RoundRobin.Base as R
 open R 𝓛
 open import Scheduler.Base 𝓛
-open import Scheduler.Security 𝓛 A
+import Scheduler.Security as S
+open S 𝓛 A
 
 open import Data.List
 open import Data.Empty
@@ -212,31 +213,42 @@ append-≈ˢ′ L⊑A (R.done l n) (cons₁ᴴ H⋤A eq) ps = ⊥-elim (H⋤A L�
 append-≈ˢ′ L⊑A (R.skip l n) (cons₁ᴴ H⋤A eq) ps = ⊥-elim (H⋤A L⊑A)
 append-≈ˢ′ L⊑A s (cons₂ᴴ H⋤A eq) ps = cons₂ᴴ H⋤A (append-≈ˢ′ L⊑A s eq ps)
 
-triangleˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁ n₂} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , suc n₂ ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
-                 ∃ (λ H → ∃ (λ m → H ⋤ A × ∀ (e : Event H) → ∃ (λ Σ₂' → Σ₁ ≈ˢ-⟨ n₁ , n₂ ⟩ Σ₂' ×  Σ₂ ⟶ Σ₂' ↑ ⟪ H , m , e ⟫ )))
-triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.step l n) = ⊥-elim (H⋤A L⊑A)
-triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.fork L n p) = ⊥-elim (H⋤A L⊑A)
-triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.done l n) = ⊥-elim (H⋤A L⊑A)
-triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.skip l n) = ⊥-elim (H⋤A L⊑A)
-triangleˢ {Σ₁} {n₁ = n₁} {n₂} L⊑A (cons₂ᴴ {H} {n} {Σ₂ = Σ₂} H⋤A eq) s = H , (n , (H⋤A , aux))
-  where aux : (e : Event H) ->  ∃ (λ Σ₂' → Σ₁ ≈ˢ-⟨ n₁ , n₂ ⟩ Σ₂' × ((H , n) ∷ Σ₂) ⟶ Σ₂' ↑ ⟪ H , n , e ⟫)
-        aux Skip = _ , (append-≈ˢ′ L⊑A s eq (H⋤A ∷ []) , (skip H n))
-        aux Step = _ , (append-≈ˢ′ L⊑A s eq (H⋤A ∷ []) , (step H n))
-        aux Done = _ , (eq , (done H n))
-        aux (Fork h n₃ x) = _ , (append-≈ˢ′ L⊑A s eq (trans-⋤ x H⋤A ∷ H⋤A ∷ []) , fork H n x )
+triangleˢ : ∀ {L H n m i j e e' Σ₁ Σ₂ Σ₁' Σ₂'}  -> L ⊑ A -> Σ₁ ≈ˢ-⟨ i , suc j ⟩ Σ₂ ->
+                   Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ -> Σ₂ ⟶ Σ₂' ↑ ⟪ H , m , e' ⟫ -> (H ⋤ A) × (Σ₁ ≈ˢ-⟨ i , j ⟩ Σ₂')
+triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.step l n) s₂ = ⊥-elim (H⋤A L⊑A)
+triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.fork L n p) s₂ = ⊥-elim (H⋤A L⊑A)
+triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.done l n) s₂ = ⊥-elim (H⋤A L⊑A)
+triangleˢ L⊑A (cons₁ᴴ H⋤A eq) (R.skip l n) s₂ = ⊥-elim (H⋤A L⊑A)
+triangleˢ L⊑A (cons₂ᴴ H⋤A eq) s₁ (R.step H m) = H⋤A , append-≈ˢ′ L⊑A s₁ eq (H⋤A ∷ [])
+triangleˢ L⊑A (cons₂ᴴ H⋤A eq) s₁ (R.fork H m p) = H⋤A , append-≈ˢ′ L⊑A s₁ eq (trans-⋤ p H⋤A ∷ H⋤A ∷ [])
+triangleˢ L⊑A (cons₂ᴴ H⋤A eq) s₁ (R.done H m) = H⋤A , eq
+triangleˢ L⊑A (cons₂ᴴ H⋤A eq) s₁ (R.skip H m) = H⋤A , append-≈ˢ′ L⊑A s₁ eq (H⋤A ∷ [])
 
-idˢ : ∀ {Σ₁ Σ₂ L m₁ n H} -> (m₂ : ℕ) (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ ⟪ L , n , (Fork H m₁ L⊑H) ⟫
-              -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ ⟪ L , n , (Fork H m₂ L⊑H) ⟫ × Σ₂ ≈ˢ Σ₂')
-idˢ m₂ L⊑H L⊑A H⋤A (R.fork {Σ = Σ} L n .L⊑H) = _ , ((R.fork L n L⊑H) , refl-≈ˢ {Σ} ++-≈ (cons₁ᴴ H⋤A (cons₂ᴴ H⋤A (consᴸ L⊑A nil))) )
+redex-≈ˢ : ∀ {L i n e₁ e₂ Σ₁ Σ₂ Σ₁'} -> (L⊑A : L ⊑ A) -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e₁ ⟫ -> Σ₁ ≈ˢ-⟨ i , 0 ⟩ Σ₂ ->
+                  e₁ ≈ᴱ⟨ yes L⊑A ⟩ e₂ -> ∃ (λ Σ₂' → Σ₂ ⟶ Σ₂' ↑ ⟪ L , n , e₂ ⟫)
+redex-≈ˢ L⊑A () nil e₁≈e₂
+redex-≈ˢ L⊑A (R.step l n) (consᴸ {Σ₂ = Σ₂} L⊑A₁ x) Step = Σ₂ ++ (l , n) ∷ [] , R.step l n
+redex-≈ˢ L⊑A (R.fork L n p) (consᴸ {Σ₂ = Σ₂} L⊑A₁ x) (S.Forkᴸ h⊑A) = Σ₂ ++ _ ∷ (L , n) ∷ [] , R.fork L n p
+redex-≈ˢ L⊑A (R.fork L n p) (consᴸ {Σ₂ = Σ₂} L⊑A₁ x) (S.Forkᴴ h⋤A) = Σ₂ ++ _ ∷ (L , n) ∷ [] , R.fork L n p
+redex-≈ˢ L⊑A (R.done l n) (consᴸ L⊑A₁ x) S.Done = _ , R.done l n
+redex-≈ˢ L⊑A (R.skip l n) (consᴸ {Σ₂ = Σ₂} L⊑A₁ x) S.Skip = Σ₂ ++ (l , n) ∷ [] , R.skip l n
+redex-≈ˢ L⊑A (R.step l n) (cons₁ᴴ H⋤A Σ₁≈Σ₂) e₁≈e₂ = ⊥-elim (H⋤A L⊑A)
+redex-≈ˢ L⊑A (R.fork L n p) (cons₁ᴴ H⋤A Σ₁≈Σ₂) e₁≈e₂ = ⊥-elim (H⋤A L⊑A)
+redex-≈ˢ L⊑A (R.done l n) (cons₁ᴴ H⋤A Σ₁≈Σ₂) e₁≈e₂ = ⊥-elim (H⋤A L⊑A)
+redex-≈ˢ L⊑A (R.skip l n) (cons₁ᴴ H⋤A Σ₁≈Σ₂) e₁≈e₂ = ⊥-elim (H⋤A L⊑A)
 
-
-step-≈ˢ : ∀ {Σ₁ Σ₂ L H n m} -> (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ ⟪ L , n , Fork H m L⊑H ⟫
-              -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ ⟪ L , n , Step ⟫ × Σ₂ ≈ˢ Σ₂')
-step-≈ˢ L⊑H L⊑A H⋤A (R.fork {Σ = Σ} L n .L⊑H) = _ , ((R.step L n) , (refl-≈ˢ {Σ} ++-≈ cons₁ᴴ H⋤A (consᴸ L⊑A nil)))
-
-fork-≈ˢ : ∀ {Σ₁ Σ₂ L H n} -> (m : ℕ) (L⊑H : L ⊑ H) -> L ⊑ A -> H ⋤ A -> Σ₁ ⟶ Σ₂ ↑ ⟪ L , n , Step ⟫
-                -> ∃ (λ Σ₂' → Σ₁ ⟶ Σ₂' ↑ ⟪ L , n , Fork H m L⊑H ⟫ × Σ₂ ≈ˢ Σ₂')
-fork-≈ˢ m L⊑H l⊑A H⋤A (R.step {Σ = Σ} l n) = _ , (R.fork l n L⊑H , refl-≈ˢ {Σ} ++-≈ cons₂ᴴ H⋤A (consᴸ l⊑A nil) )
+redex-≈▵ˢ : ∀ {Σ₁ Σ₁' Σ₂ L e n n₁ n₂} -> L ⊑ A -> Σ₁ ≈ˢ-⟨ n₁ , suc n₂ ⟩ Σ₂ -> Σ₁ ⟶ Σ₁' ↑ ⟪ L , n , e ⟫ ->
+                  ∃ (λ x → ∀ (e : Event _) → ∃ (λ Σ₂' →  Σ₂ ⟶ Σ₂' ↑ ⟪ proj₁ x , proj₂ x , e ⟫ ))
+redex-≈▵ˢ L⊑A (cons₁ᴴ H⋤A eq) (R.step l n) = ⊥-elim (H⋤A L⊑A)
+redex-≈▵ˢ L⊑A (cons₁ᴴ H⋤A eq) (R.fork L n p) = ⊥-elim (H⋤A L⊑A)
+redex-≈▵ˢ L⊑A (cons₁ᴴ H⋤A eq) (R.done l n) = ⊥-elim (H⋤A L⊑A)
+redex-≈▵ˢ L⊑A (cons₁ᴴ H⋤A eq) (R.skip l n) = ⊥-elim (H⋤A L⊑A)
+redex-≈▵ˢ L⊑A (cons₂ᴴ {H} {n} {Σ₁} {Σ₂} H⋤A eq) s₁ = (H , n) , nextˢ
+  where nextˢ : (e : Event H) ->  ∃ (λ Σ₂' → ((H , n) ∷ Σ₂) ⟶ Σ₂' ↑ ⟪ H , n , e ⟫)
+        nextˢ Skip = Σ₂ ++ (H , n) ∷ [] , R.skip H n
+        nextˢ Step = Σ₂ ++ (H , n) ∷ [] , R.step H n
+        nextˢ Done = Σ₂ , R.done H n
+        nextˢ (Fork h n₁ x) = Σ₂ ++ (h , n₁) ∷ (H , n) ∷ [] , R.fork H n x
 
 RR-is-NI : NIˢ RR
 RR-is-NI = record
@@ -251,9 +263,7 @@ RR-is-NI = record
              ; offset₂ = offset₂
              ; align = align
              ; forget = forget
-             ; id-≈ˢ = idˢ
-             ; step-≈ˢ = step-≈ˢ
-             ; fork-≈ˢ = fork-≈ˢ
-             ; squareˢ = squareˢ
              ; triangleˢ = triangleˢ
+             ; redex-≈ˢ = redex-≈ˢ
+             ; redex-≈▵ˢ = redex-≈▵ˢ
              }

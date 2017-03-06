@@ -95,29 +95,29 @@ secureStack ∙ = refl
 εᴳ-simᴸ▵ {{v}} l∈Ps t∈T (S.isF (S.isForkTS {S = S} (Fork∙ p t))) nextˢ
   rewrite secureStack S = ⊥-elim (proj₁ (V.memberᴾ (memberᴾˢ (proj₂ (proj₂ v)) l∈Ps) t∈T))
 
--- postulate _∈ᴸ_ : (l : Label) (ls : List Label) -> l ∈ ls  -- TODO probably can be added to the lattice
+-- open import Coinduction
+-- open import Data.Product as P
 
--- -- The scheduler gives me only valid thread id
--- postulate lookupᵀ : ∀ {l} -> (n : ℕ) (T : Pool l) -> ∃ (λ t → n ↦ t ∈ᵀ T)
-
--- TODO move to Semantics
-postulate stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Stateᴾ p
-
-open import Coinduction
-open import Data.Product as P
-
-Valid-Id : ∀ {ls} Label -> ℕ -> Global ls -> Set
-Valid-Id {ls} l n g = P.Σ (l ∈ ls) (λ l∈ls → ∃ (λ T → l ↦ T ∈ᴾ (P g) × (∃ (λ Ts → n ↦ Ts ∈ᵀ T))))
+-- Valid-Id : ∀ {ls} Label -> ℕ -> Global ls -> Set
+-- Valid-Id {ls} l n g = P.Σ (l ∈ ls) (λ l∈ls → ∃ (λ T → l ↦ T ∈ᴾ (P g) × (∃ (λ Ts → n ↦ Ts ∈ᵀ T))))
 
 -- Only existing threads are scheduled
-data Correct {ls} (g₁ : Global ls) : Set where
-  isC : ∀ {l n e Σ₂} -> (C.Σ g₁ ⟶ Σ₂ ↑ S₁.⟪ l , n , e ⟫ ->
-    Valid-Id l n g₁ × (∀ {Ms₂ Γ₂ Ps₂} -> (l , n) ⊢ g₁ ↪ (mkᴳ Σ₂ Ms₂ Γ₂ Ps₂) -> ∞ (Correct (mkᴳ Σ₂ Ms₂ Γ₂ Ps₂)) )) -> Correct g₁
+-- data Correct {ls} (g₁ : Global ls) : Set where
+--   isC : ∀ {l n e Σ₂} -> (C.Σ g₁ ⟶ Σ₂ ↑ S₁.⟪ l , n , e ⟫ ->
+--     Valid-Id l n g₁ × (∀ {Ms₂ Γ₂ Ps₂} -> (l , n) ⊢ g₁ ↪ (mkᴳ Σ₂ Ms₂ Γ₂ Ps₂) -> ∞ (Correct (mkᴳ Σ₂ Ms₂ Γ₂ Ps₂)) )) -> Correct g₁
 
-redexᴳ-≈ᴴ : ∀ {ls L i j n} {g₁ g₂ g₁' : Global ls} {{c₁ : Correct g₁}} {{v₁ : validᴳ g₁}} {{v₂ : validᴳ g₂}} ->
+
+-- Ideally in Agda our data-structures would be mapped by labels.
+-- However since functions complicate reasoning we are using a
+-- surrogate list representation.  With a proper represenetation we
+-- would not need this postulate.
+postulate _∈ᴸ_ : (l : Label) (ls : List Label) -> l ∈ ls
+
+-- We assume that only existing threads are scheduled.
+postulate lookupᵀ : ∀ {l} -> (n : ℕ) (T : Pool l) -> ∃ (λ t → n ↦ t ∈ᵀ T)
+
+redexᴳ-≈ᴴ : ∀ {ls L i j n} {g₁ g₂ g₁' : Global ls} {{v₁ : validᴳ g₁}} {{v₂ : validᴳ g₂}} ->
                       L ⊑ A -> g₁ ≈ᴳ-⟨ i , suc j ⟩ g₂ -> ( L , n ) ⊢ g₁ ↪ g₁' -> ∃ (λ x → Redexᴳ x g₂)
-redexᴳ-≈ᴴ {ls} {g₂ = g₂} {{isC k}} L⊑A g₁≈g₂ step with redex-≈▵ˢ L⊑A (Σ₁≈Σ₂′ g₁≈g₂) (getSchStep step)
-... | (H , m) , nextˢ with k {!!}
-... | vid , _ = {!!} -- with
--- lookupᵀ m (lookupᴾ (H ∈ᴸ ls) (P g₂))
--- ... | Ts₂ , t∈T₂ = (H , m) , (εᴳ-simᴸ▵ (lookup-∈ᴾ (H ∈ᴸ ls) (P g₂)) t∈T₂ (stateᴾ (mkᴾ (Ms g₂) (Γ g₂) Ts₂)) nextˢ)
+redexᴳ-≈ᴴ {ls} {g₂ = g₂} L⊑A g₁≈g₂ step with redex-≈▵ˢ L⊑A (Σ₁≈Σ₂′ g₁≈g₂) (getSchStep step)
+... | (H , m) , nextˢ with lookupᵀ m (lookupᴾ (H ∈ᴸ ls) (P g₂))
+... | Ts₂ , t∈T₂ = (H , m) , (εᴳ-simᴸ▵ (lookup-∈ᴾ (H ∈ᴸ ls) (P g₂)) t∈T₂ (stateᴾ (mkᴾ (Ms g₂) (Γ g₂) Ts₂)) nextˢ)

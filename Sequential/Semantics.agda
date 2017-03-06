@@ -215,6 +215,11 @@ data Stateᴾ {l ls τ} (p : Program l ls τ) : Set where
   isS : Stuckᴾ p -> Stateᴾ p
   isF : Forkᴾ p -> Stateᴾ p
 
+-- This function is tedious and lengthy to write, therefore it is
+-- postulate.  Intuitively this holds because Stateᴾ partitions the
+-- possible states of a program.
+postulate stateᴾ : ∀ {l ls τ} (p : Program l ls τ) -> Stateᴾ p
+
 --------------------------------------------------------------------------------
 -- Lemmas
 

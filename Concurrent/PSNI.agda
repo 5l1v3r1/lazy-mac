@@ -43,7 +43,7 @@ squareᴸ l⊑A g₁≈g₂ step₁ step₂ = ⌜ aux ⌞ g₁≈g₂ ⌟ᴳ (ε
 
 triangleᴴ : ∀ {L H ls i j n m} {g₁ g₁' g₂ g₂' : Global ls} {{v₁ : validᴳ g₁}} {{v₂ : validᴳ g₂}} ->
             L ⊑ A -> g₁ ≈ᴳ-⟨ i , suc j ⟩ g₂ -> ( L , n ) ⊢ g₁ ↪ g₁' -> ( H , m ) ⊢ g₂ ↪ g₂' -> g₁ ≈ᴳ-⟨ i , j ⟩ g₂'
-triangleᴴ L⊑A L₁.⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , Ps₁≈Ps₂ ⟩ step₁ step₂ with ≈ˢ-> L⊑A Σ₁≈Σ₂ (getSchStep step₁) (getSchStep step₂)
+triangleᴴ L⊑A L₁.⟨ Σ₁≈Σ₂ , Ms₁≈Ms₂ , Γ₁≈Γ₂ , Ps₁≈Ps₂ ⟩ step₁ step₂ with triangleˢ L⊑A Σ₁≈Σ₂ (getSchStep step₁) (getSchStep step₂)
 ... | H⋤A , Σ₁≈Σ₂' with ⌜ εᴳ-simᴴ H⋤A step₂ ⌝ᴳ
 ... | L₁.⟨ Σ₂≈Σ₂' , Ms₂≈Ms₂' , Γ₂≈Γ₂' , Ps₂≈Ps₂' ⟩
   = L₁.⟨ Σ₁≈Σ₂' , (trans-≈ᴹ Ms₁≈Ms₂ Ms₂≈Ms₂') , trans-≈ᴴ Γ₁≈Γ₂ Γ₂≈Γ₂' , L₁.trans-≈ᴾ Ps₁≈Ps₂ Ps₂≈Ps₂' ⟩
