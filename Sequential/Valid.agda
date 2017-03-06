@@ -248,7 +248,6 @@ map-wkenᴴ {Γ = H S.∷ Γ} Ms₁⊆Ms₂ v = (wkenᴴ∙ {H = H} Ms₁⊆Ms�
 -- Initial Valid configurations
 
 -- TODO move to different module?
-
 Ms₀ : {{ls : List Label}} {{us : valid-𝓛 ls}} -> Memories ls
 Ms₀ {{[]}} {{_}} = []
 Ms₀ {{l ∷ ls}} {{u , us}} = [] ∷ Ms₀
