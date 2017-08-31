@@ -12,6 +12,8 @@ using Sestoft's Lazy Abstract Machine.
 The calculus is extended with a *general-purpose* unsharing primitive that, in this setting,
 is used to restrict sharing for terms that could possibly leak secrets otherwise.
 
+This project corroborates the results of the paper [Securing Concurrent Lazy Programs Against Information Leakage](http://www.cse.chalmers.se/~vassena/publications_files/csf2017.pdf).
+
 The agda code has been typechecked with Agda version 2.4.2.5, stdlib version 0.11, 
 and --rewriting flag. 
 
